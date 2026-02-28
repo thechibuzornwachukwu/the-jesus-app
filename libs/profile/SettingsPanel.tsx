@@ -154,7 +154,7 @@ export function SettingsPanel({
                     borderBottom: '1px solid var(--color-border)',
                   }}
                 >
-                  <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', fontFamily: 'monospace' }}>
+                  <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text)', fontFamily: 'monospace' }}>
                     {id.slice(0, 8)}…
                   </span>
                   <Button
@@ -204,7 +204,7 @@ export function SettingsPanel({
             Sign Out
           </Button>
           <div style={{ marginTop: 'var(--space-6)' }}>
-            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-error)', marginBottom: 'var(--space-2)' }}>
+            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-accent-2)', marginBottom: 'var(--space-2)' }}>
               Delete account — type <strong>DELETE</strong> to confirm
             </p>
             <Input
@@ -218,10 +218,10 @@ export function SettingsPanel({
               disabled={deleteConfirm !== 'DELETE'}
               style={{
                 marginTop: 'var(--space-3)',
-                background: 'var(--color-error)',
-                color: '#fff',
+                background: 'rgba(139,46,18,0.15)',
+                color: 'var(--color-accent-2)',
                 opacity: deleteConfirm !== 'DELETE' ? 0.4 : 1,
-                border: 'none',
+                border: '1px solid rgba(139,46,18,0.3)',
               }}
             >
               Permanently Delete Account
@@ -281,7 +281,7 @@ function ToggleRow({
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
       <div>
-        <p style={{ margin: 0, fontSize: 'var(--font-size-base)', color: 'var(--color-text-primary)' }}>
+        <p style={{ margin: 0, fontSize: 'var(--font-size-base)', color: 'var(--color-text)' }}>
           {label}
         </p>
         <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>

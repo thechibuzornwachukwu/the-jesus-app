@@ -97,9 +97,9 @@ export function ProfileClient({
         <h1
           style={{
             margin: 0,
-            fontSize: 'var(--font-size-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--color-text-primary)',
+            fontSize: 'var(--font-size-xl)',
+            fontWeight: 'var(--font-weight-bold)',
+            color: 'var(--color-text)',
           }}
         >
           {profile.username}
@@ -113,7 +113,7 @@ export function ProfileClient({
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              color: 'var(--color-text-primary)',
+              color: 'var(--color-text)',
               padding: 'var(--space-2)',
               position: 'relative',
               lineHeight: 1,
@@ -154,7 +154,7 @@ export function ProfileClient({
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              color: 'var(--color-text-primary)',
+              color: 'var(--color-text)',
               padding: 'var(--space-2)',
               lineHeight: 1,
               display: 'flex',

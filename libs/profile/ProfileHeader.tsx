@@ -43,7 +43,7 @@ export function ProfileHeader({ profile, onEditClick, onAvatarChange }: ProfileH
       }}
     >
       {/* Avatar with camera overlay */}
-      <div style={{ position: 'relative', display: 'inline-block' }}>
+      <div style={{ position: 'relative', display: 'inline-block', borderRadius: 'var(--radius-full)', outline: '2px solid var(--color-accent)', outlineOffset: 2 }}>
         <Avatar src={profile.avatar_url} name={profile.username} size={80} />
         <button
           onClick={() => fileRef.current?.click()}
@@ -82,7 +82,7 @@ export function ProfileHeader({ profile, onEditClick, onAvatarChange }: ProfileH
         style={{
           fontSize: 'var(--font-size-xl)',
           fontWeight: 'var(--font-weight-bold)',
-          color: 'var(--color-text-primary)',
+          color: 'var(--color-text)',
           margin: 0,
         }}
       >

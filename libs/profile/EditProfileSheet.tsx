@@ -62,11 +62,11 @@ export function EditProfileSheet({ profile, open, onClose, onSaved }: EditProfil
             maxLength={200}
             rows={3}
             style={{
-              background: 'var(--color-bg-primary)',
+              background: 'var(--color-bg)',
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-md)',
               padding: 'var(--space-3)',
-              color: 'var(--color-text-primary)',
+              color: 'var(--color-text)',
               fontSize: 'var(--font-size-base)',
               resize: 'vertical',
               fontFamily: 'var(--font-sans)',

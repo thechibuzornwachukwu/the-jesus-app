@@ -83,7 +83,7 @@ export function NotificationCenter({
                 style={{
                   margin: 0,
                   fontSize: 'var(--font-size-sm)',
-                  color: 'var(--color-text-primary)',
+                  color: 'var(--color-text)',
                   lineHeight: 'var(--line-height-normal)',
                 }}
               >
