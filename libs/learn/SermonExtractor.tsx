@@ -140,7 +140,7 @@ export function SermonExtractor() {
           style={{
             width: '100%',
             background: 'var(--color-bg-surface)',
-            border: '1px solid var(--color-border)',
+            border: '1.5px dashed var(--color-border)',
             borderRadius: 'var(--radius-lg)',
             padding: 'var(--space-4)',
             color: 'var(--color-text-primary)',
@@ -156,7 +156,8 @@ export function SermonExtractor() {
         <div
           onClick={() => fileInputRef.current?.click()}
           style={{
-            border: '2px dashed var(--color-border)',
+            border: `1.5px dashed ${audioFile ? 'var(--color-accent)' : 'var(--color-accent-soft)'}`,
+            background: 'var(--color-accent-wash)',
             borderRadius: 'var(--radius-lg)',
             padding: 'var(--space-10)',
             display: 'flex',

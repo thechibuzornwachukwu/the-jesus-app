@@ -197,7 +197,7 @@ function TrackDetail({
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
         <button
           onClick={onBack}
-          style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: 'var(--space-1)', lineHeight: 0 }}
+          style={{ background: 'none', border: 'none', color: 'var(--color-accent)', cursor: 'pointer', padding: 'var(--space-1)', lineHeight: 0 }}
         >
           <ChevronLeft size={20} />
         </button>
@@ -228,7 +228,7 @@ function TrackDetail({
       {summaryLoading ? (
         <div style={{ height: 56, background: 'var(--color-bg-surface)', borderRadius: 'var(--radius-lg)', animation: 'pulse 1.5s ease-in-out infinite' }} />
       ) : summary ? (
-        <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', lineHeight: 'var(--line-height-relaxed)', fontStyle: 'italic', padding: 'var(--space-3) var(--space-4)', background: 'var(--color-bg-surface)', borderRadius: 'var(--radius-lg)' }}>
+        <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', lineHeight: 'var(--line-height-relaxed)', fontStyle: 'italic', fontFamily: 'var(--font-serif)', padding: 'var(--space-3) var(--space-4)', background: 'var(--color-accent-tint)', borderLeft: '3px solid var(--color-accent)', borderRadius: '0 var(--radius-lg) var(--radius-lg) 0' }}>
           {summary}
         </p>
       ) : null}

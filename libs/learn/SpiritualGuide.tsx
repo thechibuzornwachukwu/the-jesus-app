@@ -199,7 +199,9 @@ export function SpiritualGuide() {
                       ? 'var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg)'
                       : 'var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm)',
                   background:
-                    msg.role === 'user' ? 'var(--color-accent)' : 'var(--color-bg-surface)',
+                    msg.role === 'user' ? 'var(--color-accent)' : 'var(--color-accent-tint)',
+                  borderLeft:
+                    msg.role === 'assistant' ? '2px solid var(--color-accent-soft)' : undefined,
                   color:
                     msg.role === 'user'
                       ? 'var(--color-text-inverse)'
