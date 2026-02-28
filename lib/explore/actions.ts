@@ -7,6 +7,25 @@ import type { Video, Comment, Post, FeedItem } from './types';
 const PAGE_SIZE = 5;
 
 // ---------------------------------------------------------------------------
+// Helper: batch-fetch profiles by user IDs (avoids PostgREST FK-join)
+// ---------------------------------------------------------------------------
+async function fetchProfiles(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userIds: string[]
+): Promise<Map<string, { username: string; avatar_url: string | null }>> {
+  if (userIds.length === 0) return new Map();
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url')
+    .in('id', userIds);
+  const map = new Map<string, { username: string; avatar_url: string | null }>();
+  (data ?? []).forEach((p: { id: string; username: string; avatar_url: string | null }) => {
+    map.set(p.id, { username: p.username, avatar_url: p.avatar_url });
+  });
+  return map;
+}
+
+// ---------------------------------------------------------------------------
 // getVideos — paginated feed fetch
 // ---------------------------------------------------------------------------
 export async function getVideos(cursor?: string): Promise<{
@@ -27,14 +46,13 @@ export async function getVideos(cursor?: string): Promise<{
     duration_sec: number | null;
     like_count: number;
     created_at: string;
-    profiles: { username: string; avatar_url: string | null } | null;
     video_verses: { verse_reference: string; verse_text: string; position_pct: number }[];
   };
 
   let query = supabase
     .from('videos')
     .select(
-      'id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at, profiles(username, avatar_url), video_verses(verse_reference, verse_text, position_pct)'
+      'id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at, video_verses(verse_reference, verse_text, position_pct)'
     )
     .order('created_at', { ascending: false })
     .limit(PAGE_SIZE + 1);
@@ -49,9 +67,10 @@ export async function getVideos(cursor?: string): Promise<{
   const hasMore = rows.length > PAGE_SIZE;
   const batch = (hasMore ? rows.slice(0, PAGE_SIZE) : rows) as unknown as RawVideo[];
   const videoIds = batch.map((v) => v.id);
+  const userIds = [...new Set(batch.map((v) => v.user_id))];
 
-  // Parallel: comment counts + user likes
-  const [commentCountMap, userLikedSet] = await Promise.all([
+  // Parallel: comment counts + user likes + profiles
+  const [commentCountMap, userLikedSet, profileMap] = await Promise.all([
     videoIds.length > 0
       ? supabase.from('comments').select('video_id').in('video_id', videoIds).then(({ data }) => {
           const m = new Map<string, number>();
@@ -66,6 +85,7 @@ export async function getVideos(cursor?: string): Promise<{
           return s;
         })
       : Promise.resolve(new Set<string>()),
+    fetchProfiles(supabase, userIds),
   ]);
 
   const videos: Video[] = batch.map((row) => ({
@@ -80,7 +100,7 @@ export async function getVideos(cursor?: string): Promise<{
     comment_count: commentCountMap.get(row.id) ?? 0,
     user_liked: userLikedSet.has(row.id),
     verse: row.video_verses?.[0] ?? null,
-    profiles: row.profiles ?? null,
+    profiles: profileMap.get(row.user_id) ?? null,
   }));
 
   const nextCursor = hasMore ? batch[batch.length - 1].created_at : null;
@@ -108,14 +128,13 @@ export async function getVideoById(videoId: string): Promise<Video | null> {
     duration_sec: number | null;
     like_count: number;
     created_at: string;
-    profiles: { username: string; avatar_url: string | null } | null;
     video_verses: { verse_reference: string; verse_text: string; position_pct: number }[];
   };
 
   const { data: row, error } = await supabase
     .from('videos')
     .select(
-      'id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at, profiles(username, avatar_url), video_verses(verse_reference, verse_text, position_pct)'
+      'id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at, video_verses(verse_reference, verse_text, position_pct)'
     )
     .eq('id', videoId)
     .single();
@@ -123,10 +142,10 @@ export async function getVideoById(videoId: string): Promise<Video | null> {
   if (error || !row) return null;
   const r = row as unknown as RawVideo;
 
-  const { data: commentRows } = await supabase
-    .from('comments')
-    .select('video_id')
-    .eq('video_id', videoId);
+  const [{ data: commentRows }, profileMap] = await Promise.all([
+    supabase.from('comments').select('video_id').eq('video_id', videoId),
+    fetchProfiles(supabase, [r.user_id]),
+  ]);
   const comment_count = (commentRows ?? []).length;
 
   let user_liked = false;
@@ -151,7 +170,7 @@ export async function getVideoById(videoId: string): Promise<Video | null> {
     comment_count,
     user_liked,
     verse: r.video_verses?.[0] ?? null,
-    profiles: r.profiles ?? null,
+    profiles: profileMap.get(r.user_id) ?? null,
   };
 }
 
@@ -362,22 +381,21 @@ export async function getPostById(postId: string): Promise<Post | null> {
     id: string; user_id: string; content: string; image_url: string | null;
     verse_reference: string | null; verse_text: string | null;
     like_count: number; created_at: string;
-    profiles: { username: string; avatar_url: string | null } | null;
   };
 
   const { data: row, error } = await supabase
     .from('posts')
-    .select('id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at, profiles(username, avatar_url)')
+    .select('id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at')
     .eq('id', postId)
     .single();
 
   if (error || !row) return null;
   const r = row as unknown as RawPost;
 
-  const { data: commentRows } = await supabase
-    .from('post_comments')
-    .select('post_id')
-    .eq('post_id', postId);
+  const [{ data: commentRows }, profileMap] = await Promise.all([
+    supabase.from('post_comments').select('post_id').eq('post_id', postId),
+    fetchProfiles(supabase, [r.user_id]),
+  ]);
   const comment_count = (commentRows ?? []).length;
 
   let user_liked = false;
@@ -394,7 +412,8 @@ export async function getPostById(postId: string): Promise<Post | null> {
     id: r.id, user_id: r.user_id, content: r.content,
     image_url: r.image_url, verse_reference: r.verse_reference,
     verse_text: r.verse_text, like_count: r.like_count ?? 0,
-    comment_count, user_liked, created_at: r.created_at, profiles: r.profiles ?? null,
+    comment_count, user_liked, created_at: r.created_at,
+    profiles: profileMap.get(r.user_id) ?? null,
   };
 }
 
@@ -416,7 +435,6 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
     id: string; user_id: string; url: string; thumbnail_url: string | null;
     caption: string | null; duration_sec: number | null; like_count: number;
     created_at: string;
-    profiles: { username: string; avatar_url: string | null } | null;
     video_verses: { verse_reference: string; verse_text: string; position_pct: number }[];
   };
 
@@ -424,18 +442,17 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
     id: string; user_id: string; content: string; image_url: string | null;
     verse_reference: string | null; verse_text: string | null;
     like_count: number; created_at: string;
-    profiles: { username: string; avatar_url: string | null } | null;
   };
 
   let videoQuery = supabase
     .from('videos')
-    .select('id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at, profiles(username, avatar_url), video_verses(verse_reference, verse_text, position_pct)')
+    .select('id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at, video_verses(verse_reference, verse_text, position_pct)')
     .order('created_at', { ascending: false })
     .limit(FEED_BATCH);
 
   let postQuery = supabase
     .from('posts')
-    .select('id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at, profiles(username, avatar_url)')
+    .select('id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at')
     .order('created_at', { ascending: false })
     .limit(FEED_BATCH);
 
@@ -449,11 +466,11 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
   const videos = (videoRows ?? []) as unknown as RawVideo[];
   const posts = (postRows ?? []) as unknown as RawPost[];
 
-  // Fetch comment counts
   const videoIds = videos.map((v) => v.id);
   const postIds = posts.map((p) => p.id);
+  const allUserIds = [...new Set([...videos.map((v) => v.user_id), ...posts.map((p) => p.user_id)])];
 
-  const [commentMapVideo, commentMapPost, userLikedVideos, userLikedPosts] = await Promise.all([
+  const [commentMapVideo, commentMapPost, userLikedVideos, userLikedPosts, profileMap] = await Promise.all([
     videoIds.length > 0
       ? supabase.from('comments').select('video_id').in('video_id', videoIds).then(({ data }) => {
           const m = new Map<string, number>();
@@ -482,6 +499,7 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
           return s;
         })
       : Promise.resolve(new Set<string>()),
+    fetchProfiles(supabase, allUserIds),
   ]);
 
   const videoItems: FeedItem[] = videos.map((v) => ({
@@ -493,7 +511,7 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
       comment_count: commentMapVideo.get(v.id) ?? 0,
       user_liked: userLikedVideos.has(v.id),
       verse: v.video_verses?.[0] ?? null,
-      profiles: v.profiles ?? null,
+      profiles: profileMap.get(v.user_id) ?? null,
     },
   }));
 
@@ -505,7 +523,7 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
       like_count: p.like_count ?? 0,
       comment_count: commentMapPost.get(p.id) ?? 0,
       user_liked: userLikedPosts.has(p.id),
-      created_at: p.created_at, profiles: p.profiles ?? null,
+      created_at: p.created_at, profiles: profileMap.get(p.user_id) ?? null,
     },
   }));
 
