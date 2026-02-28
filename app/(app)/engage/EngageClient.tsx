@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useTransition } from 'react';
-import { Search, Plus } from 'lucide-react';
+import Image from 'next/image';
+import { Search, Plus, Users } from 'lucide-react';
 import { CellCard } from '../../../libs/cells/CellCard';
 import { CreateCellSheet } from '../../../libs/cells/CreateCellSheet';
 import { SwipeToAction } from '../../../libs/cells/SwipeToAction';
@@ -91,77 +92,119 @@ export function EngageClient({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Fixed header bar */}
-      <div
-        style={{
-          height: 56,
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 var(--space-4)',
-          gap: 'var(--space-2)',
-          borderBottom: '1px solid var(--color-border)',
-          background: 'var(--color-bg)',
-          flexShrink: 0,
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <h1
-          style={{
-            fontFamily: "'Archivo Condensed', var(--font-display)",
-            fontSize: 'var(--font-size-2xl)',
-            fontWeight: 900,
-            letterSpacing: 'var(--letter-spacing-tight)',
-            color: 'var(--color-accent)',
-            flex: 1,
-            lineHeight: 1,
-            margin: 0,
-          }}
-        >
-          Engage
-        </h1>
 
-        <button
-          onClick={handleSearchToggle}
-          aria-label="Search cells"
+      {/* ── Stage 5.1 Hero ── */}
+      <div style={{ position: 'relative', height: 200, flexShrink: 0, overflow: 'hidden' }}>
+        <Image
+          src="/engage-hero.png"
+          alt="Community"
+          fill
+          priority
+          style={{ objectFit: 'cover', objectPosition: 'center 30%' }}
+          sizes="100vw"
+        />
+        {/* gradient overlay */}
+        <div
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 'var(--radius-full)',
-            border: 'none',
-            background: searchOpen ? 'var(--color-accent-soft)' : 'transparent',
-            cursor: 'pointer',
+            position: 'absolute',
+            inset: 0,
+            background:
+              'linear-gradient(to bottom, rgba(4,5,3,0.65) 0%, transparent 50%, var(--color-bg) 100%)',
+          }}
+        />
+
+        {/* top action bar (search + create) */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 56,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            color: searchOpen ? 'var(--color-accent)' : 'var(--color-text-muted)',
-            transition: 'background 0.15s, color 0.15s',
-            flexShrink: 0,
+            justifyContent: 'flex-end',
+            padding: '0 var(--space-4)',
+            gap: 'var(--space-2)',
           }}
         >
-          <Search size={18} />
-        </button>
+          <button
+            onClick={handleSearchToggle}
+            aria-label="Search cells"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 'var(--radius-full)',
+              border: 'none',
+              background: searchOpen ? 'var(--color-accent)' : 'rgba(255,255,255,0.18)',
+              backdropFilter: 'blur(6px)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--color-bright)',
+              transition: 'background 0.15s',
+              flexShrink: 0,
+            }}
+          >
+            <Search size={17} />
+          </button>
 
-        <button
-          onClick={() => setCreateOpen(true)}
-          aria-label="Create a new cell"
+          <button
+            onClick={() => setCreateOpen(true)}
+            aria-label="Create a new cell"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 'var(--radius-full)',
+              border: 'none',
+              background: 'var(--color-accent)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--color-accent-text)',
+              flexShrink: 0,
+            }}
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+
+        {/* hero text */}
+        <div
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 'var(--radius-full)',
-            border: 'none',
-            background: 'var(--color-accent)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--color-accent-text)',
-            flexShrink: 0,
+            position: 'absolute',
+            bottom: 20,
+            left: 'var(--space-4)',
           }}
         >
-          <Plus size={18} />
-        </button>
+          <h1
+            style={{
+              margin: 0,
+              fontFamily: "'Archivo Condensed', var(--font-display)",
+              fontSize: 'clamp(2.4rem, 10vw, 3rem)',
+              fontWeight: 900,
+              letterSpacing: '-0.02em',
+              color: '#f5f7f7',
+              lineHeight: 1,
+              textShadow: '0 2px 12px rgba(4,5,3,0.6)',
+            }}
+          >
+            Engage
+          </h1>
+          <p
+            style={{
+              margin: '4px 0 0',
+              fontSize: 'var(--font-size-sm)',
+              color: 'rgba(245,247,247,0.75)',
+              fontWeight: 'var(--font-weight-medium)',
+              letterSpacing: '0.01em',
+            }}
+          >
+            Find your people. Go deeper.
+          </p>
+        </div>
       </div>
 
       {/* Inline search bar */}
@@ -188,16 +231,18 @@ export function EngageClient({
               color: 'var(--color-text)',
               fontSize: 'var(--font-size-sm)',
               outline: 'none',
+              boxSizing: 'border-box',
             }}
           />
         </div>
       )}
 
       {/* Scrollable content */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-3) 0 var(--space-6)' }}>
-        {/* My Cells */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-4) 0 var(--space-6)' }}>
+
+        {/* ── Stage 5.2 Your Communities ── */}
         <section style={{ marginBottom: 'var(--space-5)', padding: '0 var(--space-4)' }}>
-          <SectionHeader>My Cells</SectionHeader>
+          <SectionHeader>Your Communities</SectionHeader>
           {localMyCells.length === 0 ? (
             <EmptyState message="No cells yet — start one!" />
           ) : (
@@ -210,7 +255,49 @@ export function EngageClient({
                     setLocalMyCells((p) => p.filter((c) => c.id !== cell.id));
                   }}
                 >
-                  <CellCard cell={cell} isMember />
+                  {/* online badge wrapper */}
+                  <div style={{ position: 'relative' }}>
+                    <CellCard cell={cell} isMember />
+                    {/* online member count badge */}
+                    {typeof (cell as CellWithPreview & { online_count?: number }).online_count === 'number' &&
+                      (cell as CellWithPreview & { online_count?: number }).online_count! > 0 && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 10,
+                          right: 10,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          background: 'rgba(4,5,3,0.72)',
+                          backdropFilter: 'blur(4px)',
+                          borderRadius: 'var(--radius-full)',
+                          padding: '2px 8px 2px 6px',
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 7,
+                            height: 7,
+                            borderRadius: '50%',
+                            background: 'var(--color-success)',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: '#f5f7f7',
+                            lineHeight: 1,
+                          }}
+                        >
+                          {(cell as CellWithPreview & { online_count?: number }).online_count}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </SwipeToAction>
               ))}
             </div>
@@ -225,7 +312,7 @@ export function EngageClient({
           }}
         />
 
-        {/* Discover */}
+        {/* ── Stage 5.3 Discover ── */}
         <section style={{ padding: '0 var(--space-4)' }}>
           <div
             style={{
@@ -251,6 +338,7 @@ export function EngageClient({
             </button>
           </div>
 
+          {/* reordered chips: Prayer first */}
           <div style={{ marginBottom: 'var(--space-3)' }}>
             <ChipGroup
               options={CATEGORIES}
@@ -264,23 +352,67 @@ export function EngageClient({
           {categoryFilter === 'For You' && forYouLoading ? (
             <EmptyState message="Finding cells for you…" />
           ) : filteredDiscover.length === 0 ? (
-            <EmptyState
-              message={
-                categoryFilter === 'For You'
+            /* warm empty state */
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 'var(--space-3)',
+                padding: 'var(--space-8) var(--space-4)',
+                textAlign: 'center',
+              }}
+            >
+              {/* inline cross icon */}
+              <svg width={36} height={36} viewBox="0 0 36 36" fill="none" aria-hidden>
+                <rect x={15} y={4} width={6} height={28} rx={3} fill="var(--color-accent)" />
+                <rect x={4} y={13} width={28} height={6} rx={3} fill="var(--color-accent)" />
+              </svg>
+              <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', lineHeight: 'var(--line-height-relaxed)' }}>
+                {categoryFilter === 'For You'
                   ? 'No matching cells found. Update your interests in Profile → Settings.'
                   : search || categoryFilter !== 'All'
-                  ? 'No cells match your filter.'
-                  : 'No public cells yet. Be the first to create one!'
-              }
-            />
+                  ? 'No cells match your filter — try a different category.'
+                  : 'No public cells yet. Be the first to create a community!'}
+              </p>
+            </div>
           ) : (
             <>
-              {/* Featured — full-width */}
-              <div style={{ marginBottom: 'var(--space-3)' }}>
-                <CellCard cell={featuredCell} isMember={false} featured />
+              {/* Featured — full-width card with brand photo background */}
+              <div style={{ marginBottom: 'var(--space-3)', position: 'relative' }}>
+                <div
+                  style={{
+                    position: 'relative',
+                    borderRadius: 'var(--radius-xl)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* background photo */}
+                  <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+                    <Image
+                      src="/engage-discover.png"
+                      alt=""
+                      fill
+                      style={{ objectFit: 'cover', objectPosition: 'center' }}
+                      sizes="100vw"
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background:
+                          'linear-gradient(to top, rgba(4,5,3,0.82) 0%, rgba(4,5,3,0.3) 60%, transparent 100%)',
+                      }}
+                    />
+                  </div>
+                  {/* card content on top */}
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <CellCard cell={featuredCell} isMember={false} featured />
+                  </div>
+                </div>
               </div>
 
-              {/* Grid — 2 columns */}
+              {/* Grid — 2 columns with stagger animation */}
               {gridCells.length > 0 && (
                 <div
                   className="stagger-list"
@@ -293,6 +425,24 @@ export function EngageClient({
                   {gridCells.map((cell) => (
                     <CellCard key={cell.id} cell={cell} isMember={false} />
                   ))}
+                </div>
+              )}
+
+              {/* member count hint */}
+              {filteredDiscover.length > 0 && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-2)',
+                    marginTop: 'var(--space-4)',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Users size={13} color="var(--color-text-faint)" />
+                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-faint)' }}>
+                    {filteredDiscover.length} {filteredDiscover.length === 1 ? 'community' : 'communities'} available
+                  </span>
                 </div>
               )}
             </>

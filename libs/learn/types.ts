@@ -16,6 +16,7 @@ export interface CourseTrack {
   id: string;
   title: string;
   icon?: string;       // unused — icon resolved from id in FaithCourses
+  image?: string;      // path to background photo in /public/courses/
   description: string;
   lessons: CourseLesson[];
 }

@@ -3,6 +3,7 @@ import type { CourseTrack } from "../../libs/learn/types";
 export const COURSE_TRACKS: CourseTrack[] = [
   {
     id: "salvation",
+    image: "/courses/salvation.jfif",
     title: "Salvation",
     description: "Understand the gift of eternal life through Jesus Christ.",
     lessons: [
@@ -51,6 +52,7 @@ export const COURSE_TRACKS: CourseTrack[] = [
 
   {
     id: "prayer",
+    image: "/courses/prayer.jfif",
     title: "Prayer",
     description: "Learn to commune with the Father through Scripture-grounded prayer.",
     lessons: [
@@ -99,6 +101,7 @@ export const COURSE_TRACKS: CourseTrack[] = [
 
   {
     id: "grace",
+    image: "/courses/grace.png",
     title: "Grace",
     description: "Discover the scandalous, limitless grace of God.",
     lessons: [
@@ -147,6 +150,7 @@ export const COURSE_TRACKS: CourseTrack[] = [
 
   {
     id: "identity",
+    image: "/courses/identity.png",
     title: "Identity in Christ",
     description: "Discover who you truly are as a new creation in Jesus.",
     lessons: [
@@ -195,6 +199,7 @@ export const COURSE_TRACKS: CourseTrack[] = [
 
   {
     id: "warfare",
+    image: "/courses/warfare.png",
     title: "Spiritual Warfare",
     description: "Stand firm against the enemy with the full armor of God.",
     lessons: [
