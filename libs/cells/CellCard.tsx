@@ -109,7 +109,7 @@ export function CellCard({ cell, isMember, featured }: CellCardProps) {
           height: bannerHeight,
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg, var(--color-surface-high), var(--color-surface))',
+          background: 'linear-gradient(160deg, var(--color-surface-high) 0%, var(--color-sidebar) 100%)',
         }}
       >
         {cell.banner_url ? (
@@ -190,7 +190,7 @@ export function CellCard({ cell, isMember, featured }: CellCardProps) {
             <>
               <AvatarStack members={cell.member_preview} />
               {(cell.member_count ?? 0) > 3 && (
-                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-accent)', fontWeight: 'var(--font-weight-semibold)' }}>
                   +{(cell.member_count ?? 0) - 3}
                 </span>
               )}

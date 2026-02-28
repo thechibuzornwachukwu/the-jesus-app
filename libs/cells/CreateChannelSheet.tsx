@@ -10,7 +10,7 @@ const EmojiPicker = dynamic(() => import('@emoji-mart/react').then((m) => ({ def
   loading: () => null,
 });
 
-const COLOR_PRESETS = ['#f47521', '#4ade80', '#60a5fa', '#f87171', '#a78bfa', '#facc15'];
+const COLOR_PRESETS = ['#d4922a', '#4ade80', '#60a5fa', '#f87171', '#a78bfa', '#facc15'];
 
 interface CreateChannelSheetProps {
   open: boolean;

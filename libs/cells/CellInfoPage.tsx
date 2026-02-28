@@ -154,7 +154,7 @@ export function CellInfoPage({
               width: '100%',
               height: '100%',
               background:
-                'radial-gradient(ellipse 120% 100% at 50% 0%, rgba(244,117,33,0.35) 0%, var(--color-faint-bg) 70%, var(--color-bg) 100%)',
+                'radial-gradient(ellipse 120% 100% at 50% 0%, rgba(212,146,42,0.30) 0%, var(--color-sidebar) 70%, var(--color-bg) 100%)',
             }}
           />
         )}

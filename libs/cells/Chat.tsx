@@ -1054,10 +1054,10 @@ function DiscordMessage({
           ? '1px var(--space-4) 1px var(--space-4)'
           : 'var(--space-2) var(--space-4) var(--space-1)',
         background: isHighlighted
-          ? 'rgba(244,117,33,0.10)'
+          ? 'rgba(212,146,42,0.12)'
           : hovered
             ? isOwn
-              ? 'rgba(244,117,33,0.04)'
+              ? 'rgba(212,146,42,0.05)'
               : 'rgba(245,247,247,0.03)'
             : 'transparent',
         transition: 'background 0.2s',

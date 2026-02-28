@@ -285,7 +285,7 @@ export function ChannelSidebar({
                           ? '2px solid var(--color-accent)'
                           : '2px solid transparent',
                         opacity: isDragging ? 0.4 : 1,
-                        boxShadow: priority === 'high' ? '0 0 6px 1px rgba(244,117,33,0.25)' : 'none',
+                        boxShadow: priority === 'high' ? '0 0 6px 1px rgba(212,146,42,0.25)' : 'none',
                         transition: 'background 0.1s, box-shadow 0.2s',
                         userSelect: 'none',
                       }}
