@@ -59,6 +59,7 @@ export function Chat({
   const [scheduleSheetOpen, setScheduleSheetOpen] = useState(false);
   const [scheduledListOpen, setScheduledListOpen] = useState(false);
   const [scheduling, setScheduling] = useState(false);
+  const [liveMemberCount, setLiveMemberCount] = useState<number | undefined>(memberCount);
   const [onlineMemberIds, setOnlineMemberIds] = useState<Set<string>>(
     new Set([currentUser.id])
   );
@@ -91,6 +92,25 @@ export function Chat({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Realtime member count
+  useEffect(() => {
+    const supabase = createClient();
+    const ch = supabase
+      .channel(`members:${cellId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'cell_members', filter: `cell_id=eq.${cellId}` },
+        () => setLiveMemberCount((c) => (c ?? 0) + 1)
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'cell_members', filter: `cell_id=eq.${cellId}` },
+        () => setLiveMemberCount((c) => Math.max((c ?? 1) - 1, 0))
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [cellId]);
 
   // Realtime chat messages
   useEffect(() => {
@@ -396,7 +416,7 @@ export function Chat({
           </span>
 
           {/* Member count — tappable to open member list */}
-          {memberCount !== undefined && (
+          {liveMemberCount !== undefined && (
             <button
               onClick={() => setMemberListOpen(true)}
               aria-label="View members"
@@ -415,7 +435,7 @@ export function Chat({
               }}
             >
               <Users size={14} />
-              <span>{memberCount}</span>
+              <span>{liveMemberCount}</span>
               {onlineCount > 1 && (
                 <span style={{ color: 'var(--color-success)' }}>· {onlineCount} online</span>
               )}
