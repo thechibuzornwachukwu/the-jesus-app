@@ -8,17 +8,18 @@
   /* ─── Brand Colors ─────────────────────────────────────────
      Source-of-truth palette. Never reference these directly
      in components — use the semantic tokens below instead.   */
-  --color-orange-dark:  #f47521;   /* vivid orange */
-  --color-orange-sharp: #f7bd95;   /* soft peach */
-  --color-blue-deep:    #040503;   /* near-black bg */
-  --color-faint-bg:     #171638;   /* deep indigo surface */
-  --color-bright:       #f5f7f7;   /* near-white text */
+  --color-orange-dark:  #d4922a;   /* gold leaf */
+  --color-orange-sharp: #e8c080;   /* warm gold highlight */
+  --color-blue-deep:    #0b0905;   /* burnt ash — near-black bg */
+  --color-faint-bg:     #161009;   /* warm brown-black surface */
+  --color-bright:       #f0e6c8;   /* warm ivory bone */
+  --color-sienna:       #8b2e12;   /* deep sienna — secondary accent */
 
   /* ─── Semantic Backgrounds ─────────────────────────────── */
   --color-bg:           var(--color-blue-deep);      /* page / shell */
   --color-surface:      var(--color-faint-bg);       /* card / panel */
-  --color-surface-high: #1e1d42;                     /* elevated card */
-  --color-overlay:      rgba(23,22,56,0.98);         /* modal backdrop */
+  --color-surface-high: #1f160d;                     /* elevated card */
+  --color-overlay:      rgba(22,16,9,0.98);          /* modal backdrop */
 
   /* ─── Semantic Text ─────────────────────────────────────── */
   --color-text:         var(--color-bright);
@@ -27,8 +28,9 @@
 
   /* ─── Accent ────────────────────────────────────────────── */
   --color-accent:       var(--color-orange-dark);    /* buttons, links, active */
-  --color-accent-soft:  rgba(244,117,33,0.12);       /* hover tint bg */
-  --color-accent-text:  #040503;                     /* dark text ON orange */
+  --color-accent-soft:  rgba(212,146,42,0.12);       /* hover tint bg */
+  --color-accent-text:  #0b0905;                     /* dark text ON gold */
+  --color-accent-2:     var(--color-sienna);         /* deep sienna — secondary */
 
   /* ─── Status ────────────────────────────────────────────── */
   --color-success: #4ade80;
@@ -42,14 +44,14 @@
   /* ─── Backward-compat aliases ───────────────────────────── */
   --color-bg-primary:   var(--color-bg);
   --color-bg-surface:   var(--color-surface);
-  --color-bg-overlay:   rgba(23,22,56,0.95);
+  --color-bg-overlay:   rgba(22,16,9,0.95);
   --color-text-primary: var(--color-text);
   --color-text-inverse: var(--color-accent-text);
 
   /* ─── Typography ────────────────────────────────────────── */
-  --font-sans:    'Archivo', system-ui, -apple-system, sans-serif;
-  --font-serif:   'Newsreader', Georgia, serif;
-  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-sans:    'Nunito', system-ui, -apple-system, sans-serif;
+  --font-serif:   'EB Garamond', Georgia, serif;
+  --font-display: 'Playfair Display', Georgia, serif;
   --font-size-xs:   0.75rem;   /* 12px */
   --font-size-sm:   0.875rem;  /* 14px */
   --font-size-base: 1rem;      /* 16px */
@@ -110,14 +112,14 @@
   --nav-height: 64px;
 
   /* ─── Alpha overlays ────────────────────────────────────── */
-  --color-accent-wash:   rgba(244,117,33,0.06);   /* notification unread bg */
-  --color-accent-tint:   rgba(244,117,33,0.08);   /* blockquote / reflection bg */
-  --color-accent-glow:   rgba(244,117,33,0.12);   /* tone warning banner */
-  --color-accent-chip:   rgba(244,117,33,0.15);   /* active chip */
-  --color-video-top:     rgba(4,5,3,0.55);        /* video gradient top */
-  --color-video-bottom:  rgba(4,5,3,0.75);        /* video gradient bottom */
-  --color-glass:         rgba(4,5,3,0.72);        /* frosted-glass overlays */
-  --color-verse-overlay: rgba(23,22,56,0.80);     /* daily verse gradient end */
+  --color-accent-wash:   rgba(212,146,42,0.06);   /* notification unread bg */
+  --color-accent-tint:   rgba(212,146,42,0.08);   /* blockquote / reflection bg */
+  --color-accent-glow:   rgba(212,146,42,0.12);   /* tone warning banner */
+  --color-accent-chip:   rgba(212,146,42,0.15);   /* active chip */
+  --color-video-top:     rgba(11,9,5,0.55);       /* video gradient top */
+  --color-video-bottom:  rgba(11,9,5,0.75);       /* video gradient bottom */
+  --color-glass:         rgba(11,9,5,0.72);       /* frosted-glass overlays */
+  --color-verse-overlay: rgba(22,16,9,0.80);      /* daily verse gradient end */
   --color-remove-btn:    rgba(0,0,0,0.70);        /* video remove button */
   --color-audio-track:   rgba(255,255,255,0.20);  /* audio progress bar bg */
   --color-pulse-active:  rgba(248,113,113,0.60);  /* voice recorder pulse */
@@ -127,11 +129,11 @@
   --gradient-verse-banner: linear-gradient(135deg, var(--color-faint-bg) 0%, var(--color-verse-overlay) 100%);
 
   /* ─── Discord 3-Panel Shell ─────────────────────────────────────── */
-  --color-sidebar:     #0c0c18;
-  --color-panel:       #11111e;
-  --color-panel-hover: #181827;
-  --color-surface-dp1: #161625;
-  --color-surface-dp2: #1b1b2f;
+  --color-sidebar:     #080604;
+  --color-panel:       #0e0a06;
+  --color-panel-hover: #161009;
+  --color-surface-dp1: #1a1109;
+  --color-surface-dp2: #1f160d;
   --color-online:      var(--color-success);
   --color-idle:        #facc15;
   --color-offline:     rgba(245,247,247,0.25);

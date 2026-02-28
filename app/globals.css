@@ -8,7 +8,7 @@
 }
 
 html {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: var(--font-size-base);
   color: var(--color-text-primary);
   background-color: var(--color-bg-primary);
@@ -33,7 +33,7 @@ body {
   /* Subtle radial glow at top for depth */
   background-image: radial-gradient(
     ellipse 80% 60% at 50% 0%,
-    rgba(244,117,33,0.05) 0%,
+    rgba(212,146,42,0.06) 0%,
     transparent 70%
   );
 }
@@ -48,7 +48,7 @@ body {
 /* Desktop sidebar fill */
 @media (min-width: 431px) {
   body {
-    background-color: #040503;
+    background-color: #0b0905;
   }
 
   .app-container {
@@ -101,7 +101,7 @@ body {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(245,247,247,0.06) 50%,
+    rgba(212,146,42,0.07) 50%,
     transparent 100%
   );
   animation: skeleton-shimmer 1.4s ease infinite;

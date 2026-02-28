@@ -30,8 +30,8 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: dark)',  color: '#040503' },
-    { media: '(prefers-color-scheme: light)', color: '#040503' },
+    { media: '(prefers-color-scheme: dark)',  color: '#0b0905' },
+    { media: '(prefers-color-scheme: light)', color: '#0b0905' },
   ],
 };
 
@@ -41,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Archivo+Condensed:wght@400;800;900&family=Archivo:ital,wght@0,200;0,400;0,800;0,900;1,200;1,400&family=Newsreader:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Nunito:wght@400;500;600;700;800&family=EB+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
