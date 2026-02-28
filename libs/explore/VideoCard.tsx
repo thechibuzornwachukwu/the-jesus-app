@@ -369,7 +369,7 @@ function ActionButton({
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1)',
-          transform: pressed ? 'scale(0.82)' : active ? 'scale(1.12)' : 'scale(1)',
+          transform: pressed ? 'scale(0.85)' : active ? 'scale(1.12)' : 'scale(1)',
           filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))',
         }}
       >

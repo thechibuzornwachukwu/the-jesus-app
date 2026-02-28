@@ -199,7 +199,7 @@ function TrackDetail({
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(to top, rgba(4,5,3,0.88) 0%, rgba(4,5,3,0.3) 60%, transparent 100%)',
+              background: 'var(--gradient-card-overlay)',
             }}
           />
           {/* back button */}
@@ -352,7 +352,7 @@ function TrackCard({
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(to top, rgba(4,5,3,0.92) 0%, rgba(4,5,3,0.45) 55%, rgba(4,5,3,0.15) 100%)',
+              background: 'var(--gradient-card-overlay)',
             }}
           />
         </>

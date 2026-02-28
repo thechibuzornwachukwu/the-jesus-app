@@ -109,7 +109,7 @@ export function EngageClient({
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(to bottom, rgba(4,5,3,0.65) 0%, transparent 50%, var(--color-bg) 100%)',
+              'var(--gradient-hero)',
           }}
         />
 
@@ -244,7 +244,10 @@ export function EngageClient({
         <section style={{ marginBottom: 'var(--space-5)', padding: '0 var(--space-4)' }}>
           <SectionHeader>Your Communities</SectionHeader>
           {localMyCells.length === 0 ? (
-            <EmptyState message="No cells yet — start one!" />
+            <EmptyState
+              message="Every revival starts with a room. Create your first cell and call your people in."
+              imageSrc="/engage-hero.png"
+            />
           ) : (
             <div className="stagger-list" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               {localMyCells.map((cell) => (
@@ -401,7 +404,7 @@ export function EngageClient({
                         position: 'absolute',
                         inset: 0,
                         background:
-                          'linear-gradient(to top, rgba(4,5,3,0.82) 0%, rgba(4,5,3,0.3) 60%, transparent 100%)',
+                          'var(--gradient-card-overlay)',
                       }}
                     />
                   </div>

@@ -23,8 +23,9 @@ export function JoinedCellsList({ cells }: JoinedCellsListProps) {
   if (cells.length === 0) {
     return (
       <EmptyState
-        icon={<Users size={40} />}
-        message="No fellowships joined yet — browse cells in the Engage tab and find your community."
+        icon={<Users size={36} />}
+        message="You weren't made to walk alone. Find your fellowship in the Engage tab."
+        imageSrc="/engage-hero.png"
       />
     );
   }

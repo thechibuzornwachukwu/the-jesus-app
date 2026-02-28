@@ -101,8 +101,9 @@ function JournalTab({ videos, posts }: { videos: PostedVideo[]; posts: Post[] })
   if (!hasVideos && !hasPosts) {
     return (
       <EmptyState
-        message="Nothing shared yet — post a video or write a reflection in Explore."
-        icon={<BookOpen size={40} />}
+        message="Your story matters. Share a perspective or reflection in Explore."
+        icon={<BookOpen size={36} />}
+        imageSrc="/engage-discover.png"
       />
     );
   }

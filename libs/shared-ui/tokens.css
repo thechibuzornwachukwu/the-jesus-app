@@ -60,7 +60,8 @@
   --font-size-2xl:  1.5rem;    /* 24px */
   --font-size-3xl:  1.875rem;  /* 30px */
   --font-size-4xl:  2.5rem;    /* 40px */
-  --font-size-5xl:  3.25rem;   /* 52px */
+  --font-size-5xl:  3.75rem;   /* 60px */
+  --font-size-6xl:  4.5rem;    /* 72px — hero moments */
   --font-weight-light:   200;
   --font-weight-regular: 400;
   --font-weight-medium:  500;
@@ -126,7 +127,9 @@
   --color-pulse-fade:    rgba(248,113,113,0);     /* voice recorder pulse end */
 
   /* ─── Gradient shorthands ───────────────────────────────── */
-  --gradient-verse-banner: linear-gradient(135deg, var(--color-faint-bg) 0%, var(--color-verse-overlay) 100%);
+  --gradient-verse-banner: linear-gradient(135deg, var(--color-surface) 0%, rgba(212,146,42,0.14) 55%, var(--color-verse-overlay) 100%);
+  --gradient-hero:         linear-gradient(to bottom, rgba(11,9,5,0.65) 0%, transparent 50%, var(--color-bg) 100%);
+  --gradient-card-overlay: linear-gradient(to top, rgba(11,9,5,0.92) 0%, rgba(11,9,5,0.45) 55%, rgba(11,9,5,0.15) 100%);
 
   /* ─── Discord 3-Panel Shell ─────────────────────────────────────── */
   --color-sidebar:     #080604;
