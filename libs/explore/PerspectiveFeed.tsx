@@ -18,6 +18,7 @@ interface PerspectiveFeedProps {
 
 export interface PerspectiveFeedHandle {
   refreshFeed: () => void;
+  prependItem: (item: FeedItem) => void;
 }
 
 export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeedProps>(
@@ -34,14 +35,24 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
   const loadingRef = useRef(false);
 
   const refreshFeed = useCallback(async () => {
-    const { items: fresh, nextCursor } = await getUnifiedFeed();
-    setItems(fresh);
-    setCursor(nextCursor);
+    try {
+      const { items: fresh, nextCursor } = await getUnifiedFeed();
+      setItems(fresh);
+      setCursor(nextCursor);
+      setActiveIndex(0);
+      containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      // silent — feed keeps showing existing items
+    }
+  }, []);
+
+  const prependItem = useCallback((item: FeedItem) => {
+    setItems((prev) => [item, ...prev]);
     setActiveIndex(0);
     containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  useImperativeHandle(ref, () => ({ refreshFeed }), [refreshFeed]);
+  useImperativeHandle(ref, () => ({ refreshFeed, prependItem }), [refreshFeed, prependItem]);
 
   // IntersectionObserver: detect active card (≥80% visible)
   useEffect(() => {

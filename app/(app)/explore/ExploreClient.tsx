@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import type { FeedItem } from '../../../lib/explore/types';
 import type { DailyVerseType } from '../../../lib/explore/types';
+import { getVideoById, getPostById } from '../../../lib/explore/actions';
 import { DailyVerse } from '../../../libs/explore/DailyVerse';
 import { PerspectiveFeed, type PerspectiveFeedHandle } from '../../../libs/explore/PerspectiveFeed';
 import { CommentSheet } from '../../../libs/explore/CommentSheet';
@@ -33,10 +34,27 @@ export function ExploreClient({
   const [uploadOpen, setUploadOpen] = useState(false);
   const feedRef = useRef<PerspectiveFeedHandle>(null);
 
-  const handleUploaded = async (_id: string, _kind: 'video' | 'post') => {
+  const handleUploaded = async (id: string, kind: 'video' | 'post') => {
     showToast('Perspective published!', 'success');
     setUploadOpen(false);
-    await feedRef.current?.refreshFeed();
+    try {
+      let item: FeedItem | null = null;
+      if (kind === 'video') {
+        const video = await getVideoById(id);
+        if (video) item = { kind: 'video', data: video };
+      } else {
+        const post = await getPostById(id);
+        if (post) item = { kind: 'post', data: post };
+      }
+      if (item) {
+        feedRef.current?.prependItem(item);
+      } else {
+        // fallback: full refresh if fetch-by-id failed
+        await feedRef.current?.refreshFeed();
+      }
+    } catch {
+      await feedRef.current?.refreshFeed();
+    }
   };
 
   return (
