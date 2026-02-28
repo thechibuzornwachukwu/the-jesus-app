@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Heart, MessageSquare, Share2 } from 'lucide-react';
+import { Heart, MessageSquare, Share2, Volume2, VolumeX } from 'lucide-react';
 import type { Video } from '../../lib/explore/types';
 import { ScriptureOverlay } from './ScriptureOverlay';
 import { toggleLike, saveVerse } from '../../lib/explore/actions';
@@ -22,6 +22,8 @@ export function VideoCard({ video, isActive, height, onComment, onLikeChanged }:
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [amenBurst, setAmenBurst] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   // Autoplay / pause when active changes
   useEffect(() => {
@@ -99,8 +101,10 @@ export function VideoCard({ video, isActive, height, onComment, onLikeChanged }:
         poster={video.thumbnail_url ?? undefined}
         loop
         playsInline
-        muted={false}
+        muted={muted}
         preload="metadata"
+        onTimeUpdate={e => setProgress(e.currentTarget.currentTime / (e.currentTarget.duration || 1))}
+        onEnded={() => setProgress(0)}
         style={{
           position: 'absolute',
           inset: 0,
@@ -143,6 +147,32 @@ export function VideoCard({ video, isActive, height, onComment, onLikeChanged }:
           </span>
         </div>
       )}
+
+      {/* Mute/Unmute button */}
+      <button
+        aria-label={muted ? 'Unmute' : 'Mute'}
+        onClick={() => { setMuted(m => !m); vibrate([6]); }}
+        style={{
+          position: 'absolute',
+          top: 'calc(var(--safe-top, 0px) + var(--space-3))',
+          right: 'var(--space-3)',
+          width: 40,
+          height: 40,
+          borderRadius: 'var(--radius-full)',
+          background: 'rgba(0,0,0,0.4)',
+          border: 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 4,
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        {muted
+          ? <VolumeX size={20} color="#fff" />
+          : <Volume2 size={20} color="#fff" />}
+      </button>
 
       {/* Top: author info */}
       <div
@@ -257,6 +287,11 @@ export function VideoCard({ video, isActive, height, onComment, onLikeChanged }:
           onClick={handleShare}
           count={null}
         />
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: 'rgba(255,255,255,0.2)', zIndex: 4 }}>
+        <div style={{ height: '100%', width: `${progress * 100}%`, background: 'var(--color-accent)', transition: 'width 0.25s linear' }} />
       </div>
 
       <style>{`

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
 import { Video as VideoIcon } from 'lucide-react';
 import type { FeedItem } from '../../lib/explore/types';
 import { VideoCard } from './VideoCard';
@@ -14,32 +14,34 @@ interface PerspectiveFeedProps {
   userId: string;
   feedHeight: string;
   onComment: (videoId: string) => void;
-  pendingItem?: FeedItem | null;
 }
 
-export function PerspectiveFeed({
-  initialItems,
-  initialCursor,
-  userId: _userId,
-  feedHeight,
-  onComment,
-  pendingItem,
-}: PerspectiveFeedProps) {
+export interface PerspectiveFeedHandle {
+  refreshFeed: () => void;
+}
+
+export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeedProps>(
+  function PerspectiveFeed(
+    { initialItems, initialCursor, userId: _userId, feedHeight, onComment },
+    ref
+  ) {
   const [items, setItems] = useState<FeedItem[]>(initialItems);
-
-  useEffect(() => {
-    if (!pendingItem) return;
-    setItems((prev) =>
-      prev.some((i) => i.data.id === pendingItem.data.id) ? prev : [pendingItem, ...prev]
-    );
-  }, [pendingItem]);
-
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const loadingRef = useRef(false);
+
+  const refreshFeed = useCallback(async () => {
+    const { items: fresh, nextCursor } = await getUnifiedFeed();
+    setItems(fresh);
+    setCursor(nextCursor);
+    setActiveIndex(0);
+    containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  useImperativeHandle(ref, () => ({ refreshFeed }), [refreshFeed]);
 
   // IntersectionObserver: detect active card (≥80% visible)
   useEffect(() => {
@@ -175,4 +177,4 @@ export function PerspectiveFeed({
       )}
     </div>
   );
-}
+});

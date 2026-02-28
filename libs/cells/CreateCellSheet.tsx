@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { BottomSheet } from '../shared-ui/BottomSheet';
+import { FullScreenModal } from '../shared-ui/FullScreenModal';
 import { Button } from '../shared-ui/Button';
 import { Input } from '../shared-ui/Input';
 import { Avatar } from '../shared-ui/Avatar';
@@ -101,11 +101,36 @@ export function CreateCellSheet({ open, onClose }: CreateCellSheetProps) {
     router.push(`/engage/${result.slug}/info`);
   };
 
+  const footerContent = (
+    <div
+      style={{
+        padding: 'var(--space-4) var(--space-6) calc(var(--safe-bottom, 0px) + var(--space-4))',
+        borderTop: '1px solid var(--color-border)',
+      }}
+    >
+      <Button
+        type="submit"
+        form="create-cell-form"
+        loading={submitting}
+        disabled={submitting || uploading || name.trim().length < 2}
+        className="w-full"
+      >
+        Create Cell
+      </Button>
+    </div>
+  );
+
   return (
-    <BottomSheet open={open} onClose={handleClose} title="Create a Cell">
+    <FullScreenModal open={open} onClose={handleClose} title="Create a Cell" footerContent={footerContent}>
       <form
+        id="create-cell-form"
         onSubmit={handleSubmit}
-        style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--space-5)',
+          padding: 'var(--space-5) var(--space-6)',
+        }}
       >
         {/* Avatar upload */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
@@ -282,16 +307,7 @@ export function CreateCellSheet({ open, onClose }: CreateCellSheetProps) {
         {error && (
           <p style={{ color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>{error}</p>
         )}
-
-        <Button
-          type="submit"
-          loading={submitting}
-          disabled={submitting || uploading || name.trim().length < 2}
-          className="w-full"
-        >
-          Create Cell
-        </Button>
       </form>
-    </BottomSheet>
+    </FullScreenModal>
   );
 }

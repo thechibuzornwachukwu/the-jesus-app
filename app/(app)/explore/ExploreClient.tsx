@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import type { FeedItem } from '../../../lib/explore/types';
 import type { DailyVerseType } from '../../../lib/explore/types';
-import { getVideoById, getPostById } from '../../../lib/explore/actions';
 import { DailyVerse } from '../../../libs/explore/DailyVerse';
-import { PerspectiveFeed } from '../../../libs/explore/PerspectiveFeed';
+import { PerspectiveFeed, type PerspectiveFeedHandle } from '../../../libs/explore/PerspectiveFeed';
 import { CommentSheet } from '../../../libs/explore/CommentSheet';
 import { UploadSheet } from '../../../libs/explore/UploadSheet';
 import { showToast } from '../../../libs/shared-ui/Toast';
@@ -32,17 +31,12 @@ export function ExploreClient({
 }: ExploreClientProps) {
   const [commentVideoId, setCommentVideoId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [pendingItem, setPendingItem] = useState<FeedItem | null>(null);
+  const feedRef = useRef<PerspectiveFeedHandle>(null);
 
-  const handleUploaded = async (id: string, kind: 'video' | 'post') => {
-    if (kind === 'video') {
-      const video = await getVideoById(id);
-      if (video) setPendingItem({ kind: 'video', data: video });
-    } else {
-      const post = await getPostById(id);
-      if (post) setPendingItem({ kind: 'post', data: post });
-    }
+  const handleUploaded = async (_id: string, _kind: 'video' | 'post') => {
     showToast('Perspective published!', 'success');
+    setUploadOpen(false);
+    await feedRef.current?.refreshFeed();
   };
 
   return (
@@ -54,12 +48,12 @@ export function ExploreClient({
 
       {/* Unified feed */}
       <PerspectiveFeed
+        ref={feedRef}
         initialItems={initialItems}
         initialCursor={initialCursor}
         userId={userId}
         feedHeight={FEED_HEIGHT}
         onComment={(id) => setCommentVideoId(id)}
-        pendingItem={pendingItem}
       />
 
       {/* Create FAB — bottom-left */}
