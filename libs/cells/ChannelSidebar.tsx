@@ -1,8 +1,19 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { ChevronDown, ChevronRight, Hash, Megaphone, Plus, MoreVertical, Info, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Hash, Megaphone, Plus, MoreVertical, Info, X, Calendar } from 'lucide-react';
 import type { ChannelCategory, Channel, NotificationScore } from '../../lib/cells/types';
+import { sortChannelsByPriority, getChannelPriorityClass } from '../../lib/cells/notification-scoring';
+
+/** Returns true when the earliest upcoming meeting for this channel starts within 2 hours */
+function useMeetingAlert(channelId: string, upcomingMeetings: UpcomingMeetingHint[]): boolean {
+  const cutoff = Date.now() + 2 * 60 * 60 * 1000;
+  return upcomingMeetings.some(
+    (m) => m.channelId === channelId && new Date(m.scheduledAt).getTime() <= cutoff
+  );
+}
+
+export type UpcomingMeetingHint = { channelId: string; scheduledAt: string };
 
 interface ChannelSidebarProps {
   cellName: string;
@@ -19,6 +30,8 @@ interface ChannelSidebarProps {
   onReorderChannels: (updates: { id: string; position: number }[]) => void;
   onClose?: () => void;
   cellId: string;
+  /** Hint list so the sidebar can show pulsing dots for imminent meetings */
+  upcomingMeetings?: UpcomingMeetingHint[];
 }
 
 export function ChannelSidebar({
@@ -35,6 +48,7 @@ export function ChannelSidebar({
   onReorderChannels,
   onClose,
   cellId,
+  upcomingMeetings = [],
 }: ChannelSidebarProps) {
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [contextMenu, setContextMenu] = useState<{
@@ -161,7 +175,7 @@ export function ChannelSidebar({
 
       {/* Channels list */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-2) 0' }}>
-        {categories.map((cat) => {
+        {sortChannelsByPriority(categories, notificationScores).map((cat) => {
           const collapsed = collapsedCategories.has(cat.id);
           return (
             <div
@@ -232,7 +246,11 @@ export function ChannelSidebar({
                   const isActive = ch.id === activeChannelId;
                   const unread = unreadCounts[ch.id] ?? 0;
                   const score = notificationScores[ch.id] ?? 0;
+                  const priority = getChannelPriorityClass(score);
                   const isDragging = dragState.draggingId === ch.id;
+                  const isMeeting = ch.channel_type === 'meeting';
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const meetingAlert = useMeetingAlert(ch.id, upcomingMeetings);
 
                   return (
                     <div
@@ -256,10 +274,18 @@ export function ChannelSidebar({
                         marginRight: 'var(--space-2)',
                         borderRadius: 'var(--radius-sm)',
                         cursor: 'pointer',
-                        background: isActive ? 'var(--color-panel-hover)' : 'transparent',
-                        borderLeft: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',
+                        background: isActive
+                          ? 'var(--color-panel-hover)'
+                          : priority === 'high'
+                          ? 'var(--color-accent-soft)'
+                          : 'transparent',
+                        borderLeft: isActive
+                          ? '2px solid var(--color-accent)'
+                          : priority !== 'normal'
+                          ? '2px solid var(--color-accent)'
+                          : '2px solid transparent',
                         opacity: isDragging ? 0.4 : 1,
-                        boxShadow: score >= 15 ? '0 0 0 1px var(--color-accent)' : 'none',
+                        boxShadow: priority === 'high' ? '0 0 6px 1px rgba(244,117,33,0.25)' : 'none',
                         transition: 'background 0.1s, box-shadow 0.2s',
                         userSelect: 'none',
                       }}
@@ -270,13 +296,29 @@ export function ChannelSidebar({
                         if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent';
                       }}
                     >
-                      <span style={{ flexShrink: 0, opacity: 0.6, fontSize: 14 }}>
+                      <span style={{ flexShrink: 0, opacity: 0.6, fontSize: 14, position: 'relative' }}>
                         {ch.emoji ? (
                           ch.emoji
+                        ) : isMeeting ? (
+                          <Calendar size={14} />
                         ) : ch.channel_type === 'announcement' ? (
                           <Megaphone size={14} />
                         ) : (
                           <Hash size={14} />
+                        )}
+                        {meetingAlert && (
+                          <span
+                            style={{
+                              position: 'absolute',
+                              top: -3,
+                              right: -3,
+                              width: 7,
+                              height: 7,
+                              borderRadius: '50%',
+                              background: 'var(--color-accent)',
+                              animation: 'sidebar-meeting-pulse 1.4s ease-in-out infinite',
+                            }}
+                          />
                         )}
                       </span>
                       <span
@@ -296,6 +338,22 @@ export function ChannelSidebar({
                       >
                         {ch.name}
                       </span>
+                      {isMeeting && (
+                        <span
+                          style={{
+                            fontSize: '0.5625rem',
+                            fontWeight: 'var(--font-weight-bold)',
+                            color: 'var(--color-accent)',
+                            background: 'var(--color-accent-soft)',
+                            borderRadius: 3,
+                            padding: '1px 4px',
+                            letterSpacing: '0.04em',
+                            flexShrink: 0,
+                          }}
+                        >
+                          MTG
+                        </span>
+                      )}
                       {unread > 0 && (
                         <span
                           style={{
@@ -392,6 +450,10 @@ export function ChannelSidebar({
       <style>{`
         .channel-menu-btn { opacity: 0 !important; }
         div:hover > .channel-menu-btn { opacity: 1 !important; }
+        @keyframes sidebar-meeting-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50%       { opacity: 0.4; transform: scale(0.7); }
+        }
       `}</style>
     </div>
   );

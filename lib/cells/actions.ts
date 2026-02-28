@@ -814,6 +814,69 @@ export async function reorderChannels(
   );
 }
 
+// ─── Phase 7D: Notification Intelligence ───────────────────────────────────
+
+/**
+ * Increment (or decrement) a channel's notification score for the current user.
+ * Score is floored at 0.
+ */
+export async function addNotificationScore(channelId: string, delta: number): Promise<void> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || delta === 0) return;
+
+  const { data: existing } = await supabase
+    .from('channel_notification_scores')
+    .select('score')
+    .eq('user_id', user.id)
+    .eq('channel_id', channelId)
+    .maybeSingle();
+
+  const newScore = Math.max(0, (existing?.score ?? 0) + delta);
+
+  await supabase.from('channel_notification_scores').upsert(
+    { user_id: user.id, channel_id: channelId, score: newScore },
+    { onConflict: 'user_id,channel_id' }
+  );
+}
+
+/**
+ * Fetch public cells that match any of the given categories,
+ * excluding already-joined cells, ordered by most-recent message activity.
+ */
+export async function getDiscoverCellsWithActivityMatch(
+  userCategories: string[],
+  excludeIds: string[]
+): Promise<CellWithPreview[]> {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from('cells')
+    .select('*')
+    .eq('is_public', true)
+    .order('created_at', { ascending: false })
+    .limit(30);
+
+  if (userCategories.length > 0) {
+    query = query.in('category', userCategories);
+  }
+
+  if (excludeIds.length > 0) {
+    query = query.not('id', 'in', `(${excludeIds.join(',')})`);
+  }
+
+  const { data: cells } = await query;
+  const enriched = await enrichCells(supabase, (cells as Cell[]) ?? []);
+
+  // Sort by last_activity descending (most recently active first)
+  return enriched.sort((a, b) => {
+    if (!a.last_activity && !b.last_activity) return 0;
+    if (!a.last_activity) return 1;
+    if (!b.last_activity) return -1;
+    return new Date(b.last_activity).getTime() - new Date(a.last_activity).getTime();
+  });
+}
+
 export async function updateScheduledMessage(
   id: string,
   sendAt: string

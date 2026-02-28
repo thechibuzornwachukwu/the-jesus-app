@@ -1,28 +1,39 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useTransition } from 'react';
 import { Search, Plus } from 'lucide-react';
 import { CellCard } from '../../../libs/cells/CellCard';
 import { CreateCellSheet } from '../../../libs/cells/CreateCellSheet';
 import { SwipeToAction } from '../../../libs/cells/SwipeToAction';
 import { ChipGroup, SectionHeader, EmptyState } from '../../../libs/shared-ui';
 import type { CellWithPreview } from '../../../lib/cells/types';
+import { getDiscoverCellsWithActivityMatch } from '../../../lib/cells/actions';
+import { getActivityMatchScore } from '../../../lib/cells/notification-scoring';
 
-const CATEGORIES = ['All', 'Prayer', 'Bible Study', 'Youth', 'Worship', 'Discipleship', 'General'];
+const CATEGORIES = ['For You', 'All', 'Prayer', 'Bible Study', 'Youth', 'Worship', 'Discipleship', 'General'];
 
 interface EngageClientProps {
   myCells: CellWithPreview[];
   discoverCells: CellWithPreview[];
   currentUserId: string;
+  userCategories: string[];
 }
 
-export function EngageClient({ myCells, discoverCells, currentUserId: _currentUserId }: EngageClientProps) {
+export function EngageClient({
+  myCells,
+  discoverCells,
+  currentUserId: _currentUserId,
+  userCategories,
+}: EngageClientProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [createOpen, setCreateOpen] = useState(false);
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set(myCells.map((c) => c.id)));
   const [localMyCells, setLocalMyCells] = useState<CellWithPreview[]>(myCells);
+  const [forYouCells, setForYouCells] = useState<CellWithPreview[] | null>(null);
+  const [forYouLoading, setForYouLoading] = useState(false);
+  const [, startTransition] = useTransition();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleSearchToggle = () => {
@@ -36,16 +47,45 @@ export function EngageClient({ myCells, discoverCells, currentUserId: _currentUs
     });
   };
 
-  const filteredDiscover = discoverCells.filter((c) => {
-    if (joinedIds.has(c.id)) return false;
-    if (categoryFilter !== 'All' && c.category !== categoryFilter) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      if (!c.name.toLowerCase().includes(q) && !(c.description?.toLowerCase().includes(q) ?? false))
-        return false;
+  const handleCategoryChange = (v: string | string[]) => {
+    const next = v as string;
+    setCategoryFilter(next);
+    if (next === 'For You' && forYouCells === null && !forYouLoading) {
+      setForYouLoading(true);
+      startTransition(() => {
+        getDiscoverCellsWithActivityMatch(userCategories, [...joinedIds]).then((cells) => {
+          const sorted = [...cells].sort(
+            (a, b) => getActivityMatchScore(b, userCategories) - getActivityMatchScore(a, userCategories)
+          );
+          setForYouCells(sorted);
+          setForYouLoading(false);
+        });
+      });
     }
-    return true;
-  });
+  };
+
+  const filteredDiscover =
+    categoryFilter === 'For You'
+      ? (forYouCells ?? []).filter((c) => {
+          if (search) {
+            const q = search.toLowerCase();
+            return (
+              c.name.toLowerCase().includes(q) ||
+              (c.description?.toLowerCase().includes(q) ?? false)
+            );
+          }
+          return true;
+        })
+      : discoverCells.filter((c) => {
+          if (joinedIds.has(c.id)) return false;
+          if (categoryFilter !== 'All' && c.category !== categoryFilter) return false;
+          if (search) {
+            const q = search.toLowerCase();
+            if (!c.name.toLowerCase().includes(q) && !(c.description?.toLowerCase().includes(q) ?? false))
+              return false;
+          }
+          return true;
+        });
 
   const [featuredCell, ...gridCells] = filteredDiscover;
 
@@ -215,16 +255,20 @@ export function EngageClient({ myCells, discoverCells, currentUserId: _currentUs
             <ChipGroup
               options={CATEGORIES}
               value={categoryFilter}
-              onChange={(v) => setCategoryFilter(v as string)}
+              onChange={handleCategoryChange}
               mode="single"
               scrollable
             />
           </div>
 
-          {filteredDiscover.length === 0 ? (
+          {categoryFilter === 'For You' && forYouLoading ? (
+            <EmptyState message="Finding cells for you…" />
+          ) : filteredDiscover.length === 0 ? (
             <EmptyState
               message={
-                search || categoryFilter !== 'All'
+                categoryFilter === 'For You'
+                  ? 'No matching cells found. Update your interests in Profile → Settings.'
+                  : search || categoryFilter !== 'All'
                   ? 'No cells match your filter.'
                   : 'No public cells yet. Be the first to create one!'
               }

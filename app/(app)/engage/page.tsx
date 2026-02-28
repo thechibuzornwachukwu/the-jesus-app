@@ -13,15 +13,21 @@ export default async function EngagePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in');
 
-  const myCells = await getMyCellsWithPreviews(user.id);
+  const [myCells, profileRes] = await Promise.all([
+    getMyCellsWithPreviews(user.id),
+    supabase.from('profiles').select('content_categories').eq('id', user.id).single(),
+  ]);
   const joinedIds = myCells.map((c) => c.id);
   const discoverCells = await getCellsWithMemberPreviews(joinedIds);
+  const userCategories =
+    (profileRes.data as { content_categories?: string[] } | null)?.content_categories ?? [];
 
   return (
     <EngageClient
       myCells={myCells}
       discoverCells={discoverCells}
       currentUserId={user.id}
+      userCategories={userCategories}
     />
   );
 }

@@ -30,6 +30,7 @@ interface ChatProps {
   userRole?: 'admin' | 'member';
   channelId?: string;
   channelTopic?: string | null;
+  onMessageSent?: () => void;
 }
 
 export function Chat({
@@ -42,6 +43,7 @@ export function Chat({
   blockedUserIds = [],
   userRole = 'member',
   channelId,
+  onMessageSent,
 }: ChatProps) {
   const router = useRouter();
   const blockedSet = React.useMemo(() => new Set(blockedUserIds), [blockedUserIds]);
@@ -266,25 +268,28 @@ export function Chat({
       if (error) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         setSendError('Failed to send. Please try again.');
-      } else if (content.includes('@')) {
-        const mentionMatches = content.match(/@(\w+)/g) ?? [];
-        if (mentionMatches.length > 0) {
-          import('../../lib/profile/actions').then(({ notifyMention }) => {
-            mentionMatches.forEach((mention) => {
-              const username = mention.slice(1);
-              const mentioned = [...profilesCache.current.values()].find(
-                (p) => p.username === username
-              );
-              if (mentioned) {
-                notifyMention(cellId, mentioned.id, content.slice(0, 80));
-              }
+      } else {
+        if (content.includes('@')) {
+          const mentionMatches = content.match(/@(\w+)/g) ?? [];
+          if (mentionMatches.length > 0) {
+            import('../../lib/profile/actions').then(({ notifyMention }) => {
+              mentionMatches.forEach((mention) => {
+                const username = mention.slice(1);
+                const mentioned = [...profilesCache.current.values()].find(
+                  (p) => p.username === username
+                );
+                if (mentioned) {
+                  notifyMention(cellId, mentioned.id, content.slice(0, 80));
+                }
+              });
             });
-          });
+          }
         }
+        onMessageSent?.();
       }
       setSending(false);
     },
-    [cellId, currentUser, sending]
+    [cellId, currentUser, sending, onMessageSent]
   );
 
   const handleSend = () => {

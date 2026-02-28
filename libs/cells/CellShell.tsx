@@ -1,18 +1,33 @@
 'use client';
 
-import React, { useState, useCallback, useTransition } from 'react';
-import { Menu, Users } from 'lucide-react';
+import React, { useState, useCallback, useTransition, useEffect } from 'react';
+import { Menu, Users, CalendarPlus } from 'lucide-react';
+import {
+  applyScore,
+  NOTIFICATION_CLICK,
+  VIEW_WITHOUT_NOTIFICATION,
+  VIEW_AFTER_NOTIFICATION,
+  MESSAGE_SENT,
+} from '../../lib/cells/notification-scoring';
 import { useRouter } from 'next/navigation';
 import { Chat } from './Chat';
 import { ChannelSidebar } from './ChannelSidebar';
+import type { UpcomingMeetingHint } from './ChannelSidebar';
 import { OnlineUsersPanel } from './OnlineUsersPanel';
 import { CreateChannelSheet } from './CreateChannelSheet';
+import { MeetingCard } from './MeetingCard';
+import { ScheduleMeetingSheet } from './ScheduleMeetingSheet';
 import {
   createChannel,
   deleteChannel,
   updateReadState,
   reorderChannels,
 } from '../../lib/cells/actions';
+import {
+  getUpcomingMeetings,
+  getMeetingWithRsvps,
+} from '../../lib/cells/meeting-actions';
+import type { ScheduledMeeting, MeetingWithRsvps } from '../../lib/cells/meeting-actions';
 import type {
   Cell,
   ChannelCategory,
@@ -56,6 +71,12 @@ export function CellShell({
   const [createSheetCategoryId, setCreateSheetCategoryId] = useState<string>('');
   const [localCategories, setLocalCategories] = useState<ChannelCategory[]>(categories);
 
+  // ── Meeting state ──────────────────────────────────────────────────────────
+  const [meetingsData, setMeetingsData] = useState<Record<string, MeetingWithRsvps[]>>({});
+  const [upcomingHints, setUpcomingHints] = useState<UpcomingMeetingHint[]>([]);
+  const [scheduleMeetingOpen, setScheduleMeetingOpen] = useState(false);
+  const [editingMeeting, setEditingMeeting] = useState<ScheduledMeeting | null>(null);
+
   const activeChannel = localCategories
     .flatMap((c) => c.channels ?? [])
     .find((ch) => ch.id === activeChannelId);
@@ -64,8 +85,48 @@ export function CellShell({
     Object.entries(unreadCounts).map(([id, count]) => [id, count * 5])
   );
 
+  // On mount: check if we arrived via a push notification for this channel
+  useEffect(() => {
+    const notifKey = `notif_channel_${initialChannelId}`;
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(notifKey)) {
+      sessionStorage.removeItem(notifKey);
+      applyScore(initialChannelId, NOTIFICATION_CLICK);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Load upcoming meetings when the active channel is a meeting channel
+  useEffect(() => {
+    if (activeChannel?.channel_type !== 'meeting') return;
+
+    // Fetch all upcoming meetings for the whole cell (for sidebar hints)
+    getUpcomingMeetings(cell.id).then((meetings) => {
+      setUpcomingHints(meetings.map((m) => ({ channelId: m.channel_id, scheduledAt: m.scheduled_at })));
+
+      // Fetch full RSVP detail for meetings in this channel
+      const channelMeetings = meetings.filter((m) => m.channel_id === activeChannelId);
+      Promise.all(channelMeetings.map((m) => getMeetingWithRsvps(m.id))).then((results) => {
+        const valid = results.filter((r): r is MeetingWithRsvps => r !== null);
+        setMeetingsData((prev) => ({ ...prev, [activeChannelId]: valid }));
+      });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeChannelId]);
+
   const handleChannelSelect = useCallback(
     (channelId: string) => {
+      // Score the channel we're leaving
+      const prevId = activeChannelId;
+      const notifKey = `notif_channel_${prevId}`;
+      const wasFromNotif =
+        typeof sessionStorage !== 'undefined' && sessionStorage.getItem(notifKey);
+      if (wasFromNotif) {
+        sessionStorage.removeItem(notifKey);
+        applyScore(prevId, VIEW_AFTER_NOTIFICATION);
+      } else {
+        applyScore(prevId, VIEW_WITHOUT_NOTIFICATION);
+      }
+
       setActiveChannelId(channelId);
       setLeftOpen(false);
       // Optimistically clear unread for this channel
@@ -77,8 +138,12 @@ export function CellShell({
       // Navigate to new channel URL
       router.push(`/engage/${cell.slug}/${channelId}`);
     },
-    [cell.slug, router]
+    [cell.slug, router, activeChannelId]
   );
+
+  const handleMessageSent = useCallback(() => {
+    applyScore(activeChannelId, MESSAGE_SENT);
+  }, [activeChannelId]);
 
   const handleAddChannel = useCallback((categoryId: string) => {
     setCreateSheetCategoryId(categoryId);
@@ -201,6 +266,7 @@ export function CellShell({
           onEditChannel={() => {}}
           onDeleteChannel={handleDeleteChannel}
           onReorderChannels={handleReorderChannels}
+          upcomingMeetings={upcomingHints}
         />
       </div>
 
@@ -233,6 +299,7 @@ export function CellShell({
           onDeleteChannel={handleDeleteChannel}
           onReorderChannels={handleReorderChannels}
           onClose={() => setLeftOpen(false)}
+          upcomingMeetings={upcomingHints}
         />
       </div>
 
@@ -297,6 +364,62 @@ export function CellShell({
           </button>
         </div>
 
+        {/* Meeting channel: admin header + meeting cards */}
+        {activeChannel?.channel_type === 'meeting' && (
+          <div
+            style={{
+              padding: 'var(--space-2) var(--space-3)',
+              borderBottom: '1px solid var(--color-border)',
+              flexShrink: 0,
+            }}
+          >
+            {/* Admin "Schedule Meeting" button in channel header */}
+            {userRole === 'admin' && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-2)' }}>
+                <button
+                  onClick={() => { setEditingMeeting(null); setScheduleMeetingOpen(true); }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-1)',
+                    padding: '5px 12px',
+                    background: 'var(--color-accent)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-full)',
+                    color: 'var(--color-accent-text)',
+                    fontSize: '0.8125rem',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-sans)',
+                  }}
+                >
+                  <CalendarPlus size={13} />
+                  Schedule Meeting
+                </button>
+              </div>
+            )}
+
+            {/* Meeting cards */}
+            {(meetingsData[activeChannelId] ?? []).map(({ meeting, rsvps }) => (
+              <MeetingCard
+                key={meeting.id}
+                meeting={meeting}
+                rsvps={rsvps}
+                currentUserId={currentUser.id}
+                userRole={userRole}
+                cellId={cell.id}
+                onEdit={(m) => { setEditingMeeting(m); setScheduleMeetingOpen(true); }}
+                onCancelled={(id) => {
+                  setMeetingsData((prev) => ({
+                    ...prev,
+                    [activeChannelId]: (prev[activeChannelId] ?? []).filter((mw) => mw.meeting.id !== id),
+                  }));
+                }}
+              />
+            ))}
+          </div>
+        )}
+
         <Chat
           cellId={cell.id}
           cellName={cell.name}
@@ -307,6 +430,7 @@ export function CellShell({
           userRole={userRole}
           channelId={activeChannelId}
           channelTopic={activeChannel?.topic ?? null}
+          onMessageSent={handleMessageSent}
         />
       </div>
 
@@ -328,6 +452,37 @@ export function CellShell({
         categories={localCategories}
         defaultCategoryId={createSheetCategoryId}
         onSubmit={handleCreateChannel}
+      />
+
+      {/* ── Schedule meeting sheet ── */}
+      <ScheduleMeetingSheet
+        open={scheduleMeetingOpen}
+        onClose={() => { setScheduleMeetingOpen(false); setEditingMeeting(null); }}
+        channelId={activeChannelId}
+        cellId={cell.id}
+        editMeeting={editingMeeting}
+        onSaved={(meetingId) => {
+          // Reload meetings for this channel
+          getMeetingWithRsvps(meetingId).then((mw) => {
+            if (!mw) return;
+            setMeetingsData((prev) => {
+              const existing = prev[activeChannelId] ?? [];
+              const idx = existing.findIndex((e) => e.meeting.id === meetingId);
+              if (idx >= 0) {
+                const updated = [...existing];
+                updated[idx] = mw;
+                return { ...prev, [activeChannelId]: updated };
+              }
+              return { ...prev, [activeChannelId]: [...existing, mw] };
+            });
+            // Update sidebar hints too
+            setUpcomingHints((prev) => {
+              const filtered = prev.filter((h) => h.channelId !== mw.meeting.channel_id ||
+                h.scheduledAt !== mw.meeting.scheduled_at);
+              return [...filtered, { channelId: mw.meeting.channel_id, scheduledAt: mw.meeting.scheduled_at }];
+            });
+          });
+        }}
       />
 
       <style>{`
