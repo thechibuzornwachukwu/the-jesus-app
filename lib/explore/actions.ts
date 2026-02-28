@@ -222,12 +222,19 @@ export async function getComments(videoId: string): Promise<Comment[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from('comments')
-    .select('*, profiles(username, avatar_url)')
+    .select('id, video_id, user_id, content, created_at')
     .eq('video_id', videoId)
     .order('created_at', { ascending: true })
     .limit(50);
 
-  return (data ?? []) as Comment[];
+  if (!data || data.length === 0) return [];
+
+  type RawComment = { id: string; video_id: string; user_id: string; content: string; created_at: string };
+  const rows = data as RawComment[];
+  const ids = [...new Set(rows.map((c) => c.user_id))];
+  const profileMap = await fetchProfiles(supabase, ids);
+
+  return rows.map((c) => ({ ...c, profiles: profileMap.get(c.user_id) ?? null })) as Comment[];
 }
 
 // ---------------------------------------------------------------------------
@@ -254,11 +261,18 @@ export async function addComment(
   const { data, error } = await supabase
     .from('comments')
     .insert({ video_id: parsed.data.videoId, user_id: user.id, content: parsed.data.content })
-    .select('*, profiles(username, avatar_url)')
+    .select('id, video_id, user_id, content, created_at')
     .single();
 
-  if (error) return { error: error.message };
-  return { comment: data as Comment };
+  if (error || !data) return { error: error?.message ?? 'Failed to post comment' };
+
+  const profileMap = await fetchProfiles(supabase, [user.id]);
+  type RawComment = { id: string; video_id: string; user_id: string; content: string; created_at: string };
+  const comment: Comment = {
+    ...(data as RawComment),
+    profiles: profileMap.get(user.id) ?? null,
+  };
+  return { comment };
 }
 
 // ---------------------------------------------------------------------------

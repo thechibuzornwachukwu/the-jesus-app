@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import type { DailyVerseType } from '../../lib/explore/types';
 import { BottomSheet } from '../shared-ui/BottomSheet';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Bookmark } from 'lucide-react';
+import { saveVerse } from '../../lib/explore/actions';
+import { showToast } from '../shared-ui';
 
 interface DailyVerseProps {
   verse: DailyVerseType;
@@ -11,6 +13,21 @@ interface DailyVerseProps {
 
 export function DailyVerse({ verse }: DailyVerseProps) {
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (saved || saving) return;
+    setSaving(true);
+    const { error } = await saveVerse(verse.reference, verse.text);
+    setSaving(false);
+    if (error) {
+      showToast(error, 'error');
+    } else {
+      setSaved(true);
+      showToast('Verse saved', 'success');
+    }
+  };
 
   return (
     <>
@@ -138,6 +155,31 @@ export function DailyVerse({ verse }: DailyVerseProps) {
               {verse.reflection}
             </p>
           </div>
+
+          <button
+            onClick={handleSave}
+            disabled={saved || saving}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 'var(--space-2)',
+              width: '100%',
+              padding: 'var(--space-3) var(--space-4)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--color-accent)',
+              background: saved ? 'var(--color-accent)' : 'transparent',
+              color: saved ? 'var(--color-accent-text)' : 'var(--color-accent)',
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 'var(--font-weight-semibold)',
+              cursor: saved || saving ? 'default' : 'pointer',
+              opacity: saving ? 0.6 : 1,
+              transition: 'background 0.15s, color 0.15s',
+            }}
+          >
+            <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
+            {saved ? 'Verse saved' : saving ? 'Saving…' : 'Save verse'}
+          </button>
         </div>
       </BottomSheet>
     </>

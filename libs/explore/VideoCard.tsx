@@ -6,6 +6,7 @@ import type { Video } from '../../lib/explore/types';
 import { ScriptureOverlay } from './ScriptureOverlay';
 import { toggleLike, saveVerse } from '../../lib/explore/actions';
 import { vibrate } from '../shared-ui/haptics';
+import { showToast } from '../shared-ui';
 
 interface VideoCardProps {
   video: Video;
@@ -70,9 +71,14 @@ export function VideoCard({ video, isActive, height, onComment, onLikeChanged }:
   const handleSaveVerse = async () => {
     if (!video.verse || saved || saving) return;
     setSaving(true);
-    await saveVerse(video.verse.verse_reference, video.verse.verse_text);
+    const { error } = await saveVerse(video.verse.verse_reference, video.verse.verse_text);
     setSaving(false);
-    setSaved(true);
+    if (error) {
+      showToast(error, 'error');
+    } else {
+      setSaved(true);
+      showToast('Verse saved', 'success');
+    }
   };
 
   const handleShare = async () => {

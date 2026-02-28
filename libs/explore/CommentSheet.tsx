@@ -5,6 +5,7 @@ import { BottomSheet } from '../shared-ui/BottomSheet';
 import { getComments, addComment } from '../../lib/explore/actions';
 import type { Comment } from '../../lib/explore/types';
 import { EmptyState } from '../shared-ui';
+import { showToast } from '../shared-ui';
 
 interface CommentSheetProps {
   videoId: string | null;
@@ -36,8 +37,10 @@ export function CommentSheet({ videoId, onClose }: CommentSheetProps) {
     const draft = text.trim();
     setText('');
     startTransition(async () => {
-      const { comment } = await addComment(videoId, draft);
-      if (comment) {
+      const { comment, error } = await addComment(videoId, draft);
+      if (error) {
+        showToast(error, 'error');
+      } else if (comment) {
         setComments((prev) => [...prev, comment]);
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
       }
