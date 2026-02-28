@@ -16,7 +16,10 @@ export function Heading({ as: Tag = 'h2', children, className = '' }: HeadingPro
     h4: 'text-[length:var(--font-size-lg)] font-[var(--font-weight-semibold)] leading-[var(--line-height-normal)]',
   };
   return (
-    <Tag className={`text-[var(--color-text-primary)] ${sizeMap[Tag]} ${className}`}>
+    <Tag
+      className={`text-[var(--color-text-primary)] ${sizeMap[Tag]} ${className}`}
+      style={{ fontFamily: 'var(--font-display)' }}
+    >
       {children}
     </Tag>
   );
@@ -60,6 +63,36 @@ export function Label({ children, htmlFor, className = '' }: LabelProps) {
   );
 }
 
+interface ScriptureProps {
+  children: React.ReactNode;
+  className?: string;
+  size?: 'sm' | 'base' | 'lg' | 'xl';
+}
+
+export function Scripture({ children, className = '', size = 'lg' }: ScriptureProps) {
+  const sizeMap = {
+    sm:   'var(--font-size-sm)',
+    base: 'var(--font-size-base)',
+    lg:   'var(--font-size-lg)',
+    xl:   'var(--font-size-xl)',
+  };
+  return (
+    <p
+      className={className}
+      style={{
+        fontFamily: 'var(--font-serif)',
+        fontStyle: 'italic',
+        fontSize: sizeMap[size],
+        lineHeight: 'var(--line-height-relaxed)',
+        color: 'var(--color-text)',
+        letterSpacing: '0.01em',
+      }}
+    >
+      {children}
+    </p>
+  );
+}
+
 interface DisplayProps {
   children: React.ReactNode;
   className?: string;
@@ -70,8 +103,9 @@ export function Display({ children, className = '' }: DisplayProps) {
     <h1
       className={className}
       style={{
-        fontFamily: "'Archivo Condensed', var(--font-display)",
+        fontFamily: 'var(--font-display)',
         fontWeight: 900,
+        fontStyle: 'italic',
         fontSize: 'var(--font-size-4xl)',
         lineHeight: 'var(--line-height-tight)',
         letterSpacing: 'var(--letter-spacing-tight)',

@@ -10,11 +10,12 @@ export function SectionHeader({ children, className = '' }: SectionHeaderProps) 
     <h2
       className={className}
       style={{
-        fontSize: 'var(--font-size-sm)',
-        fontWeight: 'var(--font-weight-semibold)' as React.CSSProperties['fontWeight'],
+        fontFamily: 'var(--font-sans)',
+        fontSize: 'var(--font-size-xs)',
+        fontWeight: 'var(--font-weight-bold)' as React.CSSProperties['fontWeight'],
         color: 'var(--color-text-muted)',
         textTransform: 'uppercase',
-        letterSpacing: 'var(--letter-spacing-wide)',
+        letterSpacing: '0.12em',
         marginBottom: 'var(--space-3)',
       }}
     >

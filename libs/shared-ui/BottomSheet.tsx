@@ -72,7 +72,7 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
               width: 40,
               height: 4,
               borderRadius: 'var(--radius-full)',
-              background: 'var(--color-border)',
+              background: 'var(--color-accent-soft)',
             }}
           />
         </div>
