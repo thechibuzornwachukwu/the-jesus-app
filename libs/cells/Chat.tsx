@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Users, MoreVertical, Paperclip, Send, Clock, Play } from 'lucide-react';
+import { ChevronLeft, Users, MoreVertical, Paperclip, Send, Clock, Play, X } from 'lucide-react';
 import { createClient } from '../../lib/supabase/client';
 import { Avatar } from '../shared-ui/Avatar';
 import { checkTone } from './ToneGuard';
@@ -76,8 +76,12 @@ export function Chat({
   // Long-press timer ref for send button
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const profilesCache = useRef<Map<string, Profile>>(new Map([[currentUser.id, currentUser]]));
 
   useEffect(() => {
@@ -355,6 +359,80 @@ export function Chat({
     if (insertError) setSendError('Failed to send voice message.');
   };
 
+  const handleImageSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Reset so same file can be re-selected if needed
+      e.target.value = '';
+
+      const isGif = file.type === 'image/gif';
+      const messageType = isGif ? 'gif' : 'image';
+
+      // Optimistic preview using object URL
+      const objectUrl = URL.createObjectURL(file);
+      const tempId = `temp-${Date.now()}`;
+      const optimistic: Message = {
+        id: tempId,
+        cell_id: cellId,
+        user_id: currentUser.id,
+        content: null,
+        message_type: messageType,
+        audio_url: null,
+        image_url: objectUrl,
+        channel_id: channelId ?? null,
+        created_at: new Date().toISOString(),
+        profiles: { username: currentUser.username, avatar_url: currentUser.avatar_url },
+      };
+      setMessages((prev) => [...prev, optimistic]);
+      setImageUploading(true);
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('cellId', cellId);
+      if (channelId) formData.append('channelId', channelId);
+
+      const res = await fetch('/api/cells/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        URL.revokeObjectURL(objectUrl);
+        setSendError('Failed to upload image.');
+        setImageUploading(false);
+        return;
+      }
+
+      const { signedUrl } = await res.json();
+
+      const supabase = createClient();
+      const { error: insertError } = await supabase.from('chat_messages').insert({
+        cell_id: cellId,
+        user_id: currentUser.id,
+        content: null,
+        message_type: messageType,
+        image_url: signedUrl,
+        channel_id: channelId ?? null,
+      });
+
+      // Replace optimistic with signed URL (realtime will also arrive for others)
+      URL.revokeObjectURL(objectUrl);
+      if (insertError) {
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        setSendError('Failed to send image.');
+      } else {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...m, image_url: signedUrl } : m))
+        );
+      }
+      setImageUploading(false);
+    },
+    [cellId, channelId, currentUser]
+  );
+
   const onlineCount = onlineMemberIds.size;
 
   return (
@@ -555,6 +633,7 @@ export function Chat({
                 allMessages={messages}
                 onTimestampReply={handleTimestampReply}
                 onScrollToMessage={scrollToMessage}
+                onOpenLightbox={setLightboxUrl}
               />
             );
           })}
@@ -657,23 +736,47 @@ export function Chat({
               gap: 2,
             }}
           >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              style={{ display: 'none' }}
+              onChange={handleImageSelect}
+            />
             <button
-              aria-label="Attach file"
+              aria-label="Attach image"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={imageUploading}
               style={{
                 width: 36,
                 height: 36,
                 borderRadius: 'var(--radius-full)',
                 border: 'none',
                 background: 'transparent',
-                cursor: 'pointer',
+                cursor: imageUploading ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--color-text-muted)',
+                color: imageUploading ? 'var(--color-accent)' : 'var(--color-text-muted)',
                 flexShrink: 0,
+                opacity: imageUploading ? 0.6 : 1,
               }}
             >
-              <Paperclip size={18} />
+              {imageUploading ? (
+                <span
+                  style={{
+                    width: 14,
+                    height: 14,
+                    border: '2px solid currentColor',
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%',
+                    display: 'inline-block',
+                    animation: 'chat-spin 0.6s linear infinite',
+                  }}
+                />
+              ) : (
+                <Paperclip size={18} />
+              )}
             </button>
 
             <textarea
@@ -853,6 +956,56 @@ export function Chat({
         onClose={() => setScheduledListOpen(false)}
         cellId={cellId}
       />
+
+      {/* Image lightbox */}
+      {lightboxUrl && (
+        <div
+          onClick={() => setLightboxUrl(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 200,
+            background: 'rgba(0,0,0,0.92)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); setLightboxUrl(null); }}
+            aria-label="Close"
+            style={{
+              position: 'absolute',
+              top: 'calc(var(--safe-top) + 12px)',
+              right: 16,
+              background: 'rgba(0,0,0,0.5)',
+              border: 'none',
+              borderRadius: '50%',
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            <X size={20} />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxUrl}
+            alt="Full size"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '90dvh',
+              objectFit: 'contain',
+              borderRadius: 'var(--radius-md)',
+            }}
+          />
+        </div>
+      )}
     </>
   );
 }
@@ -866,6 +1019,7 @@ function DiscordMessage({
   allMessages = [],
   onTimestampReply,
   onScrollToMessage,
+  onOpenLightbox,
 }: {
   msg: Message;
   isOwn: boolean;
@@ -875,6 +1029,7 @@ function DiscordMessage({
   allMessages?: Message[];
   onTimestampReply?: (messageId: string, seconds: number) => void;
   onScrollToMessage?: (msgId: string) => void;
+  onOpenLightbox?: (url: string) => void;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -1043,6 +1198,12 @@ function DiscordMessage({
             messageId={msg.id}
             onTimestampReply={onTimestampReply}
           />
+        ) : (msg.message_type === 'image' || msg.message_type === 'gif') && msg.image_url ? (
+          <ImageMessage
+            url={msg.image_url}
+            isGif={msg.message_type === 'gif'}
+            onTap={() => onOpenLightbox?.(msg.image_url!)}
+          />
         ) : (
           <p
             style={{
@@ -1057,6 +1218,58 @@ function DiscordMessage({
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+function ImageMessage({
+  url,
+  isGif,
+  onTap,
+}: {
+  url: string;
+  isGif: boolean;
+  onTap: () => void;
+}) {
+  return (
+    <div
+      style={{ position: 'relative', display: 'inline-block', cursor: 'pointer' }}
+      onClick={onTap}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={url}
+        alt={isGif ? 'GIF' : 'Image'}
+        loading="lazy"
+        style={{
+          maxWidth: 320,
+          maxHeight: 260,
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--color-border)',
+          display: 'block',
+          objectFit: 'cover',
+        }}
+      />
+      {isGif && (
+        <span
+          style={{
+            position: 'absolute',
+            bottom: 6,
+            left: 6,
+            background: 'rgba(0,0,0,0.65)',
+            color: '#fff',
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            padding: '2px 5px',
+            borderRadius: 4,
+            lineHeight: 1.4,
+            pointerEvents: 'none',
+          }}
+        >
+          GIF
+        </span>
+      )}
     </div>
   );
 }

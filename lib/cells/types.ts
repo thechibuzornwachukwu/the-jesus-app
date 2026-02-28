@@ -1,4 +1,4 @@
-export type MessageType = 'text' | 'audio' | 'image';
+export type MessageType = 'text' | 'audio' | 'image' | 'gif';
 
 // ─── Phase 7A: Channels ────────────────────────────────────────────────────
 
