@@ -2,7 +2,7 @@
 
 import { createClient } from '../supabase/server';
 import { z } from 'zod';
-import type { Video, Comment, Post, FeedItem } from './types';
+import type { Video, Comment, Post, FeedItem, ReactionType } from './types';
 
 const PAGE_SIZE = 5;
 
@@ -69,8 +69,10 @@ export async function getVideos(cursor?: string): Promise<{
   const videoIds = batch.map((v) => v.id);
   const userIds = [...new Set(batch.map((v) => v.user_id))];
 
-  // Parallel: comment counts + user likes + profiles
-  const [commentCountMap, userLikedSet, profileMap] = await Promise.all([
+  const REACTION_TYPES: ReactionType[] = ['heart', 'amen', 'laugh', 'shock'];
+
+  // Parallel: comment counts + user likes + reactions + profiles
+  const [commentCountMap, userLikedSet, reactionRows, profileMap] = await Promise.all([
     videoIds.length > 0
       ? supabase.from('comments').select('video_id').in('video_id', videoIds).then(({ data }) => {
           const m = new Map<string, number>();
@@ -85,8 +87,31 @@ export async function getVideos(cursor?: string): Promise<{
           return s;
         })
       : Promise.resolve(new Set<string>()),
+    videoIds.length > 0
+      ? supabase
+          .from('video_reactions')
+          .select('video_id, user_id, reaction_type')
+          .in('video_id', videoIds)
+          .then(({ data }) => data ?? [])
+      : Promise.resolve([] as { video_id: string; user_id: string; reaction_type: string }[]),
     fetchProfiles(supabase, userIds),
   ]);
+
+  // Build per-video reaction counts + user's own reaction
+  const reactionCountMap = new Map<string, Record<ReactionType, number>>();
+  const userReactionMap = new Map<string, ReactionType>();
+  for (const r of reactionRows as { video_id: string; user_id: string; reaction_type: string }[]) {
+    if (!reactionCountMap.has(r.video_id)) {
+      reactionCountMap.set(r.video_id, { heart: 0, amen: 0, laugh: 0, shock: 0 });
+    }
+    const counts = reactionCountMap.get(r.video_id)!;
+    if (REACTION_TYPES.includes(r.reaction_type as ReactionType)) {
+      counts[r.reaction_type as ReactionType]++;
+    }
+    if (user && r.user_id === user.id) {
+      userReactionMap.set(r.video_id, r.reaction_type as ReactionType);
+    }
+  }
 
   const videos: Video[] = batch.map((row) => ({
     id: row.id,
@@ -99,6 +124,8 @@ export async function getVideos(cursor?: string): Promise<{
     like_count: row.like_count ?? 0,
     comment_count: commentCountMap.get(row.id) ?? 0,
     user_liked: userLikedSet.has(row.id),
+    user_reaction: userReactionMap.get(row.id) ?? null,
+    reaction_counts: reactionCountMap.get(row.id) ?? { heart: 0, amen: 0, laugh: 0, shock: 0 },
     verse: row.video_verses?.[0] ?? null,
     profiles: profileMap.get(row.user_id) ?? null,
   }));
@@ -142,8 +169,9 @@ export async function getVideoById(videoId: string): Promise<Video | null> {
   if (error || !row) return null;
   const r = row as unknown as RawVideo;
 
-  const [{ data: commentRows }, profileMap] = await Promise.all([
+  const [{ data: commentRows }, { data: reactionRows }, profileMap] = await Promise.all([
     supabase.from('comments').select('video_id').eq('video_id', videoId),
+    supabase.from('video_reactions').select('user_id, reaction_type').eq('video_id', videoId),
     fetchProfiles(supabase, [r.user_id]),
   ]);
   const comment_count = (commentRows ?? []).length;
@@ -158,6 +186,18 @@ export async function getVideoById(videoId: string): Promise<Video | null> {
     user_liked = !!likeRow;
   }
 
+  const REACTION_TYPES: ReactionType[] = ['heart', 'amen', 'laugh', 'shock'];
+  const reaction_counts: Record<ReactionType, number> = { heart: 0, amen: 0, laugh: 0, shock: 0 };
+  let user_reaction: ReactionType | null = null;
+  for (const rx of (reactionRows ?? []) as { user_id: string; reaction_type: string }[]) {
+    if (REACTION_TYPES.includes(rx.reaction_type as ReactionType)) {
+      reaction_counts[rx.reaction_type as ReactionType]++;
+    }
+    if (user && rx.user_id === user.id) {
+      user_reaction = rx.reaction_type as ReactionType;
+    }
+  }
+
   return {
     id: r.id,
     user_id: r.user_id,
@@ -169,6 +209,8 @@ export async function getVideoById(videoId: string): Promise<Video | null> {
     like_count: r.like_count ?? 0,
     comment_count,
     user_liked,
+    user_reaction,
+    reaction_counts,
     verse: r.video_verses?.[0] ?? null,
     profiles: profileMap.get(r.user_id) ?? null,
   };
@@ -210,6 +252,105 @@ export async function toggleLike(
     .single();
 
   return { liked: !existing, likeCount: vid?.like_count ?? 0 };
+}
+
+// ---------------------------------------------------------------------------
+// toggleReaction — set / change / remove a reaction on a video
+// ---------------------------------------------------------------------------
+const VALID_REACTIONS: ReactionType[] = ['heart', 'amen', 'laugh', 'shock'];
+
+export async function toggleReaction(
+  videoId: string,
+  reactionType: ReactionType
+): Promise<{
+  userReaction: ReactionType | null;
+  counts: Record<ReactionType, number>;
+  error?: string;
+}> {
+  const empty: Record<ReactionType, number> = { heart: 0, amen: 0, laugh: 0, shock: 0 };
+
+  if (!z.string().uuid().safeParse(videoId).success) {
+    return { userReaction: null, counts: empty, error: 'Invalid video ID' };
+  }
+  if (!VALID_REACTIONS.includes(reactionType)) {
+    return { userReaction: null, counts: empty, error: 'Invalid reaction type' };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { userReaction: null, counts: empty, error: 'Unauthenticated' };
+
+  // Check existing reaction
+  const { data: existing } = await supabase
+    .from('video_reactions')
+    .select('reaction_type')
+    .eq('video_id', videoId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  let newUserReaction: ReactionType | null;
+
+  if (!existing) {
+    // INSERT
+    await supabase.from('video_reactions').insert({ video_id: videoId, user_id: user.id, reaction_type: reactionType });
+    newUserReaction = reactionType;
+  } else if (existing.reaction_type === reactionType) {
+    // Toggle off (same reaction)
+    await supabase.from('video_reactions').delete().eq('video_id', videoId).eq('user_id', user.id);
+    newUserReaction = null;
+  } else {
+    // Change reaction
+    await supabase.from('video_reactions').update({ reaction_type: reactionType }).eq('video_id', videoId).eq('user_id', user.id);
+    newUserReaction = reactionType;
+  }
+
+  // Fetch updated counts
+  const { data: rows } = await supabase
+    .from('video_reactions')
+    .select('reaction_type')
+    .eq('video_id', videoId);
+
+  const counts: Record<ReactionType, number> = { heart: 0, amen: 0, laugh: 0, shock: 0 };
+  for (const r of (rows ?? []) as { reaction_type: string }[]) {
+    if (VALID_REACTIONS.includes(r.reaction_type as ReactionType)) {
+      counts[r.reaction_type as ReactionType]++;
+    }
+  }
+
+  return { userReaction: newUserReaction, counts };
+}
+
+// ---------------------------------------------------------------------------
+// getVideoReactions — get reaction counts + user's current reaction
+// ---------------------------------------------------------------------------
+export async function getVideoReactions(videoId: string): Promise<{
+  userReaction: ReactionType | null;
+  counts: Record<ReactionType, number>;
+}> {
+  const empty: Record<ReactionType, number> = { heart: 0, amen: 0, laugh: 0, shock: 0 };
+  if (!z.string().uuid().safeParse(videoId).success) return { userReaction: null, counts: empty };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data: rows } = await supabase
+    .from('video_reactions')
+    .select('user_id, reaction_type')
+    .eq('video_id', videoId);
+
+  const counts: Record<ReactionType, number> = { heart: 0, amen: 0, laugh: 0, shock: 0 };
+  let userReaction: ReactionType | null = null;
+
+  for (const r of (rows ?? []) as { user_id: string; reaction_type: string }[]) {
+    if (VALID_REACTIONS.includes(r.reaction_type as ReactionType)) {
+      counts[r.reaction_type as ReactionType]++;
+    }
+    if (user && r.user_id === user.id) {
+      userReaction = r.reaction_type as ReactionType;
+    }
+  }
+
+  return { userReaction, counts };
 }
 
 // ---------------------------------------------------------------------------
@@ -484,7 +625,9 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
   const postIds = posts.map((p) => p.id);
   const allUserIds = [...new Set([...videos.map((v) => v.user_id), ...posts.map((p) => p.user_id)])];
 
-  const [commentMapVideo, commentMapPost, userLikedVideos, userLikedPosts, profileMap] = await Promise.all([
+  const REACTION_TYPES_FEED: ReactionType[] = ['heart', 'amen', 'laugh', 'shock'];
+
+  const [commentMapVideo, commentMapPost, userLikedVideos, userLikedPosts, feedReactionRows, profileMap] = await Promise.all([
     videoIds.length > 0
       ? supabase.from('comments').select('video_id').in('video_id', videoIds).then(({ data }) => {
           const m = new Map<string, number>();
@@ -513,8 +656,31 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
           return s;
         })
       : Promise.resolve(new Set<string>()),
+    videoIds.length > 0
+      ? supabase
+          .from('video_reactions')
+          .select('video_id, user_id, reaction_type')
+          .in('video_id', videoIds)
+          .then(({ data }) => data ?? [])
+      : Promise.resolve([] as { video_id: string; user_id: string; reaction_type: string }[]),
     fetchProfiles(supabase, allUserIds),
   ]);
+
+  // Build reaction maps for feed
+  const feedReactionCountMap = new Map<string, Record<ReactionType, number>>();
+  const feedUserReactionMap = new Map<string, ReactionType>();
+  for (const r of feedReactionRows as { video_id: string; user_id: string; reaction_type: string }[]) {
+    if (!feedReactionCountMap.has(r.video_id)) {
+      feedReactionCountMap.set(r.video_id, { heart: 0, amen: 0, laugh: 0, shock: 0 });
+    }
+    const counts = feedReactionCountMap.get(r.video_id)!;
+    if (REACTION_TYPES_FEED.includes(r.reaction_type as ReactionType)) {
+      counts[r.reaction_type as ReactionType]++;
+    }
+    if (user && r.user_id === user.id) {
+      feedUserReactionMap.set(r.video_id, r.reaction_type as ReactionType);
+    }
+  }
 
   const videoItems: FeedItem[] = videos.map((v) => ({
     kind: 'video' as const,
@@ -524,6 +690,8 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
       like_count: v.like_count ?? 0,
       comment_count: commentMapVideo.get(v.id) ?? 0,
       user_liked: userLikedVideos.has(v.id),
+      user_reaction: feedUserReactionMap.get(v.id) ?? null,
+      reaction_counts: feedReactionCountMap.get(v.id) ?? { heart: 0, amen: 0, laugh: 0, shock: 0 },
       verse: v.video_verses?.[0] ?? null,
       profiles: profileMap.get(v.user_id) ?? null,
     },

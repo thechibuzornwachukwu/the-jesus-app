@@ -4,6 +4,8 @@ export type VideoVerse = {
   position_pct: number;
 };
 
+export type ReactionType = 'heart' | 'amen' | 'laugh' | 'shock';
+
 export type Video = {
   id: string;
   user_id: string;
@@ -15,6 +17,8 @@ export type Video = {
   like_count: number;
   comment_count: number;
   user_liked: boolean;
+  user_reaction: ReactionType | null;
+  reaction_counts: Record<ReactionType, number>;
   verse: VideoVerse | null;
   profiles: { username: string; avatar_url: string | null } | null;
 };

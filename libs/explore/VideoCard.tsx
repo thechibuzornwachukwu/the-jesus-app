@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Heart, MessageSquare, Share2, Volume2, VolumeX } from 'lucide-react';
-import type { Video } from '../../lib/explore/types';
+import { MessageSquare, Share2, Volume2, VolumeX } from 'lucide-react';
+import type { Video, ReactionType } from '../../lib/explore/types';
 import { ScriptureOverlay } from './ScriptureOverlay';
-import { toggleLike, saveVerse } from '../../lib/explore/actions';
+import { ReactionPicker } from './ReactionPicker';
+import { toggleReaction, saveVerse } from '../../lib/explore/actions';
 import { vibrate } from '../shared-ui/haptics';
 import { showToast } from '../shared-ui';
 
@@ -13,13 +14,13 @@ interface VideoCardProps {
   isActive: boolean;
   height: string;
   onComment: () => void;
-  onLikeChanged: (videoId: string, liked: boolean, likeCount: number) => void;
+  onReactionChanged: (videoId: string, userReaction: ReactionType | null, counts: Record<ReactionType, number>) => void;
 }
 
-export function VideoCard({ video, isActive, height, onComment, onLikeChanged }: VideoCardProps) {
+export function VideoCard({ video, isActive, height, onComment, onReactionChanged }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [liked, setLiked] = useState(video.user_liked);
-  const [likeCount, setLikeCount] = useState(video.like_count);
+  const [userReaction, setUserReaction] = useState<ReactionType | null>(video.user_reaction);
+  const [reactionCounts, setReactionCounts] = useState<Record<ReactionType, number>>(video.reaction_counts);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [amenBurst, setAmenBurst] = useState(false);
@@ -38,35 +39,48 @@ export function VideoCard({ video, isActive, height, onComment, onLikeChanged }:
     }
   }, [isActive]);
 
-  // Double-tap "Amen" (like)
+  // Double-tap → 'amen' reaction
   const lastTap = useRef(0);
 
-  const handleLike = useCallback(async () => {
-    vibrate([10]);
-    const optimisticLiked = !liked;
-    const optimisticCount = Math.max(0, likeCount + (optimisticLiked ? 1 : -1));
-    setLiked(optimisticLiked);
-    setLikeCount(optimisticCount);
-    onLikeChanged(video.id, optimisticLiked, optimisticCount);
+  const handleReact = useCallback(async (type: ReactionType) => {
+    // Optimistic update
+    const prev = userReaction;
+    const prevCounts = { ...reactionCounts };
 
-    const { liked: serverLiked, likeCount: serverCount } = await toggleLike(video.id);
-    setLiked(serverLiked);
-    setLikeCount(serverCount);
-    onLikeChanged(video.id, serverLiked, serverCount);
-  }, [liked, likeCount, video.id, onLikeChanged]);
+    const newCounts = { ...reactionCounts };
+    if (prev) newCounts[prev] = Math.max(0, newCounts[prev] - 1);
+    const newReaction: ReactionType | null = prev === type ? null : type;
+    if (newReaction) newCounts[newReaction] = (newCounts[newReaction] ?? 0) + 1;
+
+    setUserReaction(newReaction);
+    setReactionCounts(newCounts);
+    onReactionChanged(video.id, newReaction, newCounts);
+
+    const { userReaction: serverReaction, counts: serverCounts, error } = await toggleReaction(video.id, type);
+    if (error) {
+      // Roll back
+      setUserReaction(prev);
+      setReactionCounts(prevCounts);
+      onReactionChanged(video.id, prev, prevCounts);
+    } else {
+      setUserReaction(serverReaction);
+      setReactionCounts(serverCounts);
+      onReactionChanged(video.id, serverReaction, serverCounts);
+    }
+  }, [userReaction, reactionCounts, video.id, onReactionChanged]);
 
   const handleVideoTap = useCallback(() => {
     const now = Date.now();
     if (now - lastTap.current < 300) {
-      // Double tap
-      if (!liked) {
+      // Double tap → amen burst
+      if (!userReaction || userReaction !== 'amen') {
         setAmenBurst(true);
         setTimeout(() => setAmenBurst(false), 900);
-        handleLike();
+        handleReact('amen');
       }
     }
     lastTap.current = now;
-  }, [liked, handleLike]);
+  }, [userReaction, handleReact]);
 
   const handleSaveVerse = async () => {
     if (!video.verse || saved || saving) return;
@@ -148,8 +162,8 @@ export function VideoCard({ video, isActive, height, onComment, onLikeChanged }:
             zIndex: 5,
           }}
         >
-          <span style={{ display: 'flex', animation: 'amenBurst 0.9s ease-out forwards' }}>
-            <Heart size={80} fill="var(--color-accent)" color="var(--color-accent)" />
+          <span style={{ display: 'flex', animation: 'amenBurst 0.9s ease-out forwards', fontSize: 80 }}>
+            🙏
           </span>
         </div>
       )}
@@ -274,12 +288,10 @@ export function VideoCard({ video, isActive, height, onComment, onLikeChanged }:
           zIndex: 3,
         }}
       >
-        <ActionButton
-          icon={<Heart size={26} fill={liked ? 'var(--color-accent)' : 'none'} color={liked ? 'var(--color-accent)' : 'var(--color-text)'} />}
-          label={liked ? 'Amen!' : 'Amen'}
-          count={likeCount}
-          active={liked}
-          onClick={handleLike}
+        <ReactionPicker
+          userReaction={userReaction}
+          counts={reactionCounts}
+          onReact={handleReact}
         />
         <ActionButton
           icon={<MessageSquare size={26} color="var(--color-text)" />}

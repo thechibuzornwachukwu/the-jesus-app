@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
 import { Video as VideoIcon } from 'lucide-react';
-import type { FeedItem } from '../../lib/explore/types';
+import type { FeedItem, ReactionType } from '../../lib/explore/types';
 import { VideoCard } from './VideoCard';
 import { TextPostCard } from './TextPostCard';
 import { getUnifiedFeed } from '../../lib/explore/actions';
@@ -89,12 +89,12 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
     loadingRef.current = false;
   }, [cursor]);
 
-  const handleVideoLikeChanged = useCallback(
-    (videoId: string, liked: boolean, likeCount: number) => {
+  const handleVideoReactionChanged = useCallback(
+    (videoId: string, userReaction: ReactionType | null, counts: Record<ReactionType, number>) => {
       setItems((prev) =>
         prev.map((item) =>
           item.kind === 'video' && item.data.id === videoId
-            ? { ...item, data: { ...item.data, user_liked: liked, like_count: likeCount } }
+            ? { ...item, data: { ...item.data, user_reaction: userReaction, reaction_counts: counts } }
             : item
         )
       );
@@ -147,7 +147,7 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
                 video={item.data}
                 isActive={activeIndex === idx}
                 onComment={() => onComment(item.data.id)}
-                onLikeChanged={handleVideoLikeChanged}
+                onReactionChanged={handleVideoReactionChanged}
                 height={feedHeight}
               />
             </div>
