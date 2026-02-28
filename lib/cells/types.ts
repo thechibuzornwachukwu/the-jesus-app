@@ -16,6 +16,13 @@ export type Cell = {
   member_count?: number;
 };
 
+export type MemberPreview = { avatar_url: string | null; username: string };
+
+export type CellWithPreview = Cell & {
+  member_preview: MemberPreview[];
+  last_activity: string | null;
+};
+
 export type CellMember = {
   cell_id: string;
   user_id: string;

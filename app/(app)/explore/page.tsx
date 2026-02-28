@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '../../../lib/supabase/server';
-import { getVideos } from '../../../lib/explore/actions';
+import { getUnifiedFeed } from '../../../lib/explore/actions';
 import { getDailyVerse } from '../../../lib/explore/daily-verses';
 import { ExploreClient } from './ExploreClient';
 
@@ -14,14 +14,14 @@ export default async function ExplorePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in');
 
-  const [{ videos, nextCursor }, dailyVerse] = await Promise.all([
-    getVideos(),
+  const [{ items, nextCursor }, dailyVerse] = await Promise.all([
+    getUnifiedFeed(),
     Promise.resolve(getDailyVerse()),
   ]);
 
   return (
     <ExploreClient
-      initialVideos={videos}
+      initialItems={items}
       initialCursor={nextCursor}
       dailyVerse={dailyVerse}
       userId={user.id}

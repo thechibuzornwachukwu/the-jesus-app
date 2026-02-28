@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { createClient } from '../supabase/server';
-import type { CellMemberWithProfile } from './types';
+import type { Cell, CellMemberWithProfile, CellWithPreview, MemberPreview } from './types';
 
 const CATEGORIES = ['Prayer', 'Bible Study', 'Youth', 'Worship', 'Discipleship', 'General'] as const;
 
@@ -186,6 +186,98 @@ export async function updateCell(
   revalidatePath('/engage');
   revalidatePath(`/engage/${slug}/info`);
   return { success: true };
+}
+
+// ─── Phase 4 Redesign: enrichment helpers ──────────────────────────────────
+
+type RawMemberRow = {
+  cell_id: string;
+  profiles: { username: string; avatar_url: string | null } | null;
+};
+type RawMessageRow = { cell_id: string; created_at: string };
+
+function buildMemberMap(rows: RawMemberRow[]): Map<string, MemberPreview[]> {
+  const map = new Map<string, MemberPreview[]>();
+  for (const row of rows) {
+    const list = map.get(row.cell_id) ?? [];
+    if (list.length < 3) {
+      list.push({ username: row.profiles?.username ?? '', avatar_url: row.profiles?.avatar_url ?? null });
+      map.set(row.cell_id, list);
+    }
+  }
+  return map;
+}
+
+function buildActivityMap(rows: RawMessageRow[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const row of rows) {
+    if (!map.has(row.cell_id)) map.set(row.cell_id, row.created_at);
+  }
+  return map;
+}
+
+async function enrichCells(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  cells: Cell[]
+): Promise<CellWithPreview[]> {
+  if (cells.length === 0) return [];
+  const cellIds = cells.map((c) => c.id);
+
+  const [membersRes, messagesRes] = await Promise.all([
+    supabase
+      .from('cell_members')
+      .select('cell_id, profiles(username, avatar_url)')
+      .in('cell_id', cellIds)
+      .order('joined_at', { ascending: true }),
+    supabase
+      .from('chat_messages')
+      .select('cell_id, created_at')
+      .in('cell_id', cellIds)
+      .order('created_at', { ascending: false })
+      .limit(200),
+  ]);
+
+  const memberMap = buildMemberMap((membersRes.data ?? []) as unknown as RawMemberRow[]);
+  const activityMap = buildActivityMap((messagesRes.data ?? []) as unknown as RawMessageRow[]);
+
+  return cells.map((cell) => ({
+    ...cell,
+    member_preview: memberMap.get(cell.id) ?? [],
+    last_activity: activityMap.get(cell.id) ?? null,
+  }));
+}
+
+export async function getCellsWithMemberPreviews(excludeIds: string[]): Promise<CellWithPreview[]> {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from('cells')
+    .select('*')
+    .eq('is_public', true)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (excludeIds.length > 0) {
+    query = query.not('id', 'in', `(${excludeIds.join(',')})`);
+  }
+
+  const { data: cells } = await query;
+  return enrichCells(supabase, (cells as Cell[]) ?? []);
+}
+
+export async function getMyCellsWithPreviews(userId: string): Promise<CellWithPreview[]> {
+  const supabase = await createClient();
+
+  const { data: memberships } = await supabase
+    .from('cell_members')
+    .select('cell_id, cells(*)')
+    .eq('user_id', userId);
+
+  const cells: Cell[] = (memberships ?? [])
+    .map((m) => (m as { cells: unknown }).cells as Cell)
+    .filter(Boolean);
+
+  return enrichCells(supabase, cells);
 }
 
 // ─── Phase 6: Cells 2.0 ────────────────────────────────────────────────────

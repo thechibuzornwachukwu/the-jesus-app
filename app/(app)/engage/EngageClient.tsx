@@ -6,13 +6,13 @@ import { CellCard } from '../../../libs/cells/CellCard';
 import { CreateCellSheet } from '../../../libs/cells/CreateCellSheet';
 import { SwipeToAction } from '../../../libs/cells/SwipeToAction';
 import { ChipGroup, SectionHeader, EmptyState } from '../../../libs/shared-ui';
-import type { Cell } from '../../../lib/cells/types';
+import type { CellWithPreview } from '../../../lib/cells/types';
 
 const CATEGORIES = ['All', 'Prayer', 'Bible Study', 'Youth', 'Worship', 'Discipleship', 'General'];
 
 interface EngageClientProps {
-  myCells: Cell[];
-  discoverCells: Cell[];
+  myCells: CellWithPreview[];
+  discoverCells: CellWithPreview[];
   currentUserId: string;
 }
 
@@ -22,7 +22,7 @@ export function EngageClient({ myCells, discoverCells, currentUserId: _currentUs
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [createOpen, setCreateOpen] = useState(false);
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set(myCells.map((c) => c.id)));
-  const [localMyCells, setLocalMyCells] = useState<Cell[]>(myCells);
+  const [localMyCells, setLocalMyCells] = useState<CellWithPreview[]>(myCells);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleSearchToggle = () => {
@@ -46,6 +46,8 @@ export function EngageClient({ myCells, discoverCells, currentUserId: _currentUs
     }
     return true;
   });
+
+  const [featuredCell, ...gridCells] = filteredDiscover;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -122,7 +124,7 @@ export function EngageClient({ myCells, discoverCells, currentUserId: _currentUs
         </button>
       </div>
 
-      {/* Inline search bar — slides in below header */}
+      {/* Inline search bar */}
       {searchOpen && (
         <div
           style={{
@@ -159,9 +161,15 @@ export function EngageClient({ myCells, discoverCells, currentUserId: _currentUs
           {localMyCells.length === 0 ? (
             <EmptyState message="No cells yet — start one!" />
           ) : (
-            <div className="stagger-list" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="stagger-list" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               {localMyCells.map((cell) => (
-                <SwipeToAction key={cell.id} onLeave={() => setJoinedIds((p) => { const n = new Set(p); n.delete(cell.id); return n; })}>
+                <SwipeToAction
+                  key={cell.id}
+                  onLeave={() => {
+                    setJoinedIds((p) => { const n = new Set(p); n.delete(cell.id); return n; });
+                    setLocalMyCells((p) => p.filter((c) => c.id !== cell.id));
+                  }}
+                >
                   <CellCard cell={cell} isMember />
                 </SwipeToAction>
               ))}
@@ -179,7 +187,30 @@ export function EngageClient({ myCells, discoverCells, currentUserId: _currentUs
 
         {/* Discover */}
         <section style={{ padding: '0 var(--space-4)' }}>
-          <SectionHeader>Discover</SectionHeader>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 'var(--space-1)',
+            }}
+          >
+            <SectionHeader>Discover</SectionHeader>
+            <button
+              style={{
+                fontSize: 'var(--font-size-xs)',
+                color: 'var(--color-accent)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                fontWeight: 'var(--font-weight-medium)',
+              }}
+            >
+              Browse all
+            </button>
+          </div>
+
           <div style={{ marginBottom: 'var(--space-3)' }}>
             <ChipGroup
               options={CATEGORIES}
@@ -189,6 +220,7 @@ export function EngageClient({ myCells, discoverCells, currentUserId: _currentUs
               scrollable
             />
           </div>
+
           {filteredDiscover.length === 0 ? (
             <EmptyState
               message={
@@ -198,11 +230,28 @@ export function EngageClient({ myCells, discoverCells, currentUserId: _currentUs
               }
             />
           ) : (
-            <div className="stagger-list" style={{ display: 'flex', flexDirection: 'column' }}>
-              {filteredDiscover.map((cell) => (
-                <CellCard key={cell.id} cell={cell} isMember={false} />
-              ))}
-            </div>
+            <>
+              {/* Featured — full-width */}
+              <div style={{ marginBottom: 'var(--space-3)' }}>
+                <CellCard cell={featuredCell} isMember={false} featured />
+              </div>
+
+              {/* Grid — 2 columns */}
+              {gridCells.length > 0 && (
+                <div
+                  className="stagger-list"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: 'var(--space-3)',
+                  }}
+                >
+                  {gridCells.map((cell) => (
+                    <CellCard key={cell.id} cell={cell} isMember={false} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>

@@ -2,27 +2,38 @@
 
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Video as VideoIcon } from 'lucide-react';
-import type { Video } from '../../lib/explore/types';
+import type { FeedItem } from '../../lib/explore/types';
 import { VideoCard } from './VideoCard';
-import { getVideos } from '../../lib/explore/actions';
+import { TextPostCard } from './TextPostCard';
+import { getUnifiedFeed } from '../../lib/explore/actions';
 import { EmptyState } from '../shared-ui';
 
 interface PerspectiveFeedProps {
-  initialVideos: Video[];
+  initialItems: FeedItem[];
   initialCursor: string | null;
   userId: string;
   feedHeight: string;
   onComment: (videoId: string) => void;
+  pendingItem?: FeedItem | null;
 }
 
 export function PerspectiveFeed({
-  initialVideos,
+  initialItems,
   initialCursor,
   userId: _userId,
   feedHeight,
   onComment,
+  pendingItem,
 }: PerspectiveFeedProps) {
-  const [videos, setVideos] = useState<Video[]>(initialVideos);
+  const [items, setItems] = useState<FeedItem[]>(initialItems);
+
+  useEffect(() => {
+    if (!pendingItem) return;
+    setItems((prev) =>
+      prev.some((i) => i.data.id === pendingItem.data.id) ? prev : [pendingItem, ...prev]
+    );
+  }, [pendingItem]);
+
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -30,7 +41,7 @@ export function PerspectiveFeed({
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const loadingRef = useRef(false);
 
-  // IntersectionObserver: detect which card is ≥80% visible → set as active
+  // IntersectionObserver: detect active card (≥80% visible)
   useEffect(() => {
     const cards = cardRefs.current;
     if (!cards.length) return;
@@ -42,10 +53,7 @@ export function PerspectiveFeed({
             const idx = cards.indexOf(entry.target as HTMLDivElement);
             if (idx !== -1) {
               setActiveIndex(idx);
-              // Trigger load more when 3 cards from end
-              if (idx >= cards.length - 3) {
-                loadMore();
-              }
+              if (idx >= cards.length - 3) loadMore();
             }
           }
         });
@@ -55,29 +63,46 @@ export function PerspectiveFeed({
 
     cards.forEach((c) => { if (c) observer.observe(c); });
     return () => observer.disconnect();
-  }, [videos]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [items]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !cursor) return;
     loadingRef.current = true;
     setLoadingMore(true);
-    const { videos: newVids, nextCursor } = await getVideos(cursor);
-    setVideos((prev) => [...prev, ...newVids]);
+    const { items: newItems, nextCursor } = await getUnifiedFeed(cursor);
+    setItems((prev) => [...prev, ...newItems]);
     setCursor(nextCursor);
     setLoadingMore(false);
     loadingRef.current = false;
   }, [cursor]);
 
-  const handleLikeChanged = useCallback(
+  const handleVideoLikeChanged = useCallback(
     (videoId: string, liked: boolean, likeCount: number) => {
-      setVideos((prev) =>
-        prev.map((v) => (v.id === videoId ? { ...v, user_liked: liked, like_count: likeCount } : v))
+      setItems((prev) =>
+        prev.map((item) =>
+          item.kind === 'video' && item.data.id === videoId
+            ? { ...item, data: { ...item.data, user_liked: liked, like_count: likeCount } }
+            : item
+        )
       );
     },
     []
   );
 
-  if (videos.length === 0) {
+  const handlePostLikeChanged = useCallback(
+    (postId: string, liked: boolean, likeCount: number) => {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.kind === 'post' && item.data.id === postId
+            ? { ...item, data: { ...item.data, user_liked: liked, like_count: likeCount } }
+            : item
+        )
+      );
+    },
+    []
+  );
+
+  if (items.length === 0) {
     return (
       <div style={{ height: feedHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <EmptyState message="No perspectives yet. Be the first to share one!" icon={<VideoIcon size={40} />} />
@@ -94,25 +119,45 @@ export function PerspectiveFeed({
         scrollSnapType: 'y mandatory',
         scrollBehavior: 'smooth',
         WebkitOverflowScrolling: 'touch',
-        // Hide scrollbar
         scrollbarWidth: 'none',
       }}
     >
-      {videos.map((video, idx) => (
-        <div
-          key={video.id}
-          ref={(el) => { cardRefs.current[idx] = el; }}
-          style={{ height: feedHeight, scrollSnapAlign: 'start', flexShrink: 0 }}
-        >
-          <VideoCard
-            video={video}
-            isActive={activeIndex === idx}
-            onComment={() => onComment(video.id)}
-            onLikeChanged={handleLikeChanged}
-            height={feedHeight}
-          />
-        </div>
-      ))}
+      {items.map((item, idx) => {
+        if (item.kind === 'video') {
+          return (
+            <div
+              key={item.data.id}
+              ref={(el) => { cardRefs.current[idx] = el; }}
+              style={{ height: feedHeight, scrollSnapAlign: 'start', flexShrink: 0 }}
+            >
+              <VideoCard
+                video={item.data}
+                isActive={activeIndex === idx}
+                onComment={() => onComment(item.data.id)}
+                onLikeChanged={handleVideoLikeChanged}
+                height={feedHeight}
+              />
+            </div>
+          );
+        }
+
+        // Text post — natural height, no full-screen snap
+        return (
+          <div
+            key={item.data.id}
+            ref={(el) => { cardRefs.current[idx] = el; }}
+            style={{
+              scrollSnapAlign: 'start',
+              padding: 'var(--space-3) var(--space-4)',
+            }}
+          >
+            <TextPostCard
+              post={item.data}
+              onLikeChanged={handlePostLikeChanged}
+            />
+          </div>
+        );
+      })}
 
       {loadingMore && (
         <div

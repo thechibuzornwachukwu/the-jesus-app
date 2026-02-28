@@ -33,3 +33,21 @@ export type DailyVerseType = {
   text: string;
   reflection: string;
 };
+
+export type Post = {
+  id: string;
+  user_id: string;
+  content: string;
+  image_url: string | null;
+  verse_reference: string | null;
+  verse_text: string | null;
+  like_count: number;
+  comment_count: number;
+  user_liked: boolean;
+  created_at: string;
+  profiles: { username: string; avatar_url: string | null } | null;
+};
+
+export type FeedItem =
+  | { kind: 'video'; data: Video }
+  | { kind: 'post'; data: Post };

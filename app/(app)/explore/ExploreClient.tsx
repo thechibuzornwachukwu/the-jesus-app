@@ -1,36 +1,49 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { Video } from '../../../lib/explore/types';
+import type { FeedItem } from '../../../lib/explore/types';
 import type { DailyVerseType } from '../../../lib/explore/types';
+import { getVideoById, getPostById } from '../../../lib/explore/actions';
 import { DailyVerse } from '../../../libs/explore/DailyVerse';
 import { PerspectiveFeed } from '../../../libs/explore/PerspectiveFeed';
 import { CommentSheet } from '../../../libs/explore/CommentSheet';
 import { UploadSheet } from '../../../libs/explore/UploadSheet';
-import { Video as VideoIcon } from 'lucide-react';
+import { showToast } from '../../../libs/shared-ui/Toast';
+import { Plus } from 'lucide-react';
 
 // Height of the daily verse banner (must match DailyVerse component)
 const VERSE_BANNER_H = '56px';
 
 // Feed height = full content area minus the verse banner
-// page-content already accounts for safe-top padding and nav-height padding
 const FEED_HEIGHT = `calc(100dvh - var(--safe-top) - var(--nav-height) - var(--safe-bottom) - ${VERSE_BANNER_H})`;
 
 interface ExploreClientProps {
-  initialVideos: Video[];
+  initialItems: FeedItem[];
   initialCursor: string | null;
   dailyVerse: DailyVerseType;
   userId: string;
 }
 
 export function ExploreClient({
-  initialVideos,
+  initialItems,
   initialCursor,
   dailyVerse,
   userId,
 }: ExploreClientProps) {
   const [commentVideoId, setCommentVideoId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [pendingItem, setPendingItem] = useState<FeedItem | null>(null);
+
+  const handleUploaded = async (id: string, kind: 'video' | 'post') => {
+    if (kind === 'video') {
+      const video = await getVideoById(id);
+      if (video) setPendingItem({ kind: 'video', data: video });
+    } else {
+      const post = await getPostById(id);
+      if (post) setPendingItem({ kind: 'post', data: post });
+    }
+    showToast('Perspective published!', 'success');
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -39,16 +52,17 @@ export function ExploreClient({
         <DailyVerse verse={dailyVerse} />
       </div>
 
-      {/* Video feed */}
+      {/* Unified feed */}
       <PerspectiveFeed
-        initialVideos={initialVideos}
+        initialItems={initialItems}
         initialCursor={initialCursor}
         userId={userId}
         feedHeight={FEED_HEIGHT}
         onComment={(id) => setCommentVideoId(id)}
+        pendingItem={pendingItem}
       />
 
-      {/* Upload FAB — bottom-left to avoid conflict with right-side action column */}
+      {/* Create FAB — bottom-left */}
       <button
         onClick={() => setUploadOpen(true)}
         aria-label="Share a perspective"
@@ -70,7 +84,7 @@ export function ExploreClient({
           zIndex: 'var(--z-overlay)' as React.CSSProperties['zIndex'],
         }}
       >
-        <VideoIcon size={24} />
+        <Plus size={24} />
       </button>
 
       {/* Sheets */}
@@ -78,6 +92,7 @@ export function ExploreClient({
       <UploadSheet
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
+        onUploaded={handleUploaded}
       />
     </div>
   );

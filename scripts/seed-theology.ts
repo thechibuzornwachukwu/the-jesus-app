@@ -14,6 +14,11 @@
  *   npx tsx scripts/seed-theology.ts
  */
 
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+config({ path: resolve(process.cwd(), '.env') });
+
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
 
