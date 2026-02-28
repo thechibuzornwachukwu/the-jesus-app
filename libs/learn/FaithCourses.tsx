@@ -1,29 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, Check, ChevronLeft, CheckCircle2, BookOpen, Sparkles, Feather, Crown, Shield } from 'lucide-react';
+import Image from 'next/image';
+import { ChevronDown, Check, ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { COURSE_TRACKS } from '../../lib/learn/course-content';
 import type { CourseTrack, CourseLesson, CourseProgress } from './types';
 import { upsertCourseProgress } from '../../lib/learn/actions';
 
-
-// ─── Track Icon — maps track ID to a lucide icon ─────────────────────────────
-
-const TRACK_ICONS: Record<string, React.ReactNode> = {
-  salvation: <BookOpen size={28} color="var(--color-accent)" />,
-  prayer:    <Sparkles size={28} color="var(--color-accent)" />,
-  grace:     <Feather  size={28} color="var(--color-accent)" />,
-  identity:  <Crown   size={28} color="var(--color-accent)" />,
-  warfare:   <Shield  size={28} color="var(--color-accent)" />,
-};
-
-function TrackIcon({ trackId }: { trackId: string }) {
-  return (
-    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 'var(--radius-lg)', background: 'var(--color-accent-soft)' }}>
-      {TRACK_ICONS[trackId] ?? <BookOpen size={28} color="var(--color-accent)" />}
-    </span>
-  );
-}
 
 // ─── Lesson Card ─────────────────────────────────────────────────────────────
 
@@ -161,7 +144,6 @@ function LessonCard({
 
 function TrackDetail({
   track,
-  progress,
   completedLessons,
   onBack,
   onToggleLesson,
@@ -193,23 +175,96 @@ function TrackDetail({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-      {/* Back button + title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-        <button
-          onClick={onBack}
-          style={{ background: 'none', border: 'none', color: 'var(--color-accent)', cursor: 'pointer', padding: 'var(--space-1)', lineHeight: 0 }}
+
+      {/* Full-width header image */}
+      {track.image && (
+        <div
+          style={{
+            position: 'relative',
+            height: 200,
+            borderRadius: 'var(--radius-xl)',
+            overflow: 'hidden',
+            flexShrink: 0,
+          }}
         >
-          <ChevronLeft size={20} />
-        </button>
-        <div>
-          <p style={{ margin: 0, fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)' }}>
-            {track.icon} {track.title}
-          </p>
-          <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-            {doneCount} / {track.lessons.length} complete
-          </p>
+          <Image
+            src={track.image}
+            alt={track.title}
+            fill
+            style={{ objectFit: 'cover', objectPosition: 'center' }}
+            sizes="100vw"
+          />
+          {/* gradient overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to top, rgba(4,5,3,0.88) 0%, rgba(4,5,3,0.3) 60%, transparent 100%)',
+            }}
+          />
+          {/* back button */}
+          <button
+            onClick={onBack}
+            style={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              width: 34,
+              height: 34,
+              borderRadius: 'var(--radius-full)',
+              background: 'rgba(4,5,3,0.55)',
+              backdropFilter: 'blur(6px)',
+              border: 'none',
+              color: '#f5f7f7',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          {/* title + progress overlay */}
+          <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "'Archivo Condensed', var(--font-display)",
+                fontSize: 'clamp(1.6rem, 7vw, 2rem)',
+                fontWeight: 900,
+                color: '#f5f7f7',
+                lineHeight: 1,
+                textShadow: '0 2px 8px rgba(4,5,3,0.5)',
+              }}
+            >
+              {track.title}
+            </p>
+            <p style={{ margin: '4px 0 0', fontSize: 'var(--font-size-xs)', color: 'rgba(245,247,247,0.7)' }}>
+              {doneCount} / {track.lessons.length} complete
+            </p>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Fallback title (no image) */}
+      {!track.image && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+          <button
+            onClick={onBack}
+            style={{ background: 'none', border: 'none', color: 'var(--color-accent)', cursor: 'pointer', padding: 'var(--space-1)', lineHeight: 0 }}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div>
+            <p style={{ margin: 0, fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)' }}>
+              {track.title}
+            </p>
+            <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+              {doneCount} / {track.lessons.length} complete
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Progress bar */}
       <div style={{ height: 6, background: 'var(--color-border)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
@@ -267,43 +322,101 @@ function TrackCard({
     <button
       onClick={onClick}
       style={{
-        background: 'var(--color-bg-surface)',
-        border: '1px solid var(--color-border)',
+        position: 'relative',
         borderRadius: 'var(--radius-xl)',
-        padding: 'var(--space-4)',
+        overflow: 'hidden',
+        border: '1px solid var(--color-border)',
         cursor: 'pointer',
         textAlign: 'left',
+        minHeight: 160,
         display: 'flex',
         flexDirection: 'column',
-        gap: 'var(--space-3)',
-        transition: 'border-color 0.15s',
+        justifyContent: 'flex-end',
+        padding: 0,
+        background: 'var(--color-bg-surface)',
+        transition: 'transform 0.15s, box-shadow 0.15s',
       }}
     >
-      <TrackIcon trackId={track.id} />
-      <div>
-        <p style={{ margin: '0 0 2px', fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
-          {track.title}
-        </p>
-        <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', lineHeight: 'var(--line-height-normal)' }}>
-          {track.lessons.length} lessons
-        </p>
-      </div>
-      {/* Mini progress */}
-      <div style={{ height: 4, background: 'var(--color-border)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
-        <div
-          style={{
-            height: '100%',
-            width: `${pct}%`,
-            background: 'var(--color-accent)',
-            borderRadius: 'var(--radius-full)',
-          }}
-        />
-      </div>
-      {pct > 0 && (
-        <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: pct === 100 ? 'var(--color-success)' : 'var(--color-accent)' }}>
-          {pct === 100 ? <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={12} /> Complete</span> : `${pct}% done`}
-        </p>
+      {/* Background image */}
+      {track.image && (
+        <>
+          <Image
+            src={track.image}
+            alt={track.title}
+            fill
+            style={{ objectFit: 'cover', objectPosition: 'center' }}
+            sizes="50vw"
+          />
+          {/* gradient overlay — bottom-heavy so text is readable */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to top, rgba(4,5,3,0.92) 0%, rgba(4,5,3,0.45) 55%, rgba(4,5,3,0.15) 100%)',
+            }}
+          />
+        </>
       )}
+
+      {/* Card content */}
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          padding: 'var(--space-3)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--space-2)',
+        }}
+      >
+        <div>
+          <p
+            style={{
+              margin: '0 0 2px',
+              fontSize: 'var(--font-size-base)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: track.image ? '#f5f7f7' : 'var(--color-text-primary)',
+              lineHeight: 1.15,
+            }}
+          >
+            {track.title}
+          </p>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 'var(--font-size-xs)',
+              color: track.image ? 'rgba(245,247,247,0.6)' : 'var(--color-text-muted)',
+              lineHeight: 'var(--line-height-normal)',
+            }}
+          >
+            {track.lessons.length} lessons
+          </p>
+        </div>
+
+        {/* Mini progress */}
+        <div style={{ height: 3, background: track.image ? 'rgba(245,247,247,0.25)' : 'var(--color-border)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
+          <div
+            style={{
+              height: '100%',
+              width: `${pct}%`,
+              background: 'var(--color-accent)',
+              borderRadius: 'var(--radius-full)',
+            }}
+          />
+        </div>
+
+        {pct > 0 && (
+          <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: pct === 100 ? 'var(--color-success)' : 'var(--color-accent)' }}>
+            {pct === 100 ? (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <CheckCircle2 size={12} /> Complete
+              </span>
+            ) : (
+              `${pct}% done`
+            )}
+          </p>
+        )}
+      </div>
     </button>
   );
 }
@@ -320,7 +433,6 @@ export function FaithCourses({ initialProgress }: { initialProgress: CourseProgr
       const track = COURSE_TRACKS.find((t) => t.id === prog.track_id);
       if (!track) continue;
       const completed = new Set<string>();
-      // lesson_idx stores how many lessons are done (0-based up to idx)
       for (let i = 0; i <= prog.lesson_idx && i < track.lessons.length; i++) {
         if (prog.completed || i < prog.lesson_idx) {
           completed.add(track.lessons[i].id);

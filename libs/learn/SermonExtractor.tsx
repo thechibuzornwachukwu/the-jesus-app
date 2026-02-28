@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 import { Upload, Copy } from 'lucide-react';
 import type { SermonNotes } from './types';
 import { TabBar } from '../shared-ui';
@@ -124,6 +125,57 @@ export function SermonExtractor() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+
+      {/* Ambient banner */}
+      <div
+        style={{
+          position: 'relative',
+          height: 120,
+          borderRadius: 'var(--radius-xl)',
+          overflow: 'hidden',
+          flexShrink: 0,
+        }}
+      >
+        <Image
+          src="/courses/sermon-banner.png"
+          alt=""
+          fill
+          style={{ objectFit: 'cover', objectPosition: 'center 25%' }}
+          sizes="100vw"
+        />
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to right, rgba(4,5,3,0.75) 0%, rgba(4,5,3,0.3) 60%, transparent 100%)',
+          }}
+        />
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 'var(--space-4)' }}>
+          <p
+            style={{
+              margin: 0,
+              fontFamily: "'Archivo Condensed', var(--font-display)",
+              fontSize: 'clamp(1.3rem, 5vw, 1.6rem)',
+              fontWeight: 900,
+              color: '#f5f7f7',
+              lineHeight: 1.1,
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Sermon Notes
+          </p>
+          <p
+            style={{
+              margin: '4px 0 0',
+              fontSize: 'var(--font-size-xs)',
+              color: 'rgba(245,247,247,0.65)',
+            }}
+          >
+            Extract insights from any message
+          </p>
+        </div>
+      </div>
+
       <TabBar
         tabs={[{ id: 'text', label: 'Paste Text' }, { id: 'audio', label: 'Upload Audio' }]}
         activeId={mode}
