@@ -22,7 +22,11 @@ export function ContentTabs({ savedVerses, joinedCells, postedVideos }: ContentT
   return (
     <div>
       <TabBar
-        tabs={TABS.map((t) => ({ id: t, label: t }))}
+        tabs={[
+          { id: 'Saved Verses', label: 'Saved' },
+          { id: 'My Cells',     label: 'Fellowship' },
+          { id: 'Videos',       label: 'Journal' },
+        ]}
         activeId={active}
         onChange={(id) => setActive(id as Tab)}
         variant="underline"

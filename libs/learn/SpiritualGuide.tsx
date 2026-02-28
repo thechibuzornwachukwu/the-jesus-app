@@ -22,7 +22,7 @@ function CrossIcon() {
 const WELCOME: ChatMessage = {
   role: 'assistant',
   content:
-    "Peace be with you. I'm here to walk through Scripture with you. Ask me anything — a question about faith, a struggle you're facing, or a verse you want to understand more deeply.",
+    "Welcome, Berean. Ask anything about Scripture — a verse, a doctrine, a question of faith. I search the Scriptures to walk with you.",
 };
 
 export function SpiritualGuide() {
@@ -159,7 +159,7 @@ export function SpiritualGuide() {
       <FAB
         onClick={() => setOpen(true)}
         icon={<CrossIcon />}
-        ariaLabel="Ask the Spirit"
+        ariaLabel="Open Berean study guide"
         size={56}
         bottomOffset="var(--space-6)"
         zIndex="var(--z-modal)"
@@ -168,8 +168,8 @@ export function SpiritualGuide() {
       <FullScreenModal
         open={open}
         onClose={() => setOpen(false)}
-        title="Ask the Spirit"
-        subtitle="Scripture-grounded guidance"
+        title="Berean"
+        subtitle="Search the Scriptures daily — Acts 17:11"
         icon={<CrossIcon />}
         footerContent={inputBar}
         zIndex="calc(var(--z-modal) + 1)"

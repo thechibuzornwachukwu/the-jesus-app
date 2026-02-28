@@ -48,7 +48,7 @@ export function LearnClient({ initialProgress }: LearnClientProps) {
             lineHeight: 'var(--line-height-tight)',
           }}
         >
-          Learn
+          Equip
         </h1>
         <p
           style={{

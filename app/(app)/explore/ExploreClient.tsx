@@ -12,9 +12,10 @@ import { Plus } from 'lucide-react';
 
 // Height of the daily verse banner (must match DailyVerse component)
 const VERSE_BANNER_H = '56px';
+const HEADER_H = '52px';
 
-// Feed height = full content area minus the verse banner
-const FEED_HEIGHT = `calc(100dvh - var(--safe-top) - var(--nav-height) - var(--safe-bottom) - ${VERSE_BANNER_H})`;
+// Feed height = full content area minus the verse banner and page header
+const FEED_HEIGHT = `calc(100dvh - var(--safe-top) - var(--nav-height) - var(--safe-bottom) - ${VERSE_BANNER_H} - ${HEADER_H})`;
 
 interface ExploreClientProps {
   initialItems: FeedItem[];
@@ -42,6 +43,23 @@ export function ExploreClient({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      {/* Page header */}
+      <div style={{ flexShrink: 0, height: HEADER_H, display: 'flex', alignItems: 'center', padding: '0 var(--space-6)' }}>
+        <h1
+          style={{
+            fontFamily: "'Archivo Condensed', var(--font-display)",
+            margin: 0,
+            fontSize: 'var(--font-size-4xl)',
+            fontWeight: 'var(--font-weight-black)' as React.CSSProperties['fontWeight'],
+            letterSpacing: 'var(--letter-spacing-tight)',
+            color: 'var(--color-text-primary)',
+            lineHeight: 'var(--line-height-tight)',
+          }}
+        >
+          Witness
+        </h1>
+      </div>
+
       {/* Daily verse banner — fixed height */}
       <div style={{ flexShrink: 0, height: VERSE_BANNER_H, overflow: 'hidden' }}>
         <DailyVerse verse={dailyVerse} />
