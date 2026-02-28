@@ -19,6 +19,7 @@ import type {
   SavedVerse,
   JoinedCell,
   PostedVideo,
+  Post,
   AppNotification,
 } from '../../../libs/profile/types';
 
@@ -27,6 +28,7 @@ interface ProfileClientProps {
   savedVerses: SavedVerse[];
   joinedCells: JoinedCell[];
   postedVideos: PostedVideo[];
+  posts: Post[];
   unreadCount: number;
   blockedUserIds: string[];
 }
@@ -36,6 +38,7 @@ export function ProfileClient({
   savedVerses,
   joinedCells,
   postedVideos,
+  posts,
   unreadCount: initialUnread,
   blockedUserIds: initialBlocked,
 }: ProfileClientProps) {
@@ -178,6 +181,7 @@ export function ProfileClient({
         savedVerses={savedVerses}
         joinedCells={joinedCells}
         postedVideos={postedVideos}
+        posts={posts}
       />
 
       {/* Overlays */}

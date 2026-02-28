@@ -10,6 +10,7 @@ import type {
   SavedVerse,
   JoinedCell,
   PostedVideo,
+  Post,
   AppNotification,
 } from '../../libs/profile/types';
 
@@ -156,7 +157,7 @@ export async function getJoinedCells(): Promise<JoinedCell[]> {
 
   const { data } = await supabase
     .from('cell_members')
-    .select('role, cells(id, name, category, avatar_url)')
+    .select('role, cells(id, slug, name, category, avatar_url, banner_url)')
     .eq('user_id', user.id);
 
   if (!data) return [];
@@ -187,6 +188,28 @@ export async function getPostedVideos(userId?: string): Promise<PostedVideo[]> {
     .limit(30);
 
   return (data ?? []) as PostedVideo[];
+}
+
+// ────────────────────────────────────────────────────────────
+// getUserPosts
+// ────────────────────────────────────────────────────────────
+export async function getUserPosts(userId?: string): Promise<Post[]> {
+  const supabase = await createClient();
+  const {
+    data: { user: me },
+  } = await supabase.auth.getUser();
+  if (!me) return [];
+
+  const targetId = userId ?? me.id;
+
+  const { data } = await supabase
+    .from('posts')
+    .select('id, content, verse_reference, verse_text, like_count, created_at')
+    .eq('user_id', targetId)
+    .order('created_at', { ascending: false })
+    .limit(30);
+
+  return (data ?? []) as Post[];
 }
 
 // ────────────────────────────────────────────────────────────

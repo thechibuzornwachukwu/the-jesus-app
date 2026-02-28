@@ -5,6 +5,7 @@ import {
   getSavedVerses,
   getJoinedCells,
   getPostedVideos,
+  getUserPosts,
   getUnreadCount,
   getBlockedUsers,
 } from '../../../lib/profile/actions';
@@ -19,12 +20,13 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in');
 
-  const [profile, savedVerses, joinedCells, postedVideos, unreadCount, blockedUserIds] =
+  const [profile, savedVerses, joinedCells, postedVideos, posts, unreadCount, blockedUserIds] =
     await Promise.all([
       getFullProfile(),
       getSavedVerses(),
       getJoinedCells(),
       getPostedVideos(),
+      getUserPosts(),
       getUnreadCount(),
       getBlockedUsers(),
     ]);
@@ -37,6 +39,7 @@ export default async function ProfilePage() {
       savedVerses={savedVerses}
       joinedCells={joinedCells}
       postedVideos={postedVideos}
+      posts={posts}
       unreadCount={unreadCount}
       blockedUserIds={blockedUserIds}
     />

@@ -20,10 +20,21 @@ export interface JoinedCell {
   role: string;
   cell: {
     id: string;
+    slug: string | null;
     name: string;
     category: string | null;
     avatar_url: string | null;
+    banner_url: string | null;
   };
+}
+
+export interface Post {
+  id: string;
+  content: string;
+  verse_reference: string | null;
+  verse_text: string | null;
+  like_count: number;
+  created_at: string;
 }
 
 export interface PostedVideo {

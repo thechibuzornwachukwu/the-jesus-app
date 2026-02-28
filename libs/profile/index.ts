@@ -11,5 +11,6 @@ export type {
   SavedVerse,
   JoinedCell,
   PostedVideo,
+  Post,
   AppNotification,
 } from './types';
