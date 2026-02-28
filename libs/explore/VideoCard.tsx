@@ -90,7 +90,7 @@ export function VideoCard({ video, isActive, height, onComment, onLikeChanged }:
         position: 'relative',
         width: '100%',
         height,
-        background: '#000',
+        background: 'var(--color-bg)',
         overflow: 'hidden',
       }}
     >
@@ -193,7 +193,7 @@ export function VideoCard({ video, isActive, height, onComment, onLikeChanged }:
             height: 36,
             borderRadius: 'var(--radius-full)',
             border: '2px solid var(--color-accent)',
-            background: 'var(--color-faint-bg)',
+            background: 'var(--color-surface)',
             overflow: 'hidden',
             display: 'flex',
             alignItems: 'center',
@@ -269,20 +269,20 @@ export function VideoCard({ video, isActive, height, onComment, onLikeChanged }:
         }}
       >
         <ActionButton
-          icon={<Heart size={26} fill={liked ? 'var(--color-accent)' : 'none'} color={liked ? 'var(--color-accent)' : 'rgba(245,247,247,0.9)'} />}
+          icon={<Heart size={26} fill={liked ? 'var(--color-accent)' : 'none'} color={liked ? 'var(--color-accent)' : 'var(--color-text)'} />}
           label={liked ? 'Amen!' : 'Amen'}
           count={likeCount}
           active={liked}
           onClick={handleLike}
         />
         <ActionButton
-          icon={<MessageSquare size={26} color="rgba(245,247,247,0.9)" />}
+          icon={<MessageSquare size={26} color="var(--color-text)" />}
           label="Comment"
           count={video.comment_count}
           onClick={onComment}
         />
         <ActionButton
-          icon={<Share2 size={26} color="rgba(245,247,247,0.9)" />}
+          icon={<Share2 size={26} color="var(--color-text)" />}
           label="Share"
           onClick={handleShare}
           count={null}

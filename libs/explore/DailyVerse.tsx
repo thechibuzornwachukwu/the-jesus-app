@@ -32,7 +32,7 @@ export function DailyVerse({ verse }: DailyVerseProps) {
         aria-label={`Daily verse: ${verse.reference}. Tap to meditate.`}
       >
         {/* Cross accent */}
-        <span style={{ fontSize: '1.25rem', flexShrink: 0 }}>✝</span>
+        <span style={{ fontSize: '1.1rem', flexShrink: 0, color: 'var(--color-accent)', opacity: 0.8 }}>✝</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p
             style={{
@@ -48,8 +48,10 @@ export function DailyVerse({ verse }: DailyVerseProps) {
           </p>
           <p
             style={{
+              fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
               fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-primary)',
+              color: 'var(--color-text)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',

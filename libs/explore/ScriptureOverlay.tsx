@@ -49,8 +49,10 @@ export function ScriptureOverlay({ verse, onSave, saving, saved }: ScriptureOver
       </p>
       <p
         style={{
+          fontFamily: 'var(--font-serif)',
+          fontStyle: 'italic',
           fontSize: 'var(--font-size-sm)',
-          color: 'var(--color-bright)',
+          color: 'var(--color-text)',
           lineHeight: 'var(--line-height-normal)',
           display: expanded ? undefined : '-webkit-box',
           WebkitLineClamp: expanded ? undefined : 1,

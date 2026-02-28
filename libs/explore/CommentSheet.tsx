@@ -65,7 +65,8 @@ export function CommentSheet({ videoId, onClose }: CommentSheetProps) {
                       width: 32,
                       height: 32,
                       borderRadius: 'var(--radius-full)',
-                      background: 'var(--color-faint-bg)',
+                      background: 'var(--color-surface)',
+                      border: '1.5px solid var(--color-accent)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -106,7 +107,7 @@ export function CommentSheet({ videoId, onClose }: CommentSheetProps) {
             maxLength={500}
             style={{
               flex: 1,
-              background: 'var(--color-bg-primary)',
+              background: 'var(--color-surface-high)',
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-full)',
               padding: 'var(--space-2) var(--space-4)',
