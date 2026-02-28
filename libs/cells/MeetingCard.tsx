@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
-import { Calendar, Clock, Users, MoreVertical, X } from 'lucide-react';
+import { Calendar, Clock, Users, MoreVertical, X, Check, Minus } from 'lucide-react';
 import type { ScheduledMeeting, MeetingRsvp } from '../../lib/cells/meeting-actions';
 import { upsertRsvp, cancelMeeting } from '../../lib/cells/meeting-actions';
 
@@ -270,7 +270,8 @@ export function MeetingCard({
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
         {(['yes', 'maybe', 'no'] as const).map((opt) => {
           const count = opt === 'yes' ? yesCount : opt === 'maybe' ? maybeCount : noCount;
-          const labels = { yes: '✓ Yes', maybe: '? Maybe', no: '✗ No' };
+          const rsvpIcon = opt === 'yes' ? <Check size={11} /> : opt === 'no' ? <X size={11} /> : <Minus size={11} />;
+          const rsvpLabel = opt === 'yes' ? 'Yes' : opt === 'no' ? 'No' : 'Maybe';
           const isActive = myRsvp === opt;
           return (
             <button
@@ -287,9 +288,12 @@ export function MeetingCard({
                 color: isActive ? 'var(--color-accent)' : 'var(--color-text-muted)',
                 transition: 'background 0.1s, border-color 0.1s',
                 fontFamily: 'var(--font-sans)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
               }}
             >
-              {labels[opt]}{count > 0 ? ` (${count})` : ''}
+              {rsvpIcon}{rsvpLabel}{count > 0 ? ` (${count})` : ''}
             </button>
           );
         })}

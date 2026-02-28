@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
 
   const wp = getWebPush();
   const payload = JSON.stringify({
-    title: `📖 ${verse.reference}`,
+    title: `Daily Verse · ${verse.reference}`,
     body: verse.text.length > 100 ? verse.text.slice(0, 97) + '…' : verse.text,
     url: '/explore',
   });

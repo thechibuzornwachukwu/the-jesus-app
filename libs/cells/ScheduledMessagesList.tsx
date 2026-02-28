@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Clock, Trash2, Edit3, Check } from 'lucide-react';
+import { X, Clock, Trash2, Edit3, Check, Mic } from 'lucide-react';
 import {
   getScheduledMessages,
   cancelScheduledMessage,
@@ -255,7 +255,7 @@ export function ScheduledMessagesList({ open, onClose, cellId }: ScheduledMessag
                   }}
                 >
                   {msg.message_type === 'audio'
-                    ? '🎤 Voice message'
+                    ? <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Mic size={14} />Voice message</span>
                     : (msg.content ?? '')}
                 </p>
 

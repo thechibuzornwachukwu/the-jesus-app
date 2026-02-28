@@ -49,9 +49,9 @@
   --color-text-inverse: var(--color-accent-text);
 
   /* ─── Typography ────────────────────────────────────────── */
-  --font-sans:    'Nunito', system-ui, -apple-system, sans-serif;
-  --font-serif:   'EB Garamond', Georgia, serif;
-  --font-display: 'Playfair Display', Georgia, serif;
+  --font-sans:    'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-serif:   'Lora', Georgia, serif;
+  --font-display: 'Archivo Condensed', 'Archivo', system-ui, sans-serif;
   --font-size-xs:   0.75rem;   /* 12px */
   --font-size-sm:   0.875rem;  /* 14px */
   --font-size-base: 1rem;      /* 16px */

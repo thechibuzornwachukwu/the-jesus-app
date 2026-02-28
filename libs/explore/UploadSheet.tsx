@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useTransition } from 'react';
-import { Video, Upload, FileText } from 'lucide-react';
+import { Video, Upload, FileText, X } from 'lucide-react';
 import { BottomSheet } from '../shared-ui/BottomSheet';
 import { createPost } from '../../lib/explore/actions';
 
@@ -203,7 +203,7 @@ export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
                   }}
                   aria-label="Remove selected video"
                 >
-                  ✕
+                  <X size={14} />
                 </button>
               </div>
             )}

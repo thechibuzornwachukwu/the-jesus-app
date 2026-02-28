@@ -22,7 +22,7 @@ function CrossIcon() {
 const WELCOME: ChatMessage = {
   role: 'assistant',
   content:
-    "Peace be with you 🕊️ I'm here to walk through Scripture with you. Ask me anything — a question about faith, a struggle you're facing, or a verse you want to understand more deeply.",
+    "Peace be with you. I'm here to walk through Scripture with you. Ask me anything — a question about faith, a struggle you're facing, or a verse you want to understand more deeply.",
 };
 
 export function SpiritualGuide() {

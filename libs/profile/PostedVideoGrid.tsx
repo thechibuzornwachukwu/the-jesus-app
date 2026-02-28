@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { PostedVideo } from './types';
 import { EmptyState } from '../shared-ui';
+import { Video, Play, Heart } from 'lucide-react';
 
 interface PostedVideoGridProps {
   videos: PostedVideo[];
@@ -12,7 +13,7 @@ interface PostedVideoGridProps {
 
 export function PostedVideoGrid({ videos }: PostedVideoGridProps) {
   if (videos.length === 0) {
-    return <EmptyState message="No videos posted yet." icon="📹" />;
+    return <EmptyState message="No videos posted yet." icon={<Video size={40} />} />;
   }
 
   return (
@@ -53,10 +54,9 @@ export function PostedVideoGrid({ videos }: PostedVideoGridProps) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: 'var(--color-text-inverse)',
-                  fontSize: '1.5rem',
                 }}
               >
-                ▶
+                <Play size={24} />
               </div>
             )}
             {/* Like count overlay */}
@@ -73,7 +73,7 @@ export function PostedVideoGrid({ videos }: PostedVideoGridProps) {
                 gap: 2,
               }}
             >
-              ♥ {v.like_count}
+              <Heart size={10} fill="currentColor" /> {v.like_count}
             </div>
           </div>
         </Link>

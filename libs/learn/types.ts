@@ -15,7 +15,7 @@ export interface CourseLesson {
 export interface CourseTrack {
   id: string;
   title: string;
-  icon: string;        // emoji
+  icon?: string;       // unused — icon resolved from id in FaithCourses
   description: string;
   lessons: CourseLesson[];
 }

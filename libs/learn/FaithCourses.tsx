@@ -1,11 +1,29 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, Check, ChevronLeft } from 'lucide-react';
+import { ChevronDown, Check, ChevronLeft, CheckCircle2, BookOpen, Sparkles, Feather, Crown, Shield } from 'lucide-react';
 import { COURSE_TRACKS } from '../../lib/learn/course-content';
 import type { CourseTrack, CourseLesson, CourseProgress } from './types';
 import { upsertCourseProgress } from '../../lib/learn/actions';
 
+
+// ─── Track Icon — maps track ID to a lucide icon ─────────────────────────────
+
+const TRACK_ICONS: Record<string, React.ReactNode> = {
+  salvation: <BookOpen size={28} color="var(--color-accent)" />,
+  prayer:    <Sparkles size={28} color="var(--color-accent)" />,
+  grace:     <Feather  size={28} color="var(--color-accent)" />,
+  identity:  <Crown   size={28} color="var(--color-accent)" />,
+  warfare:   <Shield  size={28} color="var(--color-accent)" />,
+};
+
+function TrackIcon({ trackId }: { trackId: string }) {
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 'var(--radius-lg)', background: 'var(--color-accent-soft)' }}>
+      {TRACK_ICONS[trackId] ?? <BookOpen size={28} color="var(--color-accent)" />}
+    </span>
+  );
+}
 
 // ─── Lesson Card ─────────────────────────────────────────────────────────────
 
@@ -261,7 +279,7 @@ function TrackCard({
         transition: 'border-color 0.15s',
       }}
     >
-      <span style={{ fontSize: 32 }}>{track.icon}</span>
+      <TrackIcon trackId={track.id} />
       <div>
         <p style={{ margin: '0 0 2px', fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
           {track.title}
@@ -283,7 +301,7 @@ function TrackCard({
       </div>
       {pct > 0 && (
         <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: pct === 100 ? 'var(--color-success)' : 'var(--color-accent)' }}>
-          {pct === 100 ? 'Complete ✓' : `${pct}% done`}
+          {pct === 100 ? <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={12} /> Complete</span> : `${pct}% done`}
         </p>
       )}
     </button>

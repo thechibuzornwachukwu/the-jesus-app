@@ -4,7 +4,6 @@ export const COURSE_TRACKS: CourseTrack[] = [
   {
     id: "salvation",
     title: "Salvation",
-    icon: "✝️",
     description: "Understand the gift of eternal life through Jesus Christ.",
     lessons: [
       {
@@ -53,7 +52,6 @@ export const COURSE_TRACKS: CourseTrack[] = [
   {
     id: "prayer",
     title: "Prayer",
-    icon: "🙏",
     description: "Learn to commune with the Father through Scripture-grounded prayer.",
     lessons: [
       {
@@ -102,7 +100,6 @@ export const COURSE_TRACKS: CourseTrack[] = [
   {
     id: "grace",
     title: "Grace",
-    icon: "🕊️",
     description: "Discover the scandalous, limitless grace of God.",
     lessons: [
       {
@@ -151,7 +148,6 @@ export const COURSE_TRACKS: CourseTrack[] = [
   {
     id: "identity",
     title: "Identity in Christ",
-    icon: "👑",
     description: "Discover who you truly are as a new creation in Jesus.",
     lessons: [
       {
@@ -200,7 +196,6 @@ export const COURSE_TRACKS: CourseTrack[] = [
   {
     id: "warfare",
     title: "Spiritual Warfare",
-    icon: "⚔️",
     description: "Stand firm against the enemy with the full armor of God.",
     lessons: [
       {

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import type { VideoVerse } from '../../lib/explore/types';
+import { Check, Bookmark } from 'lucide-react';
 
 interface ScriptureOverlayProps {
   verse: VideoVerse;
@@ -83,7 +84,11 @@ export function ScriptureOverlay({ verse, onSave, saving, saved }: ScriptureOver
             cursor: saving || saved ? 'default' : 'pointer',
           }}
         >
-          {saved ? 'Saved ✓' : saving ? 'Saving…' : '+ Save Verse'}
+          {saved ? (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Bookmark size={12} fill="currentColor" /> Saved</span>
+          ) : saving ? 'Saving…' : (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Bookmark size={12} /> Save Verse</span>
+          )}
         </button>
       )}
     </button>
