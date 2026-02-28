@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The JESUS App
+
+Christian community, discipleship and spiritual growth — PWA built on Next.js 16 + Supabase + Netlify.
+
+## Tech Stack
+
+- **Frontend**: Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
+- **Backend/DB**: Supabase (PostgreSQL + Realtime + Storage + Auth)
+- **AI** *(Phase 3)*: OpenAI GPT-4o + text-embedding-3-small
+- **Vector DB**: pgvector (Supabase extension)
+- **Deployment**: Netlify
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+cp .env.local.example .env.local
+# Fill in your Supabase URL + anon key
+
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```text
+the-jesus-app/
+├── app/
+│   ├── (app)/          # Protected tab routes (Engage, Learn, Explore, Profile)
+│   ├── (auth)/         # Sign-in, Sign-up
+│   └── auth/callback/  # Supabase OAuth/magic-link callback
+├── components/         # App-level components (BottomNav, PwaInstallPrompt)
+├── lib/
+│   ├── auth/           # Server actions (signIn, signUp, signInWithMagicLink)
+│   └── supabase/       # Server/client/middleware Supabase clients
+├── libs/
+│   ├── shared-ui/      # Design system (tokens, Typography, Button, Input…)
+│   ├── cells/          # Phase 2 — Engage tab
+│   ├── explore/        # Phase 2 — Explore tab
+│   └── learn/          # Phase 3 — Learn tab (AI)
+├── public/
+│   ├── manifest.json   # PWA manifest
+│   └── sw.js           # Service worker
+├── proxy.ts            # Auth middleware (Next.js 16 convention)
+└── supabase/
+    └── schema.sql      # Run in Supabase SQL Editor to set up DB
+```
 
-## Learn More
+## Supabase Setup
 
-To learn more about Next.js, take a look at the following resources:
+1. Create a project at [supabase.com](https://supabase.com)
+2. Run `supabase/schema.sql` in the SQL Editor
+3. Copy project URL + anon key into `.env.local`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Phases
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Phase | Feature | Status |
+| ----- | ------- | ------ |
+| 1 | Foundation — PWA shell, auth, design system | ✅ Complete |
+| 2 | Cells (Engage) + Explore video feed | Pending |
+| 3 | Learn tab — AI discipleship (OpenAI) | Pending |
 
-## Deploy on Vercel
+## Design Tokens
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+All brand colors live in `libs/shared-ui/tokens.css` as CSS custom properties.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Token | Value | Use |
+| ----- | ----- | --- |
+| `--color-orange-dark` | `#f47521` | Primary accent |
+| `--color-orange-sharp` | `#f7bd95` | Soft accent |
+| `--color-blue-deep` | `#040503` | Page background |
+| `--color-faint-bg` | `#171638` | Card / surface |
+| `--color-bright` | `#f5f7f7` | Primary text |
