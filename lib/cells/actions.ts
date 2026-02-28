@@ -133,19 +133,11 @@ export async function updateCell(
   } = await supabase.auth.getUser();
   if (!user) return { error: 'Not authenticated.' };
 
-  // Allow creator OR any admin member to update
-  const { data: membership } = await supabase
-    .from('cell_members')
-    .select('role')
-    .eq('cell_id', cellId)
-    .eq('user_id', user.id)
-    .single();
-
-  const { data: cell } = await supabase
-    .from('cells')
-    .select('creator_id')
-    .eq('id', cellId)
-    .single();
+  // Allow creator OR any admin member to update (parallel fetch)
+  const [{ data: membership }, { data: cell }] = await Promise.all([
+    supabase.from('cell_members').select('role').eq('cell_id', cellId).eq('user_id', user.id).single(),
+    supabase.from('cells').select('creator_id').eq('id', cellId).single(),
+  ]);
 
   const isCreator = (cell as { creator_id: string } | null)?.creator_id === user.id;
   const isAdmin = membership?.role === 'admin';

@@ -50,27 +50,23 @@ export async function getVideos(cursor?: string): Promise<{
   const batch = (hasMore ? rows.slice(0, PAGE_SIZE) : rows) as unknown as RawVideo[];
   const videoIds = batch.map((v) => v.id);
 
-  // Comment counts (public read)
-  const commentCountMap = new Map<string, number>();
-  if (videoIds.length > 0) {
-    const { data: commentRows } = await supabase
-      .from('comments')
-      .select('video_id')
-      .in('video_id', videoIds);
-    (commentRows ?? []).forEach((c) => {
-      commentCountMap.set(c.video_id, (commentCountMap.get(c.video_id) ?? 0) + 1);
-    });
-  }
-
-  // User's own likes (RLS: select own — returns only rows where user_id = auth.uid())
-  const userLikedSet = new Set<string>();
-  if (user && videoIds.length > 0) {
-    const { data: likeRows } = await supabase
-      .from('likes')
-      .select('video_id')
-      .in('video_id', videoIds);
-    (likeRows ?? []).forEach((l) => userLikedSet.add(l.video_id));
-  }
+  // Parallel: comment counts + user likes
+  const [commentCountMap, userLikedSet] = await Promise.all([
+    videoIds.length > 0
+      ? supabase.from('comments').select('video_id').in('video_id', videoIds).then(({ data }) => {
+          const m = new Map<string, number>();
+          (data ?? []).forEach((c) => m.set(c.video_id, (m.get(c.video_id) ?? 0) + 1));
+          return m;
+        })
+      : Promise.resolve(new Map<string, number>()),
+    user && videoIds.length > 0
+      ? supabase.from('likes').select('video_id').in('video_id', videoIds).then(({ data }) => {
+          const s = new Set<string>();
+          (data ?? []).forEach((l) => s.add(l.video_id));
+          return s;
+        })
+      : Promise.resolve(new Set<string>()),
+  ]);
 
   const videos: Video[] = batch.map((row) => ({
     id: row.id,
