@@ -22,30 +22,30 @@ export async function GET(req: NextRequest) {
   const results: Record<string, number | string> = {};
 
   // 1. Expired invite links
-  const { count: invites } = await supabase
+  const { data: invites } = await supabase
     .from('cell_invites')
     .delete()
     .lt('expires_at', now)
     .not('expires_at', 'is', null)
-    .select('*', { count: 'exact', head: true });
-  results.expiredInvites = invites ?? 0;
+    .select('id');
+  results.expiredInvites = invites?.length ?? 0;
 
   // 2. Soft-deleted profiles older than 30 days
-  const { count: profiles } = await supabase
+  const { data: profiles } = await supabase
     .from('profiles')
     .delete()
     .lt('deleted_at', thirtyDaysAgo)
     .not('deleted_at', 'is', null)
-    .select('*', { count: 'exact', head: true });
-  results.deletedProfiles = profiles ?? 0;
+    .select('id');
+  results.deletedProfiles = profiles?.length ?? 0;
 
   // 3. Old AI spiritual conversations (90+ days)
-  const { count: convos } = await supabase
+  const { data: convos } = await supabase
     .from('spiritual_conversations')
     .delete()
     .lt('created_at', ninetyDaysAgo)
-    .select('*', { count: 'exact', head: true });
-  results.oldConversations = convos ?? 0;
+    .select('id');
+  results.oldConversations = convos?.length ?? 0;
 
   return NextResponse.json({ purged: results });
 }
