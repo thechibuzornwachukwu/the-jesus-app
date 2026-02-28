@@ -23,9 +23,10 @@ interface SectionCardProps {
   items?: string[];
   body?: string;
   accent?: boolean;
+  bodyStyle?: React.CSSProperties;
 }
 
-function SectionCard({ title, items, body, accent }: SectionCardProps) {
+function SectionCard({ title, items, body, accent, bodyStyle }: SectionCardProps) {
   return (
     <div
       style={{
@@ -48,7 +49,7 @@ function SectionCard({ title, items, body, accent }: SectionCardProps) {
         {title}
       </p>
       {body && (
-        <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', lineHeight: 'var(--line-height-relaxed)' }}>
+        <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', lineHeight: 'var(--line-height-relaxed)', ...bodyStyle }}>
           {body}
         </p>
       )}
@@ -268,7 +269,7 @@ export function SermonExtractor() {
           <SectionCard title="Summary" body={notes.summary} accent />
           <SectionCard title="Key Points" items={notes.keyPoints} />
           {notes.scriptures.length > 0 && (
-            <SectionCard title="Scriptures" body={notes.scriptures.join('  ·  ')} />
+            <SectionCard title="Scriptures" body={notes.scriptures.join('  ·  ')} bodyStyle={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic' }} />
           )}
           {notes.themes.length > 0 && (
             <SectionCard title="Themes" body={notes.themes.join('  ·  ')} />
