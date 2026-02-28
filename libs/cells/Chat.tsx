@@ -28,6 +28,8 @@ interface ChatProps {
   initialMessages: Message[];
   blockedUserIds?: string[];
   userRole?: 'admin' | 'member';
+  channelId?: string;
+  channelTopic?: string | null;
 }
 
 export function Chat({
@@ -39,6 +41,7 @@ export function Chat({
   initialMessages,
   blockedUserIds = [],
   userRole = 'member',
+  channelId,
 }: ChatProps) {
   const router = useRouter();
   const blockedSet = React.useMemo(() => new Set(blockedUserIds), [blockedUserIds]);
@@ -117,14 +120,14 @@ export function Chat({
     const supabase = createClient();
 
     const channel = supabase
-      .channel(`chat:${cellId}`)
+      .channel(`chat:${cellId}:${channelId ?? 'all'}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'chat_messages',
-          filter: `cell_id=eq.${cellId}`,
+          filter: channelId ? `channel_id=eq.${channelId}` : `cell_id=eq.${cellId}`,
         },
         async (payload) => {
           const newMsg = payload.new as Omit<Message, 'profiles'>;
@@ -159,7 +162,7 @@ export function Chat({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [cellId, currentUser.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cellId, channelId, currentUser.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Realtime Presence
   useEffect(() => {
@@ -227,6 +230,8 @@ export function Chat({
         content,
         message_type: 'text',
         audio_url: null,
+        image_url: null,
+        channel_id: channelId ?? null,
         created_at: new Date().toISOString(),
         reply_to_message_id: replyState?.messageId ?? null,
         reply_to_timestamp_seconds: replyState?.timestampSeconds ?? null,
@@ -247,6 +252,7 @@ export function Chat({
         user_id: currentUser.id,
         content,
         message_type: 'text',
+        channel_id: channelId ?? null,
         ...(replyState && {
           reply_to_message_id: replyState.messageId,
           reply_to_timestamp_seconds: replyState.timestampSeconds,
@@ -343,6 +349,7 @@ export function Chat({
       content: null,
       message_type: 'audio',
       audio_url: signedData.signedUrl,
+      channel_id: channelId ?? null,
     });
 
     if (insertError) setSendError('Failed to send voice message.');

@@ -79,6 +79,25 @@ export async function createCell(
     role: 'admin',
   });
 
+  // Auto-create default "General" category + #general channel
+  const { data: category } = await supabase
+    .from('channel_categories')
+    .insert({ cell_id: cell.id, name: 'General', position: 0 })
+    .select('id')
+    .single();
+
+  if (category) {
+    await supabase.from('channels').insert({
+      cell_id: cell.id,
+      category_id: (category as { id: string }).id,
+      name: 'general',
+      emoji: '💬',
+      channel_type: 'text',
+      position: 0,
+      created_by: user.id,
+    });
+  }
+
   revalidatePath('/engage');
   return { cellId: cell.id, slug };
 }
@@ -269,7 +288,26 @@ export async function getMyCellsWithPreviews(userId: string): Promise<CellWithPr
     .map((m) => (m as { cells: unknown }).cells as Cell)
     .filter(Boolean);
 
-  return enrichCells(supabase, cells);
+  const enriched = await enrichCells(supabase, cells);
+  if (enriched.length === 0) return enriched;
+
+  // Attach default_channel_id: first channel by position for each cell
+  const cellIds = enriched.map((c) => c.id);
+  const { data: defaultChannels } = await supabase
+    .from('channels')
+    .select('id, cell_id')
+    .in('cell_id', cellIds)
+    .order('position', { ascending: true });
+
+  const defaultChannelMap = new Map<string, string>();
+  for (const ch of (defaultChannels ?? []) as { id: string; cell_id: string }[]) {
+    if (!defaultChannelMap.has(ch.cell_id)) defaultChannelMap.set(ch.cell_id, ch.id);
+  }
+
+  return enriched.map((cell) => ({
+    ...cell,
+    default_channel_id: defaultChannelMap.get(cell.id) ?? null,
+  }));
 }
 
 // ─── Phase 6: Cells 2.0 ────────────────────────────────────────────────────
@@ -580,6 +618,200 @@ export async function cancelScheduledMessage(
 
   if (error) return { error: 'Failed to cancel message.' };
   return { success: true };
+}
+
+// ─── Phase 7B: Channel Management ─────────────────────────────────────────
+
+export async function getChannelCategories(cellId: string): Promise<import('./types').ChannelCategory[]> {
+  const supabase = await createClient();
+
+  const [{ data: categories }, { data: channels }] = await Promise.all([
+    supabase
+      .from('channel_categories')
+      .select('id, cell_id, name, position')
+      .eq('cell_id', cellId)
+      .order('position', { ascending: true }),
+    supabase
+      .from('channels')
+      .select('*')
+      .eq('cell_id', cellId)
+      .order('position', { ascending: true }),
+  ]);
+
+  const channelMap = new Map<string | null, import('./types').Channel[]>();
+  for (const ch of (channels ?? []) as import('./types').Channel[]) {
+    const key = ch.category_id;
+    const arr = channelMap.get(key) ?? [];
+    arr.push(ch);
+    channelMap.set(key, arr);
+  }
+
+  return ((categories ?? []) as import('./types').ChannelCategory[]).map((cat) => ({
+    ...cat,
+    channels: channelMap.get(cat.id) ?? [],
+  }));
+}
+
+export async function createChannel(
+  cellId: string,
+  data: {
+    name: string;
+    emoji?: string;
+    color?: string;
+    channelType?: import('./types').ChannelType;
+    categoryId?: string;
+  }
+): Promise<{ id: string } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated.' };
+
+  const { data: membership } = await supabase
+    .from('cell_members')
+    .select('role')
+    .eq('cell_id', cellId)
+    .eq('user_id', user.id)
+    .single();
+  if (!membership || membership.role !== 'admin') return { error: 'Not authorized.' };
+
+  const { count } = await supabase
+    .from('channels')
+    .select('id', { count: 'exact', head: true })
+    .eq('cell_id', cellId);
+
+  const { data: ch, error } = await supabase
+    .from('channels')
+    .insert({
+      cell_id: cellId,
+      category_id: data.categoryId ?? null,
+      name: data.name.toLowerCase().replace(/\s+/g, '-'),
+      emoji: data.emoji ?? null,
+      color: data.color ?? null,
+      channel_type: data.channelType ?? 'text',
+      position: count ?? 0,
+      created_by: user.id,
+    })
+    .select('id')
+    .single();
+
+  if (error || !ch) return { error: 'Failed to create channel.' };
+
+  const slug = await fetchCellSlug(supabase, cellId);
+  revalidatePath(`/engage/${slug}`);
+  return { id: ch.id };
+}
+
+export async function deleteChannel(
+  channelId: string,
+  cellId: string
+): Promise<{ success: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated.' };
+
+  const { data: membership } = await supabase
+    .from('cell_members')
+    .select('role')
+    .eq('cell_id', cellId)
+    .eq('user_id', user.id)
+    .single();
+  if (!membership || membership.role !== 'admin') return { error: 'Not authorized.' };
+
+  await supabase.from('channels').delete().eq('id', channelId).eq('cell_id', cellId);
+
+  const slug = await fetchCellSlug(supabase, cellId);
+  revalidatePath(`/engage/${slug}`);
+  return { success: true };
+}
+
+export async function updateChannel(
+  channelId: string,
+  cellId: string,
+  data: { name?: string; emoji?: string; color?: string; topic?: string }
+): Promise<{ success: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated.' };
+
+  const { data: membership } = await supabase
+    .from('cell_members')
+    .select('role')
+    .eq('cell_id', cellId)
+    .eq('user_id', user.id)
+    .single();
+  if (!membership || membership.role !== 'admin') return { error: 'Not authorized.' };
+
+  const { error } = await supabase
+    .from('channels')
+    .update({
+      ...(data.name && { name: data.name.toLowerCase().replace(/\s+/g, '-') }),
+      ...(data.emoji !== undefined && { emoji: data.emoji }),
+      ...(data.color !== undefined && { color: data.color }),
+      ...(data.topic !== undefined && { topic: data.topic }),
+    })
+    .eq('id', channelId);
+
+  if (error) return { error: 'Failed to update channel.' };
+  const slug = await fetchCellSlug(supabase, cellId);
+  revalidatePath(`/engage/${slug}`);
+  return { success: true };
+}
+
+export async function updateReadState(channelId: string): Promise<void> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from('channel_read_states').upsert(
+    { user_id: user.id, channel_id: channelId, last_read_at: new Date().toISOString() },
+    { onConflict: 'user_id,channel_id' }
+  );
+}
+
+export async function getUnreadCounts(cellId: string): Promise<Record<string, number>> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return {};
+
+  const [{ data: channels }, { data: readStates }] = await Promise.all([
+    supabase.from('channels').select('id').eq('cell_id', cellId),
+    supabase.from('channel_read_states').select('channel_id, last_read_at').eq('user_id', user.id),
+  ]);
+
+  if (!channels?.length) return {};
+
+  const channelIds = channels.map((c: { id: string }) => c.id);
+  const readMap = new Map(
+    (readStates ?? []).map((r: { channel_id: string; last_read_at: string }) => [r.channel_id, r.last_read_at])
+  );
+
+  const counts: Record<string, number> = {};
+  await Promise.all(
+    channelIds.map(async (id: string) => {
+      const lastRead = readMap.get(id);
+      let query = supabase
+        .from('chat_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('channel_id', id)
+        .neq('user_id', user.id);
+      if (lastRead) query = query.gt('created_at', lastRead);
+      const { count } = await query;
+      if (count) counts[id] = count;
+    })
+  );
+
+  return counts;
+}
+
+export async function reorderChannels(
+  updates: { id: string; position: number }[]
+): Promise<void> {
+  const supabase = await createClient();
+  await Promise.all(
+    updates.map(({ id, position }) =>
+      supabase.from('channels').update({ position }).eq('id', id)
+    )
+  );
 }
 
 export async function updateScheduledMessage(

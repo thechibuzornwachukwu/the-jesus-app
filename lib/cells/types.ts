@@ -1,5 +1,38 @@
 export type MessageType = 'text' | 'audio' | 'image';
 
+// ─── Phase 7A: Channels ────────────────────────────────────────────────────
+
+export type ChannelType = 'text' | 'announcement' | 'meeting';
+
+export type Channel = {
+  id: string;
+  cell_id: string;
+  category_id: string | null;
+  name: string;
+  emoji: string | null;
+  color: string | null;
+  channel_type: ChannelType;
+  position: number;
+  topic: string | null;
+  is_read_only: boolean;
+  created_by: string;
+  created_at: string;
+};
+
+export type ChannelCategory = {
+  id: string;
+  cell_id: string;
+  name: string;
+  position: number;
+  channels?: Channel[];
+};
+
+export type ChannelReadState = {
+  user_id: string;
+  channel_id: string;
+  last_read_at: string;
+};
+
 export type Cell = {
   id: string;
   slug: string;
@@ -21,6 +54,7 @@ export type MemberPreview = { avatar_url: string | null; username: string };
 export type CellWithPreview = Cell & {
   member_preview: MemberPreview[];
   last_activity: string | null;
+  default_channel_id?: string | null;
 };
 
 export type CellMember = {
@@ -60,6 +94,8 @@ export type Message = {
   content: string | null;
   message_type: MessageType;
   audio_url: string | null;
+  image_url: string | null;
+  channel_id: string | null;
   created_at: string;
   reply_to_message_id?: string | null;
   reply_to_timestamp_seconds?: number | null;
@@ -71,3 +107,5 @@ export type Profile = {
   username: string;
   avatar_url: string | null;
 };
+
+export type NotificationScore = Record<string, number>; // channelId → score

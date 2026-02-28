@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import type { FeedItem } from '../../../lib/explore/types';
 import type { DailyVerseType } from '../../../lib/explore/types';
-import { getVideoById, getPostById } from '../../../lib/explore/actions';
+import { createClient } from '../../../lib/supabase/client';
 import { DailyVerse } from '../../../libs/explore/DailyVerse';
 import { PerspectiveFeed, type PerspectiveFeedHandle } from '../../../libs/explore/PerspectiveFeed';
 import { CommentSheet } from '../../../libs/explore/CommentSheet';
@@ -37,23 +37,53 @@ export function ExploreClient({
   const handleUploaded = async (id: string, kind: 'video' | 'post') => {
     showToast('Perspective published!', 'success');
     setUploadOpen(false);
-    try {
-      let item: FeedItem | null = null;
-      if (kind === 'video') {
-        const video = await getVideoById(id);
-        if (video) item = { kind: 'video', data: video };
-      } else {
-        const post = await getPostById(id);
-        if (post) item = { kind: 'post', data: post };
+
+    const supabase = createClient();
+
+    if (kind === 'video') {
+      const { data: row } = await supabase
+        .from('videos')
+        .select('id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at, profiles(username, avatar_url), video_verses(verse_reference, verse_text, position_pct)')
+        .eq('id', id)
+        .single();
+      if (row) {
+        const r = row as typeof row & {
+          profiles: { username: string; avatar_url: string | null } | null;
+          video_verses: { verse_reference: string; verse_text: string; position_pct: number }[];
+        };
+        feedRef.current?.prependItem({
+          kind: 'video',
+          data: {
+            id: r.id, user_id: r.user_id, url: r.url,
+            thumbnail_url: r.thumbnail_url, caption: r.caption,
+            duration_sec: r.duration_sec, created_at: r.created_at,
+            like_count: 0, comment_count: 0, user_liked: false,
+            verse: r.video_verses?.[0] ?? null,
+            profiles: r.profiles ?? null,
+          },
+        });
       }
-      if (item) {
-        feedRef.current?.prependItem(item);
-      } else {
-        // fallback: full refresh if fetch-by-id failed
-        await feedRef.current?.refreshFeed();
+    } else {
+      const { data: row } = await supabase
+        .from('posts')
+        .select('id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at, profiles(username, avatar_url)')
+        .eq('id', id)
+        .single();
+      if (row) {
+        const r = row as typeof row & {
+          profiles: { username: string; avatar_url: string | null } | null;
+        };
+        feedRef.current?.prependItem({
+          kind: 'post',
+          data: {
+            id: r.id, user_id: r.user_id, content: r.content,
+            image_url: r.image_url, verse_reference: r.verse_reference,
+            verse_text: r.verse_text, like_count: 0, comment_count: 0,
+            user_liked: false, created_at: r.created_at,
+            profiles: r.profiles ?? null,
+          },
+        });
       }
-    } catch {
-      await feedRef.current?.refreshFeed();
     }
   };
 

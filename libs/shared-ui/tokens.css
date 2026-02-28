@@ -125,4 +125,14 @@
 
   /* ─── Gradient shorthands ───────────────────────────────── */
   --gradient-verse-banner: linear-gradient(135deg, var(--color-faint-bg) 0%, var(--color-verse-overlay) 100%);
+
+  /* ─── Discord 3-Panel Shell ─────────────────────────────────────── */
+  --color-sidebar:     #0c0c18;
+  --color-panel:       #11111e;
+  --color-panel-hover: #181827;
+  --color-surface-dp1: #161625;
+  --color-surface-dp2: #1b1b2f;
+  --color-online:      var(--color-success);
+  --color-idle:        #facc15;
+  --color-offline:     rgba(245,247,247,0.25);
 }
