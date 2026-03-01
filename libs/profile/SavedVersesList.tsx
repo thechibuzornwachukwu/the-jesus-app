@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Bookmark, X, ChevronDown } from 'lucide-react';
 import { deleteSavedVerse, updateVerseNote } from '../../lib/profile/actions';
-import { logStreakEvent } from '../../lib/profile/actions';
+import { logStreakEvent } from '../../lib/streaks/actions';
 import type { SavedVerse } from './types';
 import { EmptyState } from '../shared-ui';
 
