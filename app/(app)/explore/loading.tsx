@@ -2,7 +2,7 @@ import { Skeleton } from '../../../libs/shared-ui/Skeleton';
 
 export default function ExploreLoading() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
+    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
       {/* Daily verse banner skeleton */}
       <div style={{ height: 56, padding: '0 16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <Skeleton w={24} h={24} radius="var(--radius-full)" />

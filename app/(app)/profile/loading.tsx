@@ -2,7 +2,7 @@ import { Skeleton } from '../../../libs/shared-ui/Skeleton';
 
 export default function ProfileLoading() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 8px' }}>
         <Skeleton w={100} h={20} />

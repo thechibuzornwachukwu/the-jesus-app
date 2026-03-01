@@ -2,7 +2,7 @@ import { Skeleton } from '../../../libs/shared-ui/Skeleton';
 
 export default function LearnLoading() {
   return (
-    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="page-enter" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
       <Skeleton w={80} h={24} />
 

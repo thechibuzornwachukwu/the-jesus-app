@@ -5,7 +5,7 @@ import { ToastContainer } from '../../libs/shared-ui/Toast';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <main className="page-content" style={{ viewTransitionName: 'page-root' } as React.CSSProperties}>
+      <main className="page-content">
         {children}
       </main>
       <BottomNav />

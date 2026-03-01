@@ -14,7 +14,7 @@ function CellRowSkeleton() {
 
 export default function EngageLoading() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header bar skeleton */}
       <div style={{ height: 56, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8, borderBottom: '1px solid var(--color-border)', flexShrink: 0 }}>
         <Skeleton w={80} h={22} radius="var(--radius-sm)" />

@@ -17,12 +17,7 @@ export function BottomNav() {
 
   function navigate(href: string) {
     vibrate([8]);
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      (document as Document & { startViewTransition: (cb: () => void) => void })
-        .startViewTransition(() => router.push(href));
-    } else {
-      router.push(href);
-    }
+    router.push(href);
   }
 
   return (
