@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '../../../../lib/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 
 interface CellPageProps {
   params: Promise<{ slug: string }>;
@@ -46,15 +47,20 @@ export default async function CellPage({ params }: CellPageProps) {
     redirect(`/engage/${slug}/${defaultChannel.id}`);
   }
 
-  // No channels yet  auto-create a default General channel so the user lands in chat
-  const { data: newCategory } = await supabase
+  // No channels yet — auto-create General channel using service role (bypasses RLS for all members)
+  const adminClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: newCategory } = await adminClient
     .from('channel_categories')
     .insert({ cell_id: cell.id, name: 'General', position: 0 })
     .select('id')
     .single();
 
   if (newCategory) {
-    const { data: newChannel } = await supabase
+    const { data: newChannel } = await adminClient
       .from('channels')
       .insert({
         cell_id: cell.id,

@@ -762,7 +762,7 @@ export async function updateReadState(channelId: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  await supabase.from('channel_read_states').upsert(
+  await supabase.from('channel_read_state').upsert(
     { user_id: user.id, channel_id: channelId, last_read_at: new Date().toISOString() },
     { onConflict: 'user_id,channel_id' }
   );
@@ -775,7 +775,7 @@ export async function getUnreadCounts(cellId: string): Promise<Record<string, nu
 
   const [{ data: channels }, { data: readStates }] = await Promise.all([
     supabase.from('channels').select('id').eq('cell_id', cellId),
-    supabase.from('channel_read_states').select('channel_id, last_read_at').eq('user_id', user.id),
+    supabase.from('channel_read_state').select('channel_id, last_read_at').eq('user_id', user.id),
   ]);
 
   if (!channels?.length) return {};

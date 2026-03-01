@@ -90,7 +90,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
   ]);
 
   // Mark this channel as read
-  await supabase.from('channel_read_states').upsert(
+  await supabase.from('channel_read_state').upsert(
     { user_id: user.id, channel_id: channelId, last_read_at: new Date().toISOString() },
     { onConflict: 'user_id,channel_id' }
   );
