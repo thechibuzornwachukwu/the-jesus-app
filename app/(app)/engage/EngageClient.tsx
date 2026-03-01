@@ -9,8 +9,10 @@ import { SwipeToAction } from '../../../libs/cells/SwipeToAction';
 import { StoriesStrip } from '../../../libs/cells/StoriesStrip';
 import { ChipGroup, SectionHeader, EmptyState } from '../../../libs/shared-ui';
 import { CellCard } from '../../../libs/cells/CellCard';
+import { DailyVerse } from '../../../libs/explore/DailyVerse';
 import type { CellWithPreview } from '../../../lib/cells/types';
 import type { CellStoryGroup } from '../../../lib/cells/types';
+import type { DailyVerseType } from '../../../lib/explore/types';
 import { getDiscoverCellsWithActivityMatch } from '../../../lib/cells/actions';
 import { getActivityMatchScore } from '../../../lib/cells/notification-scoring';
 import { vibrate } from '../../../libs/shared-ui/haptics';
@@ -170,6 +172,8 @@ interface EngageClientProps {
   lastMessages: Record<string, { content: string | null; message_type: string; created_at: string } | null>;
   storyGroups: CellStoryGroup[];
   defaultChannelIds: Record<string, string>;
+  verse: DailyVerseType;
+  verseEngagement: { likeCount: number; commentCount: number; userLiked: boolean };
 }
 
 export function EngageClient({
@@ -180,6 +184,8 @@ export function EngageClient({
   lastMessages,
   storyGroups,
   defaultChannelIds,
+  verse,
+  verseEngagement,
 }: EngageClientProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -346,6 +352,14 @@ export function EngageClient({
         {storyGroups.length > 0 && (
           <StoriesStrip groups={storyGroups} />
         )}
+
+        {/* ── Daily Verse ── */}
+        <DailyVerse
+          verse={verse}
+          initialLikeCount={verseEngagement.likeCount}
+          initialUserLiked={verseEngagement.userLiked}
+          initialCommentCount={verseEngagement.commentCount}
+        />
 
         {/* ── Your Communities ── */}
         {localMyCells.length > 0 && (

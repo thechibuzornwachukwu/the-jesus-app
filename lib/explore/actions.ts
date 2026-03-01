@@ -801,3 +801,170 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
 
   return { items: page, nextCursor };
 }
+
+// ---------------------------------------------------------------------------
+// toggleVerseLike  like / unlike today's daily verse
+// ---------------------------------------------------------------------------
+export async function toggleVerseLike(
+  verseReference: string
+): Promise<{ liked: boolean; count: number; error?: string }> {
+  const ref = z.string().min(1).max(100).safeParse(verseReference);
+  if (!ref.success) return { liked: false, count: 0, error: 'Invalid reference' };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { liked: false, count: 0, error: 'Unauthenticated' };
+
+  const today = new Date().toISOString().split('T')[0];
+  const vRef = ref.data;
+
+  const { data: existing } = await supabase
+    .from('daily_verse_likes')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .eq('verse_reference', vRef)
+    .eq('verse_date', today)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from('daily_verse_likes')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('verse_reference', vRef)
+      .eq('verse_date', today);
+  } else {
+    await supabase.from('daily_verse_likes')
+      .insert({ user_id: user.id, verse_reference: vRef, verse_date: today });
+  }
+
+  const { count } = await supabase
+    .from('daily_verse_likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('verse_reference', vRef)
+    .eq('verse_date', today);
+
+  return { liked: !existing, count: count ?? 0 };
+}
+
+// ---------------------------------------------------------------------------
+// getVerseEngagement  like count + comment count + did current user like it
+// ---------------------------------------------------------------------------
+export async function getVerseEngagement(verseReference: string): Promise<{
+  likeCount: number;
+  commentCount: number;
+  userLiked: boolean;
+}> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const today = new Date().toISOString().split('T')[0];
+
+  const [likeRes, commentRes, likedRes] = await Promise.all([
+    supabase.from('daily_verse_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('verse_reference', verseReference)
+      .eq('verse_date', today),
+    supabase.from('daily_verse_comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('verse_reference', verseReference)
+      .eq('verse_date', today),
+    user
+      ? supabase.from('daily_verse_likes')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .eq('verse_reference', verseReference)
+          .eq('verse_date', today)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  return {
+    likeCount: likeRes.count ?? 0,
+    commentCount: commentRes.count ?? 0,
+    userLiked: !!(likedRes.data),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// addVerseComment  post a reflection on today's verse
+// ---------------------------------------------------------------------------
+const verseCommentSchema = z.object({
+  verseReference: z.string().min(1).max(100),
+  body: z.string().min(1).max(500).trim(),
+});
+
+export async function addVerseComment(
+  verseReference: string,
+  body: string
+): Promise<{ comment?: VerseComment; error?: string }> {
+  const parsed = verseCommentSchema.safeParse({ verseReference, body });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthenticated' };
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('daily_verse_comments')
+    .insert({
+      user_id: user.id,
+      verse_reference: parsed.data.verseReference,
+      verse_date: today,
+      body: parsed.data.body,
+    })
+    .select('id, user_id, verse_reference, verse_date, body, created_at')
+    .single();
+
+  if (error || !data) return { error: error?.message ?? 'Failed to post comment' };
+
+  void logStreakEvent('verse_save');
+
+  const profileMap = await fetchProfiles(supabase, [user.id]);
+  type RawVC = { id: string; user_id: string; verse_reference: string; verse_date: string; body: string; created_at: string };
+  const row = data as unknown as RawVC;
+
+  return {
+    comment: {
+      id: row.id,
+      user_id: row.user_id,
+      verse_reference: row.verse_reference,
+      verse_date: row.verse_date,
+      body: row.body,
+      created_at: row.created_at,
+      profiles: profileMap.get(user.id) ?? null,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// getVerseComments  fetch today's comments for a verse (latest 30)
+// ---------------------------------------------------------------------------
+export async function getVerseComments(verseReference: string): Promise<VerseComment[]> {
+  const supabase = await createClient();
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data } = await supabase
+    .from('daily_verse_comments')
+    .select('id, user_id, verse_reference, verse_date, body, created_at')
+    .eq('verse_reference', verseReference)
+    .eq('verse_date', today)
+    .order('created_at', { ascending: true })
+    .limit(30);
+
+  if (!data || data.length === 0) return [];
+
+  type RawVC = { id: string; user_id: string; verse_reference: string; verse_date: string; body: string; created_at: string };
+  const rows = data as RawVC[];
+  const profileMap = await fetchProfiles(supabase, [...new Set(rows.map((r) => r.user_id))]);
+
+  return rows.map((r) => ({
+    id: r.id,
+    user_id: r.user_id,
+    verse_reference: r.verse_reference,
+    verse_date: r.verse_date,
+    body: r.body,
+    created_at: r.created_at,
+    profiles: profileMap.get(r.user_id) ?? null,
+  }));
+}

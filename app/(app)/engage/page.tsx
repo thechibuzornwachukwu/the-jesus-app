@@ -7,6 +7,8 @@ import {
   getStoriesForCells,
   getDefaultChannelIds,
 } from '../../../lib/cells/actions';
+import { getDailyVerse } from '../../../lib/explore/daily-verses';
+import { getVerseEngagement } from '../../../lib/explore/actions';
 import { EngageClient } from './EngageClient';
 
 export const metadata = { title: 'Engage  The JESUS App' };
@@ -19,6 +21,8 @@ export default async function EngagePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in');
 
+  const verse = getDailyVerse();
+
   const [myCells, profileRes] = await Promise.all([
     getMyCellsWithPreviews(user.id),
     supabase.from('profiles').select('content_categories').eq('id', user.id).single(),
@@ -26,14 +30,16 @@ export default async function EngagePage() {
 
   const joinedIds = myCells.map((c) => c.id);
 
-  const [discoverCells, lastMessages, storyGroups, defaultChannelIds] = await Promise.all([
-    getCellsWithMemberPreviews(joinedIds),
-    getLastMessages(joinedIds),
-    joinedIds.length > 0
-      ? getStoriesForCells(joinedIds, user.id).catch(() => [])
-      : Promise.resolve([]),
-    getDefaultChannelIds(joinedIds),
-  ]);
+  const [discoverCells, lastMessages, storyGroups, defaultChannelIds, verseEngagement] =
+    await Promise.all([
+      getCellsWithMemberPreviews(joinedIds),
+      getLastMessages(joinedIds),
+      joinedIds.length > 0
+        ? getStoriesForCells(joinedIds, user.id).catch(() => [])
+        : Promise.resolve([]),
+      getDefaultChannelIds(joinedIds),
+      getVerseEngagement(verse.reference),
+    ]);
 
   const userCategories =
     (profileRes.data as { content_categories?: string[] } | null)?.content_categories ?? [];
@@ -47,6 +53,8 @@ export default async function EngagePage() {
       lastMessages={lastMessages}
       storyGroups={storyGroups}
       defaultChannelIds={defaultChannelIds}
+      verse={verse}
+      verseEngagement={verseEngagement}
     />
   );
 }
