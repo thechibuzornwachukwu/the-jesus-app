@@ -21,7 +21,7 @@ function CrossDivider() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', maxWidth: '160px', margin: '0 auto' }}>
       <span style={{ flex: 1, height: '1px', background: 'var(--color-border)', display: 'block' }} />
-      <span style={{ color: 'var(--color-accent)', fontSize: '0.75rem', opacity: 0.6, lineHeight: 1 }}>✝</span>
+      <span style={{ color: 'var(--color-accent)', fontSize: '0.75rem', opacity: 0.6, lineHeight: 1 }}></span>
       <span style={{ flex: 1, height: '1px', background: 'var(--color-border)', display: 'block' }} />
     </div>
   );
@@ -160,7 +160,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Verse callout — above headline */}
+          {/* Verse callout  above headline */}
           <div className="lp-f2" style={{ marginBottom: '1.5rem', position: 'relative', zIndex: 2 }}>
             <p style={{
               fontFamily: 'var(--font-serif)',
@@ -277,7 +277,7 @@ export default function LandingPage() {
             margin: '0 auto',
           }}>
 
-            {/* Tile A — Community */}
+            {/* Tile A  Community */}
             <div className="lp-tile" style={{
               background: 'var(--color-surface-high)',
               border: '1px solid var(--color-border)',
@@ -336,7 +336,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Tile B — Explore (verse feed) */}
+            {/* Tile B  Explore (verse feed) */}
             <div className="lp-tile" style={{
               background: 'var(--color-surface-high)',
               border: '1px solid var(--color-border)',
@@ -387,7 +387,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Tile C — Learn */}
+            {/* Tile C  Learn */}
             <div className="lp-tile" style={{
               background: 'var(--color-surface-high)',
               border: '1px solid var(--color-border)',
@@ -478,15 +478,15 @@ export default function LandingPage() {
                 {[
                   {
                     label: 'Engage',
-                    body: 'Real communities built around scripture — cells, channels, and honest conversations with believers near and far.',
+                    body: 'Real communities built around scripture  cells, channels, and honest conversations with believers near and far.',
                   },
                   {
                     label: 'Explore',
-                    body: 'A feed of short-form scripture perspectives, testimonies, and daily verses — curated for reflection, not distraction.',
+                    body: 'A feed of short-form scripture perspectives, testimonies, and daily verses  curated for reflection, not distraction.',
                   },
                   {
                     label: 'Learn',
-                    body: 'Faith courses, AI-powered spiritual guidance, and sermon extraction — so the Word goes deeper than the pew.',
+                    body: 'Faith courses, AI-powered spiritual guidance, and sermon extraction  so the Word goes deeper than the pew.',
                   },
                 ].map((p) => (
                   <div key={p.label} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
@@ -531,7 +531,7 @@ export default function LandingPage() {
               position: 'absolute', inset: 0,
               background: 'linear-gradient(to bottom, rgba(11,9,5,0.82) 0%, rgba(11,9,5,0.70) 50%, rgba(11,9,5,0.90) 100%)',
             }} />
-            {/* Gold radial glow — corrected to token color */}
+            {/* Gold radial glow  corrected to token color */}
             <div aria-hidden="true" style={{
               position: 'absolute',
               bottom: 0, left: '50%',
