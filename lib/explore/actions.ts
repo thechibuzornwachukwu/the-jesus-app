@@ -427,12 +427,10 @@ export async function addComment(
   if (error || !data) return { error: error?.message ?? 'Failed to post comment' };
 
   // Increment comment_count on parent
-  if (parsed.data.targetType === 'post') {
-    try {
-      await supabase.rpc('increment_post_comment_count', { post_id: parsed.data.targetId });
-    } catch {
-      // RPC may not exist  no-op
-    }
+  if (parsed.data.targetType === 'video') {
+    await supabase.rpc('increment_video_comment_count', { p_video_id: parsed.data.targetId }).catch(() => {});
+  } else {
+    await supabase.rpc('increment_post_comment_count', { p_post_id: parsed.data.targetId }).catch(() => {});
   }
 
   const profileMap = await fetchProfiles(supabase, [user.id]);

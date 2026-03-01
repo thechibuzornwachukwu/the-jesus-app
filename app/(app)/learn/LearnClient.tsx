@@ -57,7 +57,7 @@ export function LearnClient({ initialProgress }: LearnClientProps) {
             color: 'var(--color-text-muted)',
           }}
         >
-          AI-powered discipleship &amp; courses
+          Push further with Biblical insights
         </p>
 
         <TabBar
