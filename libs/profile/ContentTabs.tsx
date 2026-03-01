@@ -5,10 +5,11 @@ import { Heart, BookOpen } from 'lucide-react';
 import { SavedVersesList } from './SavedVersesList';
 import { JoinedCellsList } from './JoinedCellsList';
 import { PostedVideoGrid } from './PostedVideoGrid';
+import { BadgesGrid } from './BadgesGrid';
 import type { SavedVerse, JoinedCell, PostedVideo, Post } from './types';
 import { TabBar, EmptyState } from '../shared-ui';
 
-const TABS = ['Saved Verses', 'My Cells', 'Videos'] as const;
+const TABS = ['Saved Verses', 'My Cells', 'Videos', 'Badges'] as const;
 type Tab = (typeof TABS)[number];
 
 interface ContentTabsProps {
@@ -16,6 +17,8 @@ interface ContentTabsProps {
   joinedCells: JoinedCell[];
   postedVideos: PostedVideo[];
   posts: Post[];
+  streak: number;
+  longestStreak: number;
 }
 
 function PostGrid({ posts }: { posts: Post[] }) {
@@ -150,7 +153,14 @@ function JournalTab({ videos, posts }: { videos: PostedVideo[]; posts: Post[] })
   );
 }
 
-export function ContentTabs({ savedVerses, joinedCells, postedVideos, posts }: ContentTabsProps) {
+export function ContentTabs({
+  savedVerses,
+  joinedCells,
+  postedVideos,
+  posts,
+  streak,
+  longestStreak,
+}: ContentTabsProps) {
   const [active, setActive] = useState<Tab>('Saved Verses');
 
   return (
@@ -160,6 +170,7 @@ export function ContentTabs({ savedVerses, joinedCells, postedVideos, posts }: C
           { id: 'Saved Verses', label: 'Saved' },
           { id: 'My Cells',     label: 'Fellowship' },
           { id: 'Videos',       label: 'Journal' },
+          { id: 'Badges',       label: 'Badges' },
         ]}
         activeId={active}
         onChange={(id) => setActive(id as Tab)}
@@ -168,8 +179,17 @@ export function ContentTabs({ savedVerses, joinedCells, postedVideos, posts }: C
 
       <div style={{ padding: '0 var(--space-4)' }}>
         {active === 'Saved Verses' && <SavedVersesList verses={savedVerses} />}
-        {active === 'My Cells' && <JoinedCellsList cells={joinedCells} />}
-        {active === 'Videos' && <JournalTab videos={postedVideos} posts={posts} />}
+        {active === 'My Cells'     && <JoinedCellsList cells={joinedCells} />}
+        {active === 'Videos'       && <JournalTab videos={postedVideos} posts={posts} />}
+        {active === 'Badges'       && (
+          <BadgesGrid
+            savedVerses={savedVerses}
+            joinedCells={joinedCells}
+            postedVideos={postedVideos}
+            streak={streak}
+            longestStreak={longestStreak}
+          />
+        )}
       </div>
     </div>
   );

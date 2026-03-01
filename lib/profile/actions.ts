@@ -109,6 +109,85 @@ export async function updateProfile(
 }
 
 // ────────────────────────────────────────────────────────────
+// getStreakData — computed from saved_verses activity dates
+// ────────────────────────────────────────────────────────────
+export interface StreakData {
+  current: number;
+  longest: number;
+  totalPoints: number;
+  weeklyActivity: boolean[];
+}
+
+export async function getStreakData(): Promise<StreakData> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const empty: StreakData = { current: 0, longest: 0, totalPoints: 0, weeklyActivity: Array(7).fill(false) };
+  if (!user) return empty;
+
+  const { data } = await supabase
+    .from('saved_verses')
+    .select('saved_at')
+    .eq('user_id', user.id)
+    .order('saved_at', { ascending: false });
+
+  const dates = (data ?? []).map((r: { saved_at: string }) =>
+    new Date(r.saved_at).toISOString().slice(0, 10)
+  );
+  const unique = [...new Set(dates)].sort((a, b) => b.localeCompare(a));
+
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const yesterdayStr = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
+
+  let current = 0;
+  if (unique[0] === todayStr || unique[0] === yesterdayStr) {
+    current = 1;
+    let prev = unique[0];
+    for (let i = 1; i < unique.length; i++) {
+      const diff = Math.round(
+        (new Date(prev).getTime() - new Date(unique[i]).getTime()) / 86400000
+      );
+      if (diff === 1) { current++; prev = unique[i]; } else break;
+    }
+  }
+
+  let longest = 0;
+  let run = unique.length > 0 ? 1 : 0;
+  for (let i = 1; i < unique.length; i++) {
+    const diff = Math.round(
+      (new Date(unique[i - 1]).getTime() - new Date(unique[i]).getTime()) / 86400000
+    );
+    if (diff === 1) { run++; } else { longest = Math.max(longest, run); run = 1; }
+  }
+  longest = Math.max(longest, run);
+
+  // Week: Mon–Sun of current week
+  const mon = new Date(today);
+  mon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  const dateSet = new Set(unique);
+  const weeklyActivity = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(mon.getTime() + i * 86400000);
+    return dateSet.has(d.toISOString().slice(0, 10));
+  });
+
+  return {
+    current,
+    longest,
+    totalPoints: longest * 10 + current * 5,
+    weeklyActivity,
+  };
+}
+
+// ────────────────────────────────────────────────────────────
+// logStreakEvent — no-op stub (streak derived from saved_verses)
+// ────────────────────────────────────────────────────────────
+export async function logStreakEvent(_type: string): Promise<void> {
+  // Streak is computed from saved_verses activity; no separate table needed.
+}
+
+// ────────────────────────────────────────────────────────────
 // getSavedVerses — includes note column (Phase 9)
 // ────────────────────────────────────────────────────────────
 export async function getSavedVerses(): Promise<SavedVerse[]> {

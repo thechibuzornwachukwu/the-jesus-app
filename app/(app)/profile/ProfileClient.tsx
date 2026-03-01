@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import { Bell, Settings } from 'lucide-react';
 import {
   ProfileHeader,
-  EditProfileSheet,
   ContentTabs,
   NotificationCenter,
   SettingsPanel,
 } from '../../../libs/profile';
+import { StreakWidget } from '../../../libs/profile/StreakWidget';
 import {
   getNotifications,
   markNotificationRead,
@@ -22,6 +22,7 @@ import type {
   Post,
   AppNotification,
 } from '../../../libs/profile/types';
+import type { StreakData } from '../../../lib/profile/actions';
 
 interface ProfileClientProps {
   profile: FullProfile;
@@ -31,6 +32,8 @@ interface ProfileClientProps {
   posts: Post[];
   unreadCount: number;
   blockedUserIds: string[];
+  friendCount: number;
+  streakData: StreakData;
 }
 
 export function ProfileClient({
@@ -41,9 +44,10 @@ export function ProfileClient({
   posts,
   unreadCount: initialUnread,
   blockedUserIds: initialBlocked,
+  friendCount,
+  streakData,
 }: ProfileClientProps) {
   const [profile, setProfile] = useState(initialProfile);
-  const [editOpen, setEditOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -102,6 +106,7 @@ export function ProfileClient({
             margin: 0,
             fontSize: 'var(--font-size-xl)',
             fontWeight: 'var(--font-weight-bold)',
+            fontFamily: 'var(--font-display)',
             color: 'var(--color-text)',
           }}
         >
@@ -169,29 +174,34 @@ export function ProfileClient({
         </div>
       </div>
 
-      {/* Profile Header */}
+      {/* Profile Header (Instagram-style) */}
       <ProfileHeader
         profile={profile}
-        onEditClick={() => setEditOpen(true)}
-        onAvatarChange={(url) => setProfile((p) => ({ ...p, avatar_url: url }))}
+        friendCount={friendCount}
+        streakCount={streakData.current}
+      />
+
+      {/* Streak Widget */}
+      <StreakWidget
+        current={streakData.current}
+        longest={streakData.longest}
+        totalPoints={streakData.totalPoints}
+        weeklyActivity={streakData.weeklyActivity}
       />
 
       {/* Content Tabs */}
-      <ContentTabs
-        savedVerses={savedVerses}
-        joinedCells={joinedCells}
-        postedVideos={postedVideos}
-        posts={posts}
-      />
+      <div style={{ marginTop: 'var(--space-4)' }}>
+        <ContentTabs
+          savedVerses={savedVerses}
+          joinedCells={joinedCells}
+          postedVideos={postedVideos}
+          posts={posts}
+          streak={streakData.current}
+          longestStreak={streakData.longest}
+        />
+      </div>
 
       {/* Overlays */}
-      <EditProfileSheet
-        profile={profile}
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        onSaved={(p) => { setProfile(p); setEditOpen(false); }}
-      />
-
       <NotificationCenter
         open={notifOpen}
         onClose={() => setNotifOpen(false)}

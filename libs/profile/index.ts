@@ -6,6 +6,8 @@ export { JoinedCellsList } from './JoinedCellsList';
 export { PostedVideoGrid } from './PostedVideoGrid';
 export { NotificationCenter } from './NotificationCenter';
 export { SettingsPanel } from './SettingsPanel';
+export { StreakWidget } from './StreakWidget';
+export { BadgesGrid } from './BadgesGrid';
 export type {
   FullProfile,
   SavedVerse,
