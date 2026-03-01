@@ -1,12 +1,8 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import Image from 'next/image';
 import { Upload, Copy } from 'lucide-react';
 import type { SermonNotes } from './types';
-import { TabBar } from '../shared-ui';
-
-type InputMode = 'text' | 'audio';
 
 
 function notesToText(notes: SermonNotes): string {
@@ -27,14 +23,13 @@ interface SectionCardProps {
   bodyStyle?: React.CSSProperties;
 }
 
-function SectionCard({ title, items, body, accent, bodyStyle }: SectionCardProps) {
+function SectionCard({ title, items, body, bodyStyle }: SectionCardProps) {
   return (
     <div
       style={{
         background: 'var(--color-bg-surface)',
         borderRadius: 'var(--radius-lg)',
         padding: 'var(--space-4)',
-        borderLeft: accent ? '3px solid var(--color-accent)' : undefined,
       }}
     >
       <p
@@ -68,7 +63,6 @@ function SectionCard({ title, items, body, accent, bodyStyle }: SectionCardProps
 }
 
 export function SermonExtractor() {
-  const [mode, setMode] = useState<InputMode>('text');
   const [transcript, setTranscript] = useState('');
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -85,13 +79,13 @@ export function SermonExtractor() {
     try {
       let res: Response;
 
-      if (mode === 'audio' && audioFile) {
+      if (audioFile) {
         const form = new FormData();
         form.append('audio', audioFile);
         res = await fetch('/api/learn/sermon', { method: 'POST', body: form });
       } else {
         if (!transcript.trim()) {
-          setError('Please paste sermon text first.');
+          setError('Please paste sermon text or attach an audio file.');
           setLoading(false);
           return;
         }
@@ -126,76 +120,20 @@ export function SermonExtractor() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
-      {/* Ambient banner */}
-      <div
-        style={{
-          position: 'relative',
-          height: 120,
-          borderRadius: 'var(--radius-xl)',
-          overflow: 'hidden',
-          flexShrink: 0,
-        }}
-      >
-        <Image
-          src="/courses/sermon-banner.png"
-          alt=""
-          fill
-          style={{ objectFit: 'cover', objectPosition: 'center 25%' }}
-          sizes="100vw"
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(to right, rgba(4,5,3,0.75) 0%, rgba(4,5,3,0.3) 60%, transparent 100%)',
-          }}
-        />
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 'var(--space-4)' }}>
-          <p
-            style={{
-              margin: 0,
-              fontFamily: "'Archivo Condensed', var(--font-display)",
-              fontSize: 'clamp(1.3rem, 5vw, 1.6rem)',
-              fontWeight: 900,
-              color: '#f5f7f7',
-              lineHeight: 1.1,
-              letterSpacing: '-0.01em',
-            }}
-          >
-            Sermon Notes
-          </p>
-          <p
-            style={{
-              margin: '4px 0 0',
-              fontSize: 'var(--font-size-xs)',
-              color: 'rgba(245,247,247,0.65)',
-            }}
-          >
-            Extract insights from any message
-          </p>
-        </div>
-      </div>
-
-      <TabBar
-        tabs={[{ id: 'text', label: 'Paste Text' }, { id: 'audio', label: 'Upload Audio' }]}
-        activeId={mode}
-        onChange={(id) => setMode(id as InputMode)}
-        variant="pill"
-      />
-
-      {/* Input area */}
-      {mode === 'text' ? (
+      {/* Unified input: textarea + inline paperclip */}
+      <div style={{ position: 'relative' }}>
         <textarea
           value={transcript}
           onChange={(e) => setTranscript(e.target.value)}
           placeholder="Paste sermon transcript or notes here…"
-          rows={8}
+          rows={6}
           style={{
             width: '100%',
             background: 'var(--color-bg-surface)',
             border: '1.5px dashed var(--color-border)',
             borderRadius: 'var(--radius-lg)',
             padding: 'var(--space-4)',
+            paddingRight: 'calc(var(--space-4) + 36px)',
             color: 'var(--color-text-primary)',
             fontSize: 'var(--font-size-sm)',
             lineHeight: 'var(--line-height-relaxed)',
@@ -205,36 +143,42 @@ export function SermonExtractor() {
             boxSizing: 'border-box',
           }}
         />
-      ) : (
-        <div
+        <button
           onClick={() => fileInputRef.current?.click()}
+          title="Attach audio file"
           style={{
-            border: `1.5px dashed ${audioFile ? 'var(--color-accent)' : 'var(--color-accent-soft)'}`,
-            background: 'var(--color-accent-wash)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-10)',
+            position: 'absolute',
+            bottom: 10,
+            right: 10,
+            width: 32,
+            height: 32,
+            background: audioFile ? 'var(--color-accent)' : 'var(--color-bg-primary)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            gap: 'var(--space-3)',
+            justifyContent: 'center',
             cursor: 'pointer',
-            color: audioFile ? 'var(--color-accent)' : 'var(--color-text-muted)',
-            textAlign: 'center',
-            transition: 'border-color 0.15s',
+            color: audioFile ? 'var(--color-text-inverse)' : 'var(--color-text-muted)',
+            transition: 'background 0.15s, color 0.15s',
           }}
         >
-          <Upload size={20} />
-          <span style={{ fontSize: 'var(--font-size-sm)' }}>
-            {audioFile ? audioFile.name : 'Tap to select audio file (MP3, WAV, MP4  max 25 MB)'}
-          </span>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="audio/*,video/mp4"
-            style={{ display: 'none' }}
-            onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
-          />
-        </div>
+          <Upload size={15} />
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*,video/mp4"
+          style={{ display: 'none' }}
+          onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
+        />
+      </div>
+
+      {/* Audio file name */}
+      {audioFile && (
+        <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-accent)' }}>
+          {audioFile.name}
+        </p>
       )}
 
       {/* Error */}
@@ -247,7 +191,7 @@ export function SermonExtractor() {
       {/* Extract button */}
       <button
         onClick={handleExtract}
-        disabled={loading || (mode === 'audio' && !audioFile)}
+        disabled={loading}
         style={{
           background: 'var(--color-accent)',
           color: 'var(--color-text-inverse)',
@@ -257,7 +201,7 @@ export function SermonExtractor() {
           fontSize: 'var(--font-size-base)',
           fontWeight: 'var(--font-weight-semibold)',
           cursor: 'pointer',
-          opacity: loading || (mode === 'audio' && !audioFile) ? 0.55 : 1,
+          opacity: loading ? 0.55 : 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

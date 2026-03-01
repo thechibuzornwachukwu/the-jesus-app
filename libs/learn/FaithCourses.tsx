@@ -86,9 +86,8 @@ function LessonCard({
             style={{
               margin: 0,
               padding: 'var(--space-3) var(--space-4)',
-              borderLeft: '3px solid var(--color-accent)',
               background: 'var(--color-accent-tint)',
-              borderRadius: '0 var(--radius-md) var(--radius-md) 0',
+              borderRadius: 'var(--radius-md)',
             }}
           >
             <p style={{ margin: '0 0 var(--space-1)', fontFamily: 'var(--font-serif)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', lineHeight: 'var(--line-height-relaxed)', fontStyle: 'italic' }}>
@@ -283,7 +282,7 @@ function TrackDetail({
       {summaryLoading ? (
         <div style={{ height: 56, background: 'var(--color-bg-surface)', borderRadius: 'var(--radius-lg)', animation: 'pulse 1.5s ease-in-out infinite' }} />
       ) : summary ? (
-        <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', lineHeight: 'var(--line-height-relaxed)', fontStyle: 'italic', fontFamily: 'var(--font-serif)', padding: 'var(--space-3) var(--space-4)', background: 'var(--color-accent-tint)', borderLeft: '3px solid var(--color-accent)', borderRadius: '0 var(--radius-lg) var(--radius-lg) 0' }}>
+        <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', lineHeight: 'var(--line-height-relaxed)', fontStyle: 'italic', fontFamily: 'var(--font-serif)', padding: 'var(--space-3) var(--space-4)', background: 'var(--color-accent-tint)', borderRadius: 'var(--radius-lg)' }}>
           {summary}
         </p>
       ) : null}
@@ -423,7 +422,7 @@ function TrackCard({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function FaithCourses({ initialProgress }: { initialProgress: CourseProgress[] }) {
+export function FaithCourses({ initialProgress, onCourseSelected }: { initialProgress: CourseProgress[]; onCourseSelected?: (open: boolean) => void }) {
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
 
   // Map: trackId → Set<lessonId> of completed lesson IDs
@@ -480,7 +479,7 @@ export function FaithCourses({ initialProgress }: { initialProgress: CourseProgr
         track={selectedTrack}
         progress={undefined}
         completedLessons={completedLessons}
-        onBack={() => setSelectedTrackId(null)}
+        onBack={() => { setSelectedTrackId(null); onCourseSelected?.(false); }}
         onToggleLesson={(lessonId, idx) => handleToggleLesson(selectedTrack.id, lessonId, idx)}
       />
     );
@@ -499,7 +498,7 @@ export function FaithCourses({ initialProgress }: { initialProgress: CourseProgr
           key={track.id}
           track={track}
           completedCount={(completedMap.get(track.id) ?? new Set()).size}
-          onClick={() => setSelectedTrackId(track.id)}
+          onClick={() => { setSelectedTrackId(track.id); onCourseSelected?.(true); }}
         />
       ))}
     </div>

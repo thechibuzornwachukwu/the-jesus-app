@@ -25,8 +25,14 @@ const WELCOME: ChatMessage = {
     "Welcome, Berean. Ask anything about Scripture  a verse, a doctrine, a question of faith. I search the Scriptures to walk with you.",
 };
 
-export function SpiritualGuide() {
+interface SpiritualGuideProps {
+  externalOpen?: boolean;
+  onExternalClose?: () => void;
+}
+
+export function SpiritualGuide({ externalOpen, onExternalClose }: SpiritualGuideProps = {}) {
   const [open, setOpen] = useState(false);
+  const isOpen = open || (externalOpen ?? false);
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,11 +45,11 @@ export function SpiritualGuide() {
   }, []);
 
   useEffect(() => {
-    if (open) {
+    if (isOpen) {
       scrollToBottom();
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [open, messages, scrollToBottom]);
+  }, [isOpen, messages, scrollToBottom]);
 
   async function handleSend() {
     const text = input.trim();
@@ -166,8 +172,8 @@ export function SpiritualGuide() {
       />
 
       <FullScreenModal
-        open={open}
-        onClose={() => setOpen(false)}
+        open={isOpen}
+        onClose={() => { setOpen(false); onExternalClose?.(); }}
         title="Berean"
         subtitle="Search the Scriptures daily  Acts 17:11"
         icon={<CrossIcon />}
