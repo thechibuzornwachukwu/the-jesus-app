@@ -53,8 +53,11 @@ function CommunityRow({ cell, lastMsg, onLeave, defaultChannelId }: CommunityRow
 
   const handleClick = () => {
     vibrate([8]);
-    if (defaultChannelId) router.push(`/engage/${cell.slug}/${defaultChannelId}`);
-    else router.push(`/engage/${cell.slug}/info`);
+    router.push(
+      defaultChannelId
+        ? `/engage/${cell.slug}/${defaultChannelId}`
+        : `/engage/${cell.slug}`
+    );
   };
 
   return (

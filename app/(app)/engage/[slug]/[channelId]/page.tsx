@@ -6,7 +6,7 @@ import { getChannelCategories, getUnreadCounts, getCellMembers, getStoriesForCel
 import type { Cell, Message, Profile } from '../../../../../lib/cells/types';
 
 interface ChannelPageProps {
-  params: { slug: string; channelId: string };
+  params: Promise<{ slug: string; channelId: string }>;
 }
 
 export async function generateMetadata({ params }: ChannelPageProps) {
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: ChannelPageProps) {
 }
 
 export default async function ChannelPage({ params }: ChannelPageProps) {
-  const { slug, channelId } = params;
+  const { slug, channelId } = await params;
   const supabase = await createClient();
 
   const {
