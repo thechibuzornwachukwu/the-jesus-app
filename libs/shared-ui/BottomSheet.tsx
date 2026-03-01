@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface BottomSheetProps {
   open: boolean;
@@ -9,13 +9,51 @@ interface BottomSheetProps {
   children: React.ReactNode;
 }
 
+const DISMISS_THRESHOLD = 120;
+
 export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
+  const [dragStartY, setDragStartY] = useState<number | null>(null);
+  const [dragCurrentY, setDragCurrentY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const handleRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
+  // Reset drag state when sheet closes
+  useEffect(() => {
+    if (!open) {
+      setDragStartY(null);
+      setDragCurrentY(0);
+      setIsDragging(false);
+    }
+  }, [open]);
+
   if (!open) return null;
+
+  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    setDragStartY(e.clientY);
+    setDragCurrentY(0);
+    setIsDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (dragStartY === null) return;
+    const delta = Math.max(0, e.clientY - dragStartY);
+    setDragCurrentY(delta);
+  }
+
+  function onPointerUp(_e: React.PointerEvent<HTMLDivElement>) {
+    if (dragCurrentY >= DISMISS_THRESHOLD) {
+      onClose();
+    }
+    setDragStartY(null);
+    setDragCurrentY(0);
+    setIsDragging(false);
+  }
 
   return (
     <div
@@ -55,22 +93,30 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
           flexDirection: 'column',
           border: '1px solid var(--color-border)',
           borderBottom: 'none',
+          transform: isDragging ? `translateY(${dragCurrentY}px)` : 'translateY(0)',
+          transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)',
         }}
       >
         {/* Drag handle */}
         <div
+          ref={handleRef}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
           style={{
             display: 'flex',
             justifyContent: 'center',
             paddingTop: 'var(--space-3)',
-            paddingBottom: 'var(--space-2)',
+            paddingBottom: 'var(--space-3)',
             flexShrink: 0,
+            cursor: isDragging ? 'grabbing' : 'grab',
+            touchAction: 'none',
           }}
         >
           <div
             style={{
-              width: 40,
-              height: 4,
+              width: 48,
+              height: 5,
               borderRadius: 'var(--radius-full)',
               background: 'var(--color-accent-soft)',
             }}
