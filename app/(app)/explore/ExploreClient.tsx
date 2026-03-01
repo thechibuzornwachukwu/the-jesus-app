@@ -9,10 +9,11 @@ import { CommentSheet } from '../../../libs/explore/CommentSheet';
 import { UploadSheet } from '../../../libs/explore/UploadSheet';
 import { showToast } from '../../../libs/shared-ui/Toast';
 import { Plus } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 // Height of the daily verse banner (must match DailyVerse component)
 const VERSE_BANNER_H = '56px';
-const HEADER_H = '52px';
+const HEADER_H = '56px';
 
 // Feed height = full content area minus the verse banner and page header
 const FEED_HEIGHT = `calc(100dvh - var(--safe-top) - var(--nav-height) - var(--safe-bottom) - ${VERSE_BANNER_H} - ${HEADER_H})`;
@@ -47,7 +48,20 @@ const handleUploaded = async (
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Page header */}
-      <div style={{ flexShrink: 0, height: HEADER_H, display: 'flex', alignItems: 'center', padding: '0 var(--space-6)' }}>
+      {/* <div style={{ flexShrink: 0, height: HEADER_H, display: 'flex', alignItems: 'center', padding: '0 var(--space-6)' }}> */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          height: HEADER_H,
+          display: "flex",
+          alignItems: "center",
+          padding: "0 var(--space-4)",
+          gap: "var(--space-2)",
+          background: "var(--color-bg)",
+          borderBottom: "1px solid var(--color-border)"
+        }}>
         <h1
           style={{
             fontFamily: "'Archivo Condensed', var(--font-display)",
