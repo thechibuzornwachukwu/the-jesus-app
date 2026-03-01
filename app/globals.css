@@ -23,7 +23,7 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* Mobile-first container — max 430px, centered */
+/* Mobile-first container  max 430px, centered */
 .app-container {
   max-width: 430px;
   margin: 0 auto;

@@ -13,7 +13,7 @@ import {
 import { getFriendCount } from '../../../lib/friends/actions';
 import { ProfileClient } from './ProfileClient';
 
-export const metadata = { title: 'Profile — The JESUS App' };
+export const metadata = { title: 'Profile  The JESUS App' };
 
 export default async function ProfilePage() {
   const supabase = await createClient();

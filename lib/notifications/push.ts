@@ -46,13 +46,13 @@ export async function sendPushToUser(
         } catch (err: unknown) {
           const status = (err as { statusCode?: number }).statusCode;
           if (status === 410 || status === 404) {
-            // Stale subscription — remove it
+            // Stale subscription  remove it
             await supabase.from('push_subscriptions').delete().eq('id', sub.id);
           }
         }
       })
     );
   } catch {
-    // Fire-and-forget — swallow errors
+    // Fire-and-forget  swallow errors
   }
 }

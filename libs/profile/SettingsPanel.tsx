@@ -205,7 +205,7 @@ export function SettingsPanel({
           </Button>
           <div style={{ marginTop: 'var(--space-6)' }}>
             <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-accent-2)', marginBottom: 'var(--space-2)' }}>
-              Delete account — type <strong>DELETE</strong> to confirm
+              Delete account  type <strong>DELETE</strong> to confirm
             </p>
             <Input
               label=""

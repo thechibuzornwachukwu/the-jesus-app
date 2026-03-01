@@ -14,6 +14,6 @@ export async function GET(request: Request) {
     }
   }
 
-  // Auth failed — redirect to sign-in with no error detail leaked
+  // Auth failed  redirect to sign-in with no error detail leaked
   return NextResponse.redirect(`${origin}/sign-in`);
 }

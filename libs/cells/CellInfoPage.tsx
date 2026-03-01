@@ -454,7 +454,7 @@ export function CellInfoPage({
           </button>
         )}
 
-        {/* Share This Cell — visible to all members with a permanent invite */}
+        {/* Share This Cell  visible to all members with a permanent invite */}
         {isMember && permanentInviteCode && (
           <div
             style={{
@@ -633,7 +633,7 @@ export function CellInfoPage({
           </div>
         )}
 
-        {/* Admin — edit cell */}
+        {/* Admin  edit cell */}
         {userRole === 'admin' && (
           <button
             onClick={() => setShowEditSheet(true)}

@@ -15,7 +15,7 @@ export type Story = {
 };
 
 // ────────────────────────────────────────────────────────────
-// getCellStories — active (non-expired) stories for a cell
+// getCellStories  active (non-expired) stories for a cell
 // ────────────────────────────────────────────────────────────
 export async function getCellStories(cellId: string): Promise<Story[]> {
   const parsed = z.string().uuid().safeParse(cellId);
@@ -64,7 +64,7 @@ export async function getCellStories(cellId: string): Promise<Story[]> {
 }
 
 // ────────────────────────────────────────────────────────────
-// createStory — admin-only: insert a story for a cell
+// createStory  admin-only: insert a story for a cell
 // ────────────────────────────────────────────────────────────
 const createStorySchema = z.object({
   cellId: z.string().uuid(),
@@ -117,7 +117,7 @@ export async function createStory(
 }
 
 // ────────────────────────────────────────────────────────────
-// deleteStory — author or admin can delete
+// deleteStory  author or admin can delete
 // ────────────────────────────────────────────────────────────
 export async function deleteStory(storyId: string): Promise<{ error?: string }> {
   const parsed = z.string().uuid().safeParse(storyId);
@@ -139,7 +139,7 @@ export async function deleteStory(storyId: string): Promise<{ error?: string }> 
 }
 
 // ────────────────────────────────────────────────────────────
-// deleteExpiredStories — called by cron / admin route
+// deleteExpiredStories  called by cron / admin route
 // ────────────────────────────────────────────────────────────
 export async function deleteExpiredStories(): Promise<{ deleted: number; error?: string }> {
   const supabase = await createClient();

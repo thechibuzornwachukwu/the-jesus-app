@@ -1,4 +1,4 @@
-// Service Worker — The JESUS App
+// Service Worker  The JESUS App
 const CACHE_NAME = 'jesus-app-v1';
 const STATIC_ASSETS = ['/', '/manifest.json'];
 

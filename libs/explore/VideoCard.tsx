@@ -32,7 +32,7 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
     const el = videoRef.current;
     if (!el) return;
     if (isActive) {
-      el.play().catch(() => {/* Autoplay blocked — user must tap */});
+      el.play().catch(() => {/* Autoplay blocked  user must tap */});
     } else {
       el.pause();
       el.currentTime = 0;

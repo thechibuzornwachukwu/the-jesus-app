@@ -22,7 +22,7 @@ export async function signIn(_: unknown, formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
-    // Generic message — no info leakage
+    // Generic message  no info leakage
     return { error: 'Sign in failed. Check your credentials and try again.' };
   }
 

@@ -26,7 +26,7 @@ async function fetchProfiles(
 }
 
 // ---------------------------------------------------------------------------
-// getVideos — paginated feed fetch
+// getVideos  paginated feed fetch
 // ---------------------------------------------------------------------------
 export async function getVideos(cursor?: string): Promise<{
   videos: Video[];
@@ -135,7 +135,7 @@ export async function getVideos(cursor?: string): Promise<{
 }
 
 // ---------------------------------------------------------------------------
-// getVideoById — fetch a single video by ID (same shape as getVideos rows)
+// getVideoById  fetch a single video by ID (same shape as getVideos rows)
 // ---------------------------------------------------------------------------
 export async function getVideoById(videoId: string): Promise<Video | null> {
   const parsed = z.string().uuid().safeParse(videoId);
@@ -217,7 +217,7 @@ export async function getVideoById(videoId: string): Promise<Video | null> {
 }
 
 // ---------------------------------------------------------------------------
-// toggleLike — like/unlike a video; like_count maintained by DB trigger
+// toggleLike  like/unlike a video; like_count maintained by DB trigger
 // ---------------------------------------------------------------------------
 export async function toggleLike(
   videoId: string
@@ -255,7 +255,7 @@ export async function toggleLike(
 }
 
 // ---------------------------------------------------------------------------
-// toggleReaction — set / change / remove a reaction on a video
+// toggleReaction  set / change / remove a reaction on a video
 // ---------------------------------------------------------------------------
 const VALID_REACTIONS: ReactionType[] = ['heart', 'amen', 'laugh', 'shock'];
 
@@ -321,7 +321,7 @@ export async function toggleReaction(
 }
 
 // ---------------------------------------------------------------------------
-// getVideoReactions — get reaction counts + user's current reaction
+// getVideoReactions  get reaction counts + user's current reaction
 // ---------------------------------------------------------------------------
 export async function getVideoReactions(videoId: string): Promise<{
   userReaction: ReactionType | null;
@@ -354,7 +354,7 @@ export async function getVideoReactions(videoId: string): Promise<{
 }
 
 // ---------------------------------------------------------------------------
-// getComments — fetch comments for a video or post
+// getComments  fetch comments for a video or post
 // ---------------------------------------------------------------------------
 export async function getComments(
   targetId: string,
@@ -393,7 +393,7 @@ export async function getComments(
 }
 
 // ---------------------------------------------------------------------------
-// addComment — add a comment to a video or post
+// addComment  add a comment to a video or post
 // ---------------------------------------------------------------------------
 const commentSchema = z.object({
   targetId: z.string().uuid(),
@@ -431,7 +431,7 @@ export async function addComment(
     try {
       await supabase.rpc('increment_post_comment_count', { post_id: parsed.data.targetId });
     } catch {
-      // RPC may not exist — no-op
+      // RPC may not exist  no-op
     }
   }
 
@@ -450,7 +450,7 @@ export async function addComment(
 }
 
 // ---------------------------------------------------------------------------
-// createImagePost — create an image post
+// createImagePost  create an image post
 // ---------------------------------------------------------------------------
 const imagePostSchema = z.object({
   imageUrl: z.string().url(),
@@ -491,7 +491,7 @@ export async function createImagePost(
 }
 
 // ---------------------------------------------------------------------------
-// saveVerse — save a verse to the user's collection
+// saveVerse  save a verse to the user's collection
 // ---------------------------------------------------------------------------
 const saveVerseSchema = z.object({
   verseReference: z.string().min(1).max(100),
@@ -521,7 +521,7 @@ export async function saveVerse(
 }
 
 // ---------------------------------------------------------------------------
-// createPost — create a text post
+// createPost  create a text post
 // ---------------------------------------------------------------------------
 const createPostSchema = z.object({
   content: z.string().min(1).max(1000).trim(),
@@ -559,7 +559,7 @@ export async function createPost(
 }
 
 // ---------------------------------------------------------------------------
-// togglePostLike — like/unlike a post; like_count maintained by DB trigger
+// togglePostLike  like/unlike a post; like_count maintained by DB trigger
 // ---------------------------------------------------------------------------
 export async function togglePostLike(
   postId: string
@@ -595,7 +595,7 @@ export async function togglePostLike(
 }
 
 // ---------------------------------------------------------------------------
-// getPostById — fetch a single post by ID
+// getPostById  fetch a single post by ID
 // ---------------------------------------------------------------------------
 export async function getPostById(postId: string): Promise<Post | null> {
   const parsed = z.string().uuid().safeParse(postId);
@@ -647,7 +647,7 @@ export async function getPostById(postId: string): Promise<Post | null> {
 }
 
 // ---------------------------------------------------------------------------
-// getUnifiedFeed — merged video + post feed sorted by created_at DESC
+// getUnifiedFeed  merged video + post feed sorted by created_at DESC
 // ---------------------------------------------------------------------------
 const FEED_BATCH = 6;
 

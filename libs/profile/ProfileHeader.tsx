@@ -19,7 +19,7 @@ export function ProfileHeader({ profile, friendCount, streakCount }: ProfileHead
     <div style={{ padding: 'var(--space-4) var(--space-4) var(--space-3)' }}>
       {/* Top row: avatar (left) + info (right) */}
       <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-start' }}>
-        {/* Avatar + pencil — tapping navigates to edit page */}
+        {/* Avatar + pencil  tapping navigates to edit page */}
         <button
           onClick={() => router.push('/profile/edit')}
           aria-label="Edit profile"

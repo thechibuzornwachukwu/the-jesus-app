@@ -225,7 +225,7 @@ export function SermonExtractor() {
         >
           <Upload size={20} />
           <span style={{ fontSize: 'var(--font-size-sm)' }}>
-            {audioFile ? audioFile.name : 'Tap to select audio file (MP3, WAV, MP4 — max 25 MB)'}
+            {audioFile ? audioFile.name : 'Tap to select audio file (MP3, WAV, MP4  max 25 MB)'}
           </span>
           <input
             ref={fileInputRef}

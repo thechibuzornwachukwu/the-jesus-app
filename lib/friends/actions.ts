@@ -15,7 +15,7 @@ export type FriendWithProfile = {
 };
 
 // ────────────────────────────────────────────────────────────
-// getFriends — accepted friendships with profile join
+// getFriends  accepted friendships with profile join
 // ────────────────────────────────────────────────────────────
 export async function getFriends(userId?: string): Promise<FriendWithProfile[]> {
   const supabase = await createClient();
@@ -87,7 +87,7 @@ export async function getFriendCount(userId?: string): Promise<number> {
 }
 
 // ────────────────────────────────────────────────────────────
-// getPendingRequests — incoming pending requests for current user
+// getPendingRequests  incoming pending requests for current user
 // ────────────────────────────────────────────────────────────
 export async function getPendingRequests(): Promise<FriendWithProfile[]> {
   const supabase = await createClient();
@@ -194,7 +194,7 @@ export async function acceptFriendRequest(
 }
 
 // ────────────────────────────────────────────────────────────
-// removeFriend — removes friendship in either direction
+// removeFriend  removes friendship in either direction
 // ────────────────────────────────────────────────────────────
 export async function removeFriend(
   targetId: string

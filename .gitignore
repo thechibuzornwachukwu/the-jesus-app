@@ -32,12 +32,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files — never commit real secrets
+# env files  never commit real secrets
 .env
 .env.*
 !.env.local.example
 
-# SQL schema / migrations — keep off GitHub
+# SQL schema / migrations  keep off GitHub
 **/*.sql
 
 # Claude Code memory

@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       .join('\n\n') || 'No specific passages matched. Answer from general Scripture knowledge.';
 
   // 3. Build GPT-4o messages
-  const systemPrompt = `You are a Spirit-filled spiritual guide who answers with Scripture. Be warm, conversational, and encouraging — never preachy or condescending. Always ground your answer in the Bible. After your answer, include a brief "Scripture" section listing the key references you drew on (format: "**Scripture:** Ref1; Ref2"). End every response with a gentle follow-up question to deepen the conversation.
+  const systemPrompt = `You are a Spirit-filled spiritual guide who answers with Scripture. Be warm, conversational, and encouraging  never preachy or condescending. Always ground your answer in the Bible. After your answer, include a brief "Scripture" section listing the key references you drew on (format: "**Scripture:** Ref1; Ref2"). End every response with a gentle follow-up question to deepen the conversation.
 
 Relevant passages from Scripture and theology:
 ${context}`;
@@ -70,7 +70,7 @@ ${context}`;
 
   const answer = completion.choices[0].message.content ?? '';
 
-  // 5. Persist both turns (fire-and-forget — don't await)
+  // 5. Persist both turns (fire-and-forget  don't await)
   supabase.from('spiritual_conversations').insert([
     { user_id: user.id, session_id: sessionId, role: 'user', content: message },
     { user_id: user.id, session_id: sessionId, role: 'assistant', content: answer },

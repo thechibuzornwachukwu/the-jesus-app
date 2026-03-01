@@ -30,7 +30,7 @@ async function flushBatch(): Promise<void> {
 }
 
 /**
- * Apply a score delta to a channel.  Debounced — batched calls within 5 s are
+ * Apply a score delta to a channel.  Debounced  batched calls within 5 s are
  * merged into a single server write per channel.
  */
 export function applyScore(channelId: string, delta: number): void {

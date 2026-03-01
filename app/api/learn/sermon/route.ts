@@ -23,7 +23,7 @@ const EXTRACT_PROMPT = `You are a sermon notes extractor. Given a sermon transcr
 - "themes": array of 2-5 theological themes (strings, e.g. "Grace", "Redemption")
 - "actionItems": array of 2-5 practical action items the congregation can apply (strings)
 
-Return ONLY the JSON object — no markdown, no prose outside the JSON.`;
+Return ONLY the JSON object  no markdown, no prose outside the JSON.`;
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();

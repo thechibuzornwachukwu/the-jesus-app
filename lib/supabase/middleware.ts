@@ -23,7 +23,7 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh session — do not remove this call
+  // Refresh session  do not remove this call
   const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
@@ -38,7 +38,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Already signed in — redirect away from auth pages
+  // Already signed in  redirect away from auth pages
   if (user && (pathname === '/sign-in' || pathname === '/sign-up')) {
     const url = request.nextUrl.clone();
     url.pathname = '/engage';

@@ -505,7 +505,7 @@ export function Chat({
             {cellName}
           </span>
 
-          {/* Member count — tappable to open member list */}
+          {/* Member count  tappable to open member list */}
           {liveMemberCount !== undefined && (
             <button
               onClick={() => setMemberListOpen(true)}

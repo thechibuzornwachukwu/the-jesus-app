@@ -42,7 +42,7 @@ const POINT_VALUES: Record<StreakEventType, number> = {
 };
 
 // ────────────────────────────────────────────────────────────
-// getStreak — fetch the current user's streak row
+// getStreak  fetch the current user's streak row
 // ────────────────────────────────────────────────────────────
 export async function getStreak(userId?: string): Promise<UserStreak | null> {
   const supabase = await createClient();
@@ -73,7 +73,7 @@ export async function getStreak(userId?: string): Promise<UserStreak | null> {
 }
 
 // ────────────────────────────────────────────────────────────
-// logStreakEvent — insert event, update user_streaks
+// logStreakEvent  insert event, update user_streaks
 // ────────────────────────────────────────────────────────────
 export async function logStreakEvent(
   eventType: StreakEventType
@@ -110,7 +110,7 @@ export async function logStreakEvent(
     const yesterdayStr = yesterday.toISOString().slice(0, 10);
 
     if (lastDate === today) {
-      // Already logged today — don't increment streak, just add points
+      // Already logged today  don't increment streak, just add points
       newStreak = current.current_streak;
     } else if (lastDate === yesterdayStr) {
       // Consecutive day
@@ -152,7 +152,7 @@ export async function logStreakEvent(
 }
 
 // ────────────────────────────────────────────────────────────
-// awardBadgeIfEarned — check & grant badge by criteria
+// awardBadgeIfEarned  check & grant badge by criteria
 // ────────────────────────────────────────────────────────────
 export async function awardBadgeIfEarned(
   userId: string,
@@ -190,7 +190,7 @@ export async function awardBadgeIfEarned(
 }
 
 // ────────────────────────────────────────────────────────────
-// getBadges — user_badges joined with badges
+// getBadges  user_badges joined with badges
 // ────────────────────────────────────────────────────────────
 export async function getBadges(userId?: string): Promise<UserBadge[]> {
   const supabase = await createClient();
@@ -211,7 +211,7 @@ export async function getBadges(userId?: string): Promise<UserBadge[]> {
 }
 
 // ────────────────────────────────────────────────────────────
-// getAllBadges — full catalog (for display)
+// getAllBadges  full catalog (for display)
 // ────────────────────────────────────────────────────────────
 export async function getAllBadges(): Promise<Badge[]> {
   const supabase = await createClient();

@@ -105,7 +105,7 @@ export function MemberList({
             )}
             {regularMembers.length > 0 && (
               <MemberSection
-                label={`Members — ${regularMembers.length}`}
+                label={`Members  ${regularMembers.length}`}
                 members={regularMembers}
                 currentUserId={currentUserId}
                 userRole={userRole}

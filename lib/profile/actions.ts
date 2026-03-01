@@ -109,7 +109,7 @@ export async function updateProfile(
 }
 
 // ────────────────────────────────────────────────────────────
-// getStreakData — computed from saved_verses activity dates
+// getStreakData  computed from saved_verses activity dates
 // ────────────────────────────────────────────────────────────
 export interface StreakData {
   current: number;
@@ -181,14 +181,14 @@ export async function getStreakData(): Promise<StreakData> {
 }
 
 // ────────────────────────────────────────────────────────────
-// logStreakEvent — no-op stub (streak derived from saved_verses)
+// logStreakEvent  no-op stub (streak derived from saved_verses)
 // ────────────────────────────────────────────────────────────
 export async function logStreakEvent(_type: string): Promise<void> {
   // Streak is computed from saved_verses activity; no separate table needed.
 }
 
 // ────────────────────────────────────────────────────────────
-// getSavedVerses — includes note column (Phase 9)
+// getSavedVerses  includes note column (Phase 9)
 // ────────────────────────────────────────────────────────────
 export async function getSavedVerses(): Promise<SavedVerse[]> {
   const supabase = await createClient();
@@ -208,7 +208,7 @@ export async function getSavedVerses(): Promise<SavedVerse[]> {
 }
 
 // ────────────────────────────────────────────────────────────
-// updateVerseNote — set or clear a note on a saved verse
+// updateVerseNote  set or clear a note on a saved verse
 // ────────────────────────────────────────────────────────────
 export async function updateVerseNote(
   verseReference: string,
@@ -568,7 +568,7 @@ export async function notifyMention(
 }
 
 // ────────────────────────────────────────────────────────────
-// sendFriendRequest — wrapper (re-exported from friends/actions)
+// sendFriendRequest  wrapper (re-exported from friends/actions)
 // ────────────────────────────────────────────────────────────
 export async function sendFriendRequest(
   targetId: string
@@ -577,7 +577,7 @@ export async function sendFriendRequest(
 }
 
 // ────────────────────────────────────────────────────────────
-// acceptFriendRequest — wrapper (re-exported from friends/actions)
+// acceptFriendRequest  wrapper (re-exported from friends/actions)
 // ────────────────────────────────────────────────────────────
 export async function acceptFriendRequest(
   requesterId: string

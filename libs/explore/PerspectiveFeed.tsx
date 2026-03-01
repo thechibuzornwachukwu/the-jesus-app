@@ -43,7 +43,7 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
       setActiveIndex(0);
       containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     } catch {
-      // silent — feed keeps showing existing items
+      // silent  feed keeps showing existing items
     }
   }, []);
 
@@ -185,7 +185,7 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
           );
         }
 
-        // Text post — natural height, no full-screen snap
+        // Text post  natural height, no full-screen snap
         return (
           <div
             key={item.data.id}

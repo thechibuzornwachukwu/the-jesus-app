@@ -4,7 +4,7 @@ export const DAILY_VERSES: DailyVerseType[] = [
   {
     reference: 'John 3:16',
     text: 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.',
-    reflection: 'God\'s love for you is not earned — it is freely given. Sit with the weight of that today.',
+    reflection: 'God\'s love for you is not earned  it is freely given. Sit with the weight of that today.',
   },
   {
     reference: 'Jeremiah 29:11',
@@ -29,7 +29,7 @@ export const DAILY_VERSES: DailyVerseType[] = [
   {
     reference: 'Isaiah 40:31',
     text: 'But those who hope in the LORD will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint.',
-    reflection: 'Waiting on God is not passive — it\'s the source of supernatural renewal.',
+    reflection: 'Waiting on God is not passive  it\'s the source of supernatural renewal.',
   },
   {
     reference: 'Psalm 23:1',
@@ -54,7 +54,7 @@ export const DAILY_VERSES: DailyVerseType[] = [
   {
     reference: 'Galatians 2:20',
     text: 'I have been crucified with Christ and I no longer live, but Christ lives in me.',
-    reflection: 'Your identity is no longer rooted in who you were — it\'s anchored in who Christ is.',
+    reflection: 'Your identity is no longer rooted in who you were  it\'s anchored in who Christ is.',
   },
   {
     reference: 'Psalm 46:10',
@@ -64,37 +64,37 @@ export const DAILY_VERSES: DailyVerseType[] = [
   {
     reference: '2 Corinthians 5:17',
     text: 'Therefore, if anyone is in Christ, the new creation has come: The old has gone, the new is here!',
-    reflection: 'You are not a reformed version of your old self — you are entirely new in Christ.',
+    reflection: 'You are not a reformed version of your old self  you are entirely new in Christ.',
   },
   {
     reference: 'Ephesians 2:8-9',
-    text: 'For it is by grace you have been saved, through faith — and this is not from yourselves, it is the gift of God — not by works, so that no one can boast.',
+    text: 'For it is by grace you have been saved, through faith  and this is not from yourselves, it is the gift of God  not by works, so that no one can boast.',
     reflection: 'Salvation cannot be earned. It can only be received with open hands.',
   },
   {
     reference: 'Joshua 1:9',
     text: 'Have I not commanded you? Be strong and courageous. Do not be afraid; do not be discouraged, for the LORD your God will be with you wherever you go.',
-    reflection: 'Courage is not the absence of fear — it\'s moving forward in the knowledge that God goes with you.',
+    reflection: 'Courage is not the absence of fear  it\'s moving forward in the knowledge that God goes with you.',
   },
   {
     reference: 'Psalm 119:105',
     text: 'Your word is a lamp for my feet, a light on my path.',
-    reflection: 'God\'s Word doesn\'t always illuminate the whole road — just the next step. Trust that step.',
+    reflection: 'God\'s Word doesn\'t always illuminate the whole road  just the next step. Trust that step.',
   },
   {
     reference: 'John 14:6',
     text: 'Jesus answered, "I am the way and the truth and the life. No one comes to the Father except through me."',
-    reflection: 'Jesus is not one path among many — He is the only way to the Father.',
+    reflection: 'Jesus is not one path among many  He is the only way to the Father.',
   },
   {
     reference: 'Psalm 27:1',
-    text: 'The LORD is my light and my salvation — whom shall I fear? The LORD is the stronghold of my life — of whom shall I be afraid?',
+    text: 'The LORD is my light and my salvation  whom shall I fear? The LORD is the stronghold of my life  of whom shall I be afraid?',
     reflection: 'In the presence of God, fear loses its grip. Let His light scatter the darkness in your heart.',
   },
   {
     reference: '1 John 4:19',
     text: 'We love because he first loved us.',
-    reflection: 'Our love for others is always a response, never an origination. God loves first — we reflect.',
+    reflection: 'Our love for others is always a response, never an origination. God loves first  we reflect.',
   },
   {
     reference: 'Matthew 11:28',
@@ -114,12 +114,12 @@ export const DAILY_VERSES: DailyVerseType[] = [
   {
     reference: 'Hebrews 11:1',
     text: 'Now faith is confidence in what we hope for and assurance about what we do not see.',
-    reflection: 'Faith is not blind — it is seeing through God\'s eyes what is not yet visible to the natural eye.',
+    reflection: 'Faith is not blind  it is seeing through God\'s eyes what is not yet visible to the natural eye.',
   },
   {
     reference: 'James 1:2-3',
     text: 'Consider it pure joy, my brothers and sisters, whenever you face trials of many kinds, because you know that the testing of your faith produces perseverance.',
-    reflection: 'Trials are not interruptions to growth — they are the very soil in which it happens.',
+    reflection: 'Trials are not interruptions to growth  they are the very soil in which it happens.',
   },
   {
     reference: 'Romans 5:8',
@@ -159,22 +159,22 @@ export const DAILY_VERSES: DailyVerseType[] = [
   {
     reference: 'Micah 6:8',
     text: 'He has shown you, O mortal, what is good. And what does the LORD require of you? To act justly and to love mercy and to walk humbly with your God.',
-    reflection: 'God\'s requirements are not complex. Justice, mercy, humility — practiced daily.',
+    reflection: 'God\'s requirements are not complex. Justice, mercy, humility  practiced daily.',
   },
   {
     reference: 'John 15:5',
     text: '"I am the vine; you are the branches. If you remain in me and I in you, you will bear much fruit; apart from me you can do nothing."',
-    reflection: 'Fruitfulness is not about effort — it\'s about connection. Stay close to Jesus today.',
+    reflection: 'Fruitfulness is not about effort  it\'s about connection. Stay close to Jesus today.',
   },
   {
     reference: 'Ephesians 3:20',
     text: 'Now to him who is able to do immeasurably more than all we ask or imagine, according to his power that is at work within us.',
-    reflection: 'Your biggest vision for your life is still too small for what God can do. Dream bigger — and surrender it to Him.',
+    reflection: 'Your biggest vision for your life is still too small for what God can do. Dream bigger  and surrender it to Him.',
   },
   {
     reference: '1 Peter 5:7',
     text: 'Cast all your anxiety on him because he cares for you.',
-    reflection: 'God does not merely tolerate your burdens — He actively invites you to lay them down on Him.',
+    reflection: 'God does not merely tolerate your burdens  He actively invites you to lay them down on Him.',
   },
   {
     reference: 'Romans 8:1',
@@ -184,7 +184,7 @@ export const DAILY_VERSES: DailyVerseType[] = [
   {
     reference: 'Matthew 5:14',
     text: '"You are the light of the world. A town built on a hill cannot be hidden."',
-    reflection: 'Light does not strive to be seen — it simply shines. Let Christ in you illuminate your world today.',
+    reflection: 'Light does not strive to be seen  it simply shines. Let Christ in you illuminate your world today.',
   },
   {
     reference: 'Psalm 1:1-2',
@@ -209,7 +209,7 @@ export const DAILY_VERSES: DailyVerseType[] = [
   {
     reference: 'Matthew 5:6',
     text: 'Blessed are those who hunger and thirst for righteousness, for they will be filled.',
-    reflection: 'Your spiritual appetite determines your spiritual satisfaction. Hunger for God — and be filled.',
+    reflection: 'Your spiritual appetite determines your spiritual satisfaction. Hunger for God  and be filled.',
   },
   {
     reference: 'Colossians 1:17',
@@ -239,12 +239,12 @@ export const DAILY_VERSES: DailyVerseType[] = [
   {
     reference: 'Isaiah 43:2',
     text: 'When you pass through the waters, I will be with you; and when you pass through the rivers, they will not sweep over you. When you walk through the fire, you will not be burned.',
-    reflection: 'God does not always remove the trial — but He always walks through it with you.',
+    reflection: 'God does not always remove the trial  but He always walks through it with you.',
   },
   {
     reference: 'Revelation 3:20',
     text: '"Here I am! I stand at the door and knock. If anyone hears my voice and opens the door, I will come in and eat with that person, and they with me."',
-    reflection: 'Jesus is not pushy — He is persistent. He waits at the door of your heart. Open it.',
+    reflection: 'Jesus is not pushy  He is persistent. He waits at the door of your heart. Open it.',
   },
   {
     reference: 'Psalm 16:11',
@@ -254,12 +254,12 @@ export const DAILY_VERSES: DailyVerseType[] = [
   {
     reference: 'Romans 15:13',
     text: 'May the God of hope fill you with all joy and peace as you trust in him, so that you may overflow with hope by the power of the Holy Spirit.',
-    reflection: 'Hope is not wishful thinking — it\'s a supernatural overflow of God\'s Spirit at work in you.',
+    reflection: 'Hope is not wishful thinking  it\'s a supernatural overflow of God\'s Spirit at work in you.',
   },
   {
     reference: 'Matthew 28:20',
     text: '"And surely I am with you always, to the very end of the age."',
-    reflection: 'Jesus\'s last promise was His continued presence. Not occasional, not conditional — always.',
+    reflection: 'Jesus\'s last promise was His continued presence. Not occasional, not conditional  always.',
   },
 ];
 

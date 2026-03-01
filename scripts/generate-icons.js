@@ -1,6 +1,6 @@
 /**
  * generate-icons.js
- * Pure Node.js script — no external dependencies.
+ * Pure Node.js script  no external dependencies.
  * Generates /public/icons/icon-192.png and icon-512.png
  * using a minimal PNG encoder with zlib compression.
  *

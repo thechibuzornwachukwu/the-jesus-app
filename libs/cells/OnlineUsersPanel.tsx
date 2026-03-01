@@ -130,7 +130,7 @@ export function OnlineUsersPanel({
                       marginBottom: 'var(--space-1)',
                     }}
                   >
-                    {STATUS_LABEL[group]} — {groupMembers.length}
+                    {STATUS_LABEL[group]}  {groupMembers.length}
                   </p>
                   {groupMembers.map((m) => {
                     const isCurrentUser = m.user_id === currentUserId;

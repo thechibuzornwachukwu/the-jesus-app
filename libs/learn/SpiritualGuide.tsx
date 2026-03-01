@@ -22,7 +22,7 @@ function CrossIcon() {
 const WELCOME: ChatMessage = {
   role: 'assistant',
   content:
-    "Welcome, Berean. Ask anything about Scripture — a verse, a doctrine, a question of faith. I search the Scriptures to walk with you.",
+    "Welcome, Berean. Ask anything about Scripture  a verse, a doctrine, a question of faith. I search the Scriptures to walk with you.",
 };
 
 export function SpiritualGuide() {
@@ -169,7 +169,7 @@ export function SpiritualGuide() {
         open={open}
         onClose={() => setOpen(false)}
         title="Berean"
-        subtitle="Search the Scriptures daily — Acts 17:11"
+        subtitle="Search the Scriptures daily  Acts 17:11"
         icon={<CrossIcon />}
         footerContent={inputBar}
         zIndex="calc(var(--z-modal) + 1)"

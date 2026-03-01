@@ -1,6 +1,6 @@
 # The JESUS App
 
-Christian community, discipleship and spiritual growth — PWA built on Next.js 16 + Supabase + Netlify.
+Christian community, discipleship and spiritual growth  PWA built on Next.js 16 + Supabase + Netlify.
 
 ## Tech Stack
 
@@ -36,9 +36,9 @@ the-jesus-app/
 │   └── supabase/       # Server/client/middleware Supabase clients
 ├── libs/
 │   ├── shared-ui/      # Design system (tokens, Typography, Button, Input…)
-│   ├── cells/          # Phase 2 — Engage tab
-│   ├── explore/        # Phase 2 — Explore tab
-│   └── learn/          # Phase 3 — Learn tab (AI)
+│   ├── cells/          # Phase 2  Engage tab
+│   ├── explore/        # Phase 2  Explore tab
+│   └── learn/          # Phase 3  Learn tab (AI)
 ├── public/
 │   ├── manifest.json   # PWA manifest
 │   └── sw.js           # Service worker
@@ -57,9 +57,9 @@ the-jesus-app/
 
 | Phase | Feature | Status |
 | ----- | ------- | ------ |
-| 1 | Foundation — PWA shell, auth, design system | ✅ Complete |
+| 1 | Foundation  PWA shell, auth, design system | ✅ Complete |
 | 2 | Cells (Engage) + Explore video feed | Pending |
-| 3 | Learn tab — AI discipleship (OpenAI) | Pending |
+| 3 | Learn tab  AI discipleship (OpenAI) | Pending |
 
 ## Design Tokens
 

@@ -1,5 +1,5 @@
 /**
- * Seed Theology Docs — Phase 4 RAG ingestion
+ * Seed Theology Docs  Phase 4 RAG ingestion
  *
  * Embeds key scripture passages with text-embedding-3-small and inserts
  * them into the `theology_docs` table.
@@ -49,14 +49,14 @@ const DOCS: Doc[] = [
     title: 'All Have Sinned',
     source: 'Romans 3:23',
     content:
-      'For all have sinned and fall short of the glory of God. Sin is universal — every person is separated from God\'s perfect standard. This diagnosis applies equally to all humanity regardless of culture or religion.',
+      'For all have sinned and fall short of the glory of God. Sin is universal  every person is separated from God\'s perfect standard. This diagnosis applies equally to all humanity regardless of culture or religion.',
     track: 'salvation',
   },
   {
     title: 'Wages of Sin vs Gift of Life',
     source: 'Romans 6:23',
     content:
-      'For the wages of sin is death, but the gift of God is eternal life in Christ Jesus our Lord. Eternal life is not earned — it is received as a gift through faith in Jesus Christ.',
+      'For the wages of sin is death, but the gift of God is eternal life in Christ Jesus our Lord. Eternal life is not earned  it is received as a gift through faith in Jesus Christ.',
     track: 'salvation',
   },
   {
@@ -77,7 +77,7 @@ const DOCS: Doc[] = [
     title: 'Abundant Life',
     source: 'John 10:10',
     content:
-      'The thief comes only to steal and kill and destroy; I have come that they may have life, and have it to the full. Salvation is not merely escape from hell — it is entrance into abundant, overflowing life in Christ.',
+      'The thief comes only to steal and kill and destroy; I have come that they may have life, and have it to the full. Salvation is not merely escape from hell  it is entrance into abundant, overflowing life in Christ.',
     track: 'salvation',
   },
 
@@ -100,7 +100,7 @@ const DOCS: Doc[] = [
     title: 'Pray Without Ceasing',
     source: '1 Thessalonians 5:17',
     content:
-      'Pray continually. Unceasing prayer is not endless formal prayer but a continual orientation of the heart toward God throughout every moment of the day — a lifestyle of communion rather than a religious duty.',
+      'Pray continually. Unceasing prayer is not endless formal prayer but a continual orientation of the heart toward God throughout every moment of the day  a lifestyle of communion rather than a religious duty.',
     track: 'prayer',
   },
   {
@@ -114,7 +114,7 @@ const DOCS: Doc[] = [
     title: 'Prayer and Peace',
     source: 'Philippians 4:6-7',
     content:
-      'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus. Prayer is the antidote to anxiety — presenting our concerns to God releases supernatural peace.',
+      'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus. Prayer is the antidote to anxiety  presenting our concerns to God releases supernatural peace.',
     track: 'prayer',
   },
   {
@@ -130,7 +130,7 @@ const DOCS: Doc[] = [
     title: 'Saved by Grace through Faith',
     source: 'Ephesians 2:8-9',
     content:
-      'For it is by grace you have been saved, through faith — and this is not from yourselves, it is the gift of God — not by works, so that no one can boast. Grace is God\'s unmerited favor — salvation entirely from Him, entirely free, received by faith not earned by works.',
+      'For it is by grace you have been saved, through faith  and this is not from yourselves, it is the gift of God  not by works, so that no one can boast. Grace is God\'s unmerited favor  salvation entirely from Him, entirely free, received by faith not earned by works.',
     track: 'grace',
   },
   {
@@ -144,7 +144,7 @@ const DOCS: Doc[] = [
     title: 'Neither Do I Condemn You',
     source: 'John 8:10-11',
     content:
-      '"Woman, where are they? Has no one condemned you?" "No one, sir," she said. "Then neither do I condemn you," Jesus declared. "Go now and leave your life of sin." Jesus removes condemnation before issuing the call to change. Grace precedes transformation — it is the power that makes holiness possible.',
+      '"Woman, where are they? Has no one condemned you?" "No one, sir," she said. "Then neither do I condemn you," Jesus declared. "Go now and leave your life of sin." Jesus removes condemnation before issuing the call to change. Grace precedes transformation  it is the power that makes holiness possible.',
     track: 'grace',
   },
   {
@@ -167,21 +167,21 @@ const DOCS: Doc[] = [
     title: 'New Creation',
     source: '2 Corinthians 5:17',
     content:
-      'Therefore, if anyone is in Christ, the new creation has come: The old has gone, the new is here! In Christ we are not merely improved — we are fundamentally new. Old identity, old shame, old labels are displaced by a new creation reality.',
+      'Therefore, if anyone is in Christ, the new creation has come: The old has gone, the new is here! In Christ we are not merely improved  we are fundamentally new. Old identity, old shame, old labels are displaced by a new creation reality.',
     track: 'identity',
   },
   {
     title: 'Children of God',
     source: '1 John 3:1-2',
     content:
-      'See what great love the Father has lavished on us, that we should be called children of God! And that is what we are! The reason the world does not know us is that it did not know him. You are not merely a servant or a creation — you are a dearly loved child of the Father, called and acknowledged by God Himself.',
+      'See what great love the Father has lavished on us, that we should be called children of God! And that is what we are! The reason the world does not know us is that it did not know him. You are not merely a servant or a creation  you are a dearly loved child of the Father, called and acknowledged by God Himself.',
     track: 'identity',
   },
   {
     title: 'I Am the Vine',
     source: 'John 15:5',
     content:
-      '"I am the vine; you are the branches. If you remain in me and I in you, you will bear much fruit; apart from me you can do nothing." Identity in Christ is relational not just positional. We exist as branches — only alive and fruitful when connected to the Vine.',
+      '"I am the vine; you are the branches. If you remain in me and I in you, you will bear much fruit; apart from me you can do nothing." Identity in Christ is relational not just positional. We exist as branches  only alive and fruitful when connected to the Vine.',
     track: 'identity',
   },
   {
@@ -195,14 +195,14 @@ const DOCS: Doc[] = [
     title: 'Royal Priesthood',
     source: '1 Peter 2:9',
     content:
-      'But you are a chosen people, a royal priesthood, a holy nation, God\'s special possession, that you may declare the praises of him who called you out of darkness into his wonderful light. Believers carry a fourfold identity: chosen, royal, holy, and possessed by God — called for the purpose of declaring His glory.',
+      'But you are a chosen people, a royal priesthood, a holy nation, God\'s special possession, that you may declare the praises of him who called you out of darkness into his wonderful light. Believers carry a fourfold identity: chosen, royal, holy, and possessed by God  called for the purpose of declaring His glory.',
     track: 'identity',
   },
   {
     title: 'Seated in Heavenly Places',
     source: 'Ephesians 2:6',
     content:
-      'And God raised us up with Christ and seated us with him in the heavenly realms in Christ Jesus. Our identity in Christ is not earthly but heavenly — spiritually seated in authority alongside the risen Christ right now.',
+      'And God raised us up with Christ and seated us with him in the heavenly realms in Christ Jesus. Our identity in Christ is not earthly but heavenly  spiritually seated in authority alongside the risen Christ right now.',
     track: 'identity',
   },
 
@@ -218,7 +218,7 @@ const DOCS: Doc[] = [
     title: 'Greater is He',
     source: '1 John 4:4',
     content:
-      'You, dear children, are from God and have overcome them, because the one who is in you is greater than the one who is in the world. The Holy Spirit dwelling within a believer is greater in power than any demonic force. Victory is not fought toward — it is enforced from.',
+      'You, dear children, are from God and have overcome them, because the one who is in you is greater than the one who is in the world. The Holy Spirit dwelling within a believer is greater in power than any demonic force. Victory is not fought toward  it is enforced from.',
     track: 'warfare',
   },
   {
@@ -232,14 +232,14 @@ const DOCS: Doc[] = [
     title: 'Divine Weapons',
     source: '2 Corinthians 10:4-5',
     content:
-      'The weapons we fight with are not the weapons of the world. On the contrary, they have divine power to demolish strongholds. We demolish arguments and every pretension that sets itself up against the knowledge of God. Spiritual strongholds — patterns of thought opposed to God — are torn down through spiritual weapons, not human reasoning alone.',
+      'The weapons we fight with are not the weapons of the world. On the contrary, they have divine power to demolish strongholds. We demolish arguments and every pretension that sets itself up against the knowledge of God. Spiritual strongholds  patterns of thought opposed to God  are torn down through spiritual weapons, not human reasoning alone.',
     track: 'warfare',
   },
   {
     title: 'The Devil Prowls',
     source: '1 Peter 5:8-9',
     content:
-      'Be alert and of sober mind. Your enemy the devil prowls around like a roaring lion looking for someone to devour. Resist him, standing firm in the faith. Vigilance is required in spiritual warfare — the enemy is real, active, and looking for opportunities. The response is sober alertness and firm faith.',
+      'Be alert and of sober mind. Your enemy the devil prowls around like a roaring lion looking for someone to devour. Resist him, standing firm in the faith. Vigilance is required in spiritual warfare  the enemy is real, active, and looking for opportunities. The response is sober alertness and firm faith.',
     track: 'warfare',
   },
 
@@ -269,7 +269,7 @@ const DOCS: Doc[] = [
     title: 'Faith without Works is Dead',
     source: 'James 2:17',
     content:
-      'In the same way, faith by itself, if it is not accompanied by action, is dead. Genuine saving faith always produces fruit. Faith and works are not competitors in salvation — faith saves, and saving faith inevitably produces action.',
+      'In the same way, faith by itself, if it is not accompanied by action, is dead. Genuine saving faith always produces fruit. Faith and works are not competitors in salvation  faith saves, and saving faith inevitably produces action.',
     track: null,
   },
   {
@@ -283,14 +283,14 @@ const DOCS: Doc[] = [
     title: 'Renewing the Mind',
     source: 'Romans 12:2',
     content:
-      'Do not conform to the pattern of this world, but be transformed by the renewing of your mind. Then you will be able to test and approve what God\'s will is — his good, pleasing and perfect will. Transformation begins in the mind. Christian growth is fundamentally a renewal of how we think, perceive, and respond.',
+      'Do not conform to the pattern of this world, but be transformed by the renewing of your mind. Then you will be able to test and approve what God\'s will is  his good, pleasing and perfect will. Transformation begins in the mind. Christian growth is fundamentally a renewal of how we think, perceive, and respond.',
     track: null,
   },
   {
     title: 'Drawing Near to God',
     source: 'Hebrews 4:16',
     content:
-      'Let us then approach God\'s throne of grace with confidence, so that we may receive mercy and find grace to help us in our time of need. Because of Christ\'s atoning work, believers have direct, confident access to God — not as strangers but as welcomed children.',
+      'Let us then approach God\'s throne of grace with confidence, so that we may receive mercy and find grace to help us in our time of need. Because of Christ\'s atoning work, believers have direct, confident access to God  not as strangers but as welcomed children.',
     track: null,
   },
 ];

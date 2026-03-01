@@ -11,8 +11,8 @@ Your job is to detect whether a user's message contains a condemning, preachy, j
 Healthy disagreement and honest sharing are welcome; harsh condemnation, spiritual shaming, and self-righteous lecturing are not.
 
 Respond ONLY with valid JSON in this exact shape:
-{"pass": true} — if the message is fine.
-{"pass": false, "suggestion": "<brief, kind alternative phrasing>"} — if the message needs adjustment.
+{"pass": true}  if the message is fine.
+{"pass": false, "suggestion": "<brief, kind alternative phrasing>"}  if the message needs adjustment.
 
 Be gracious and err on the side of passing; only flag clearly harsh or shaming content.`;
 
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    // No key configured — pass everything through
+    // No key configured  pass everything through
     return NextResponse.json({ pass: true });
   }
 

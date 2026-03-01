@@ -95,7 +95,7 @@ function LessonCard({
               "{lesson.verse}"
             </p>
             <cite style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-accent)', fontStyle: 'normal', fontWeight: 'var(--font-weight-semibold)' }}>
-              — {lesson.scripture}
+               {lesson.scripture}
             </cite>
           </blockquote>
 
@@ -347,7 +347,7 @@ function TrackCard({
             style={{ objectFit: 'cover', objectPosition: 'center' }}
             sizes="50vw"
           />
-          {/* gradient overlay — bottom-heavy so text is readable */}
+          {/* gradient overlay  bottom-heavy so text is readable */}
           <div
             style={{
               position: 'absolute',

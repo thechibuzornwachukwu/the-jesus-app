@@ -1,5 +1,5 @@
 /* ============================================================
-   The JESUS App — Design Tokens
+   The JESUS App  Design Tokens
    All colors, spacing, typography as CSS custom properties.
    Never use hardcoded hex values in components.
    ============================================================ */
@@ -7,13 +7,13 @@
 :root {
   /* ─── Brand Colors ─────────────────────────────────────────
      Source-of-truth palette. Never reference these directly
-     in components — use the semantic tokens below instead.   */
+     in components  use the semantic tokens below instead.   */
   --color-orange-dark:  #d4922a;   /* gold leaf */
   --color-orange-sharp: #e8c080;   /* warm gold highlight */
-  --color-blue-deep:    #0b0905;   /* burnt ash — near-black bg */
+  --color-blue-deep:    #0b0905;   /* burnt ash  near-black bg */
   --color-faint-bg:     #161009;   /* warm brown-black surface */
   --color-bright:       #f0e6c8;   /* warm ivory bone */
-  --color-sienna:       #8b2e12;   /* deep sienna — secondary accent */
+  --color-sienna:       #8b2e12;   /* deep sienna  secondary accent */
 
   /* ─── Semantic Backgrounds ─────────────────────────────── */
   --color-bg:           var(--color-blue-deep);      /* page / shell */
@@ -30,7 +30,7 @@
   --color-accent:       var(--color-orange-dark);    /* buttons, links, active */
   --color-accent-soft:  rgba(212,146,42,0.12);       /* hover tint bg */
   --color-accent-text:  #0b0905;                     /* dark text ON gold */
-  --color-accent-2:     var(--color-sienna);         /* deep sienna — secondary */
+  --color-accent-2:     var(--color-sienna);         /* deep sienna  secondary */
 
   /* ─── Status ────────────────────────────────────────────── */
   --color-success: #4ade80;
@@ -61,7 +61,7 @@
   --font-size-3xl:  1.875rem;  /* 30px */
   --font-size-4xl:  2.5rem;    /* 40px */
   --font-size-5xl:  3.75rem;   /* 60px */
-  --font-size-6xl:  4.5rem;    /* 72px — hero moments */
+  --font-size-6xl:  4.5rem;    /* 72px  hero moments */
   --font-weight-light:   200;
   --font-weight-regular: 400;
   --font-weight-medium:  500;

@@ -5,7 +5,7 @@ import { Play, Pause } from 'lucide-react';
 
 const BAR_COUNT = 40;
 
-// Static amplitude pattern — pseudo-random via overlapping sine waves
+// Static amplitude pattern  pseudo-random via overlapping sine waves
 const BAR_AMPLITUDES = Array.from({ length: BAR_COUNT }, (_, i) => {
   const v =
     0.3 +

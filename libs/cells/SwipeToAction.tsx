@@ -56,7 +56,7 @@ export function SwipeToAction({ children, onLeave, onMute }: SwipeToActionProps)
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--radius-md)' }}>
-      {/* Left action (Leave) — shown on swipe-left */}
+      {/* Left action (Leave)  shown on swipe-left */}
       <div
         aria-hidden={revealed !== 'left'}
         style={{
@@ -84,7 +84,7 @@ export function SwipeToAction({ children, onLeave, onMute }: SwipeToActionProps)
         </button>
       </div>
 
-      {/* Right action (Mute) — shown on swipe-right */}
+      {/* Right action (Mute)  shown on swipe-right */}
       <div
         aria-hidden={revealed !== 'right'}
         style={{
