@@ -152,7 +152,7 @@ async function notifyUser(
     void sendPushToUser(
       userId,
       "Don't break your streak!",
-      `Keep your ${s.current_streak}-day streak alive — open the app now`,
+      `Keep your ${s.current_streak}-day streak alive  open the app now`,
       '/'
     );
   }

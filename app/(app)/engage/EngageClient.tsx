@@ -135,7 +135,7 @@ function CommunityRow({ cell, lastMsg, onLeave }: CommunityRowProps) {
           <span style={{ fontSize: 11, color: 'var(--color-text-faint)' }}>
             {relativeTime(lastMsg?.created_at ?? cell.last_activity)}
           </span>
-          {/* unread badge placeholder — will be driven by DB count */}
+          {/* unread badge placeholder  will be driven by DB count */}
           {(cell.unread_count ?? 0) > 0 && (
             <div
               style={{
@@ -424,7 +424,7 @@ export function EngageClient({
                 {categoryFilter === 'For You'
                   ? 'No matching cells found. Update your interests in Profile → Settings.'
                   : search || categoryFilter !== 'All'
-                  ? 'No cells match your filter — try a different category.'
+                  ? 'No cells match your filter  try a different category.'
                   : 'No public cells yet. Be the first to create a community!'}
               </p>
             </div>

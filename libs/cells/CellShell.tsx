@@ -299,7 +299,7 @@ export function CellShell({
         </button>
       </div>
 
-      {/* ── Banner (collapsible — just shown as a thin coloured strip if no image) ── */}
+      {/* ── Banner (collapsible  just shown as a thin coloured strip if no image) ── */}
       {cell.banner_url && (
         <div
           style={{

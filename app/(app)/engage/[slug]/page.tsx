@@ -46,7 +46,7 @@ export default async function CellPage({ params }: CellPageProps) {
     redirect(`/engage/${slug}/${defaultChannel.id}`);
   }
 
-  // No channels yet — auto-create a default General channel so the user lands in chat
+  // No channels yet  auto-create a default General channel so the user lands in chat
   const { data: newCategory } = await supabase
     .from('channel_categories')
     .insert({ cell_id: cell.id, name: 'General', position: 0 })

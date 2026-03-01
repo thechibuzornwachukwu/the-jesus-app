@@ -45,7 +45,7 @@ function BooksSection() {
   const BOOK_COUNT = 3;
 
   function handleBookTap() {
-    showToast('Coming soon — open-source books arriving.');
+    showToast('Coming soon  open-source books arriving.');
   }
 
   return (
@@ -158,7 +158,7 @@ function BereanSection({ onOpen }: { onOpen: () => void }) {
           objectFit: 'cover',
         }}
       />
-      {/* Solid dark overlay — no gradient */}
+      {/* Solid dark overlay  no gradient */}
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(4,5,3,0.65)' }} />
       {/* Orange cross top-right */}
       <div
@@ -225,7 +225,7 @@ export function LearnClient({ initialProgress }: LearnClientProps) {
         overflow: 'hidden',
       }}
     >
-      {/* Page header — hidden when a course track is open */}
+      {/* Page header  hidden when a course track is open */}
       {!courseOpen && (
         <div style={{ padding: 'var(--space-6) var(--space-6) 0', flexShrink: 0 }}>
           <h1
@@ -264,13 +264,13 @@ export function LearnClient({ initialProgress }: LearnClientProps) {
           paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom) + 72px)',
         }}
       >
-        {/* Faith Courses — always rendered; manages its own track detail */}
+        {/* Faith Courses  always rendered; manages its own track detail */}
         <FaithCourses
           initialProgress={initialProgress}
           onCourseSelected={setCourseOpen}
         />
 
-        {/* Below-courses sections — hidden while a track is open */}
+        {/* Below-courses sections  hidden while a track is open */}
         {!courseOpen && (
           <>
             {/* Sermon Notes */}
@@ -292,7 +292,7 @@ export function LearnClient({ initialProgress }: LearnClientProps) {
         )}
       </div>
 
-      {/* Floating AI Guide — FAB + modal; modal also controlled externally by BereanSection */}
+      {/* Floating AI Guide  FAB + modal; modal also controlled externally by BereanSection */}
       <SpiritualGuide
         externalOpen={chatOpen}
         onExternalClose={() => setChatOpen(false)}

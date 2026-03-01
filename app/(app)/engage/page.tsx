@@ -8,7 +8,7 @@ import {
 } from '../../../lib/cells/actions';
 import { EngageClient } from './EngageClient';
 
-export const metadata = { title: 'Engage — The JESUS App' };
+export const metadata = { title: 'Engage  The JESUS App' };
 
 export default async function EngagePage() {
   const supabase = await createClient();

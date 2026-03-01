@@ -24,7 +24,7 @@ export function StoriesStrip({ groups, userRole, activeCellId, onCreateStory }: 
       setViewingIndex(0);
       setViewingGroup(group);
     } else if (activeCellId) {
-      // no stories — navigate to the cell
+      // no stories  navigate to the cell
       router.push(`/engage/${group.cellSlug}`);
     }
   };
