@@ -428,13 +428,11 @@ export async function addComment(
 
   // Increment comment_count on parent
   if (parsed.data.targetType === 'post') {
-    await supabase.rpc('increment_post_comment_count', { post_id: parsed.data.targetId }).catch(() => {
-      // RPC may not exist — fallback raw update
-      supabase
-        .from('posts')
-        .update({ comment_count: supabase.rpc('coalesce_plus_one' as never) })
-        .eq('id', parsed.data.targetId);
-    });
+    try {
+      await supabase.rpc('increment_post_comment_count', { post_id: parsed.data.targetId });
+    } catch {
+      // RPC may not exist — no-op
+    }
   }
 
   const profileMap = await fetchProfiles(supabase, [user.id]);

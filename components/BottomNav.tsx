@@ -1,13 +1,13 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { MessageSquare, Video, Zap, User } from 'lucide-react';
+import { MessageSquare, Globe, Zap, User } from 'lucide-react';
 import { vibrate } from '../libs/shared-ui/haptics';
 
 const navItems = [
   { href: '/engage',  label: 'Engage',  Icon: MessageSquare },
   { href: '/learn',   label: 'Equip',   Icon: Zap },
-  { href: '/explore', label: 'Witness', Icon: Video },
+  { href: '/explore', label: 'Witness', Icon: Globe },
   { href: '/profile', label: 'Profile', Icon: User },
 ];
 

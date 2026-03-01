@@ -1,27 +1,29 @@
 'use client';
 
 import React, { useState, useRef, useTransition } from 'react';
-import { Video, Upload, FileText, X } from 'lucide-react';
+import { Video, Upload, FileText, X, ImageIcon } from 'lucide-react';
 import { BottomSheet } from '../shared-ui/BottomSheet';
 import { createPost } from '../../lib/explore/actions';
 
-type Mode = 'video' | 'post';
+type Mode = 'video' | 'post' | 'image';
 
 interface UploadSheetProps {
   open: boolean;
   onClose: () => void;
-  onUploaded?: (id: string, kind: 'video' | 'post') => void;
+  onUploaded?: (id: string, kind: 'video' | 'post' | 'image') => void;
 }
 
-const MAX_MB = 100;
-const ALLOWED = ['video/mp4', 'video/webm', 'video/quicktime'];
+const MAX_VIDEO_MB = 100;
+const MAX_IMAGE_MB = 10;
+const ALLOWED_VIDEO = ['video/mp4', 'video/webm', 'video/quicktime'];
+const ALLOWED_IMAGE = ['image/jpeg', 'image/png', 'image/webp'];
 
 export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
   const [mode, setMode] = useState<Mode>('video');
 
   // Video state
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [videoCaption, setVideoCaption] = useState('');
   const [videoVerseRef, setVideoVerseRef] = useState('');
   const [videoVerseText, setVideoVerseText] = useState('');
@@ -33,47 +35,86 @@ export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
   const [postVerseText, setPostVerseText] = useState('');
   const [publishing, setPublishing] = useState(false);
 
+  // Image state
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageCaption, setImageCaption] = useState('');
+  const [imageVerseRef, setImageVerseRef] = useState('');
+  const [imageVerseText, setImageVerseText] = useState('');
+  const [imageUploading, setImageUploading] = useState(false);
+
   const [error, setError] = useState('');
   const [, startTransition] = useTransition();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (f: File) => {
+  // ── Video handlers ──────────────────────────────────────────────────────
+
+  const handleVideoFile = (f: File) => {
     setError('');
-    if (!ALLOWED.includes(f.type)) { setError('Only MP4, WebM, or MOV videos allowed.'); return; }
-    if (f.size > MAX_MB * 1024 * 1024) { setError(`File must be under ${MAX_MB} MB.`); return; }
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
+    if (!ALLOWED_VIDEO.includes(f.type)) { setError('Only MP4, WebM, or MOV videos allowed.'); return; }
+    if (f.size > MAX_VIDEO_MB * 1024 * 1024) { setError(`File must be under ${MAX_VIDEO_MB} MB.`); return; }
+    setVideoFile(f);
+    setVideoPreview(URL.createObjectURL(f));
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleVideoDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const dropped = e.dataTransfer.files[0];
-    if (dropped) handleFile(dropped);
+    if (dropped) handleVideoFile(dropped);
   };
 
+  // ── Image handlers ──────────────────────────────────────────────────────
+
+  const handleImageFile = (f: File) => {
+    setError('');
+    if (!ALLOWED_IMAGE.includes(f.type)) { setError('Only JPEG, PNG, or WebP images allowed.'); return; }
+    if (f.size > MAX_IMAGE_MB * 1024 * 1024) { setError(`Image must be under ${MAX_IMAGE_MB} MB.`); return; }
+    setImageFile(f);
+    setImagePreview(URL.createObjectURL(f));
+  };
+
+  const handleImageDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const dropped = e.dataTransfer.files[0];
+    if (dropped) handleImageFile(dropped);
+  };
+
+  // ── Reset ───────────────────────────────────────────────────────────────
+
   const reset = () => {
-    setFile(null);
-    if (preview) URL.revokeObjectURL(preview);
-    setPreview(null);
+    setVideoFile(null);
+    if (videoPreview) URL.revokeObjectURL(videoPreview);
+    setVideoPreview(null);
     setVideoCaption('');
     setVideoVerseRef('');
     setVideoVerseText('');
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    setImageCaption('');
+    setImageVerseRef('');
+    setImageVerseText('');
     setPostContent('');
     setPostVerseRef('');
     setPostVerseText('');
     setError('');
     setUploading(false);
     setPublishing(false);
+    setImageUploading(false);
   };
 
   const handleClose = () => { reset(); onClose(); };
 
+  // ── Publish handlers ────────────────────────────────────────────────────
+
   const handlePublishVideo = () => {
-    if (!file) return;
+    if (!videoFile) return;
     setUploading(true);
     startTransition(async () => {
       const form = new FormData();
-      form.append('file', file);
+      form.append('file', videoFile);
+      form.append('type', 'video');
       form.append('caption', videoCaption.trim());
       form.append('verse_reference', videoVerseRef.trim());
       form.append('verse_text', videoVerseText.trim());
@@ -111,6 +152,33 @@ export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
     onUploaded?.(result.postId, 'post');
   };
 
+  const handlePublishImage = () => {
+    if (!imageFile || !imageCaption.trim()) return;
+    setImageUploading(true);
+    startTransition(async () => {
+      const form = new FormData();
+      form.append('file', imageFile);
+      form.append('type', 'image');
+      form.append('caption', imageCaption.trim());
+      form.append('verse_reference', imageVerseRef.trim());
+      form.append('verse_text', imageVerseText.trim());
+
+      const res = await fetch('/api/explore/upload', { method: 'POST', body: form });
+      const json = await res.json();
+      setImageUploading(false);
+
+      if (!res.ok || json.error) {
+        setError(json.error ?? 'Upload failed. Please try again.');
+        return;
+      }
+      reset();
+      onClose();
+      onUploaded?.(json.postId, 'image');
+    });
+  };
+
+  // ── Styles ──────────────────────────────────────────────────────────────
+
   const tabStyle = (active: boolean): React.CSSProperties => ({
     flex: 1,
     padding: 'var(--space-2) var(--space-3)',
@@ -145,40 +213,31 @@ export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
         >
           <button style={tabStyle(mode === 'video')} onClick={() => { setMode('video'); setError(''); }}>
             <Video size={15} />
-            Video Perspective
+            Video
+          </button>
+          <button style={tabStyle(mode === 'image')} onClick={() => { setMode('image'); setError(''); }}>
+            <ImageIcon size={15} />
+            Image
           </button>
           <button style={tabStyle(mode === 'post')} onClick={() => { setMode('post'); setError(''); }}>
             <FileText size={15} />
-            Text Post
+            Text
           </button>
         </div>
 
         {/* ── VIDEO MODE ─────────────────────────────────────────────── */}
         {mode === 'video' && (
           <>
-            {!file ? (
+            {!videoFile ? (
               <div
                 role="button"
                 tabIndex={0}
                 aria-label="Select a video to upload"
-                onClick={() => inputRef.current?.click()}
-                onDrop={handleDrop}
+                onClick={() => videoInputRef.current?.click()}
+                onDrop={handleVideoDrop}
                 onDragOver={(e) => e.preventDefault()}
-                onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
-                style={{
-                  height: 180,
-                  border: '2px dashed var(--color-border)',
-                  borderRadius: 'var(--radius-lg)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 'var(--space-2)',
-                  cursor: 'pointer',
-                  color: 'var(--color-text-muted)',
-                  fontSize: 'var(--font-size-sm)',
-                  transition: 'border-color 0.15s',
-                }}
+                onKeyDown={(e) => e.key === 'Enter' && videoInputRef.current?.click()}
+                style={dropZoneStyle}
               >
                 <Video size={36} color="var(--color-text-muted)" />
                 <Upload size={20} color="var(--color-text-faint)" />
@@ -188,32 +247,20 @@ export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
             ) : (
               <div style={{ position: 'relative', borderRadius: 'var(--radius-lg)', overflow: 'hidden', height: 200 }}>
                 <video
-                  src={preview ?? undefined}
+                  src={videoPreview ?? undefined}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   muted playsInline controls={false}
                 />
-                <button
-                  onClick={reset}
-                  style={{
-                    position: 'absolute', top: 'var(--space-2)', right: 'var(--space-2)',
-                    width: 28, height: 28, borderRadius: 'var(--radius-full)',
-                    background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.75rem',
-                  }}
-                  aria-label="Remove selected video"
-                >
-                  <X size={14} />
-                </button>
+                <RemoveButton onClick={() => { setVideoFile(null); if (videoPreview) URL.revokeObjectURL(videoPreview); setVideoPreview(null); }} />
               </div>
             )}
 
             <input
-              ref={inputRef}
+              ref={videoInputRef}
               type="file"
               accept="video/mp4,video/webm,video/quicktime"
               style={{ display: 'none' }}
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleVideoFile(f); }}
             />
 
             <FieldGroup label="Caption">
@@ -229,31 +276,93 @@ export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               <label style={labelStyle}>Tag a Scripture (optional)</label>
-              <input
-                value={videoVerseRef}
-                onChange={(e) => setVideoVerseRef(e.target.value)}
-                placeholder="e.g. John 3:16"
-                maxLength={80}
-                style={inputStyle}
-              />
-              <textarea
-                value={videoVerseText}
-                onChange={(e) => setVideoVerseText(e.target.value)}
-                placeholder="Paste the verse text here…"
-                maxLength={600}
-                rows={2}
-                style={textareaStyle}
-              />
+              <input value={videoVerseRef} onChange={(e) => setVideoVerseRef(e.target.value)} placeholder="e.g. John 3:16" maxLength={80} style={inputStyle} />
+              <textarea value={videoVerseText} onChange={(e) => setVideoVerseText(e.target.value)} placeholder="Paste the verse text here…" maxLength={600} rows={2} style={textareaStyle} />
             </div>
 
             {error && <ErrorMsg msg={error} />}
 
             <button
               onClick={handlePublishVideo}
-              disabled={!file || uploading}
-              style={publishBtnStyle(!file || uploading)}
+              disabled={!videoFile || uploading}
+              style={publishBtnStyle(!videoFile || uploading)}
             >
               {uploading ? 'Publishing…' : 'Publish Perspective'}
+            </button>
+          </>
+        )}
+
+        {/* ── IMAGE MODE ─────────────────────────────────────────────── */}
+        {mode === 'image' && (
+          <>
+            {!imageFile ? (
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label="Select an image to upload"
+                onClick={() => imageInputRef.current?.click()}
+                onDrop={handleImageDrop}
+                onDragOver={(e) => e.preventDefault()}
+                onKeyDown={(e) => e.key === 'Enter' && imageInputRef.current?.click()}
+                style={dropZoneStyle}
+              >
+                <ImageIcon size={36} color="var(--color-text-muted)" />
+                <Upload size={20} color="var(--color-text-faint)" />
+                <span>Tap to select an image</span>
+                <span style={{ fontSize: 'var(--font-size-xs)' }}>JPEG · PNG · WebP · up to 10 MB</span>
+              </div>
+            ) : (
+              <div
+                style={{
+                  position: 'relative',
+                  borderRadius: 'var(--radius-lg)',
+                  overflow: 'hidden',
+                  aspectRatio: '4/3',
+                  background: 'var(--color-surface)',
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imagePreview ?? undefined}
+                  alt="Preview"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                <RemoveButton onClick={() => { setImageFile(null); if (imagePreview) URL.revokeObjectURL(imagePreview); setImagePreview(null); }} />
+              </div>
+            )}
+
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: 'none' }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); }}
+            />
+
+            <FieldGroup label={`Caption (${imageCaption.length}/300)`}>
+              <textarea
+                value={imageCaption}
+                onChange={(e) => setImageCaption(e.target.value.slice(0, 300))}
+                placeholder="Share what God is doing…"
+                rows={2}
+                style={textareaStyle}
+              />
+            </FieldGroup>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              <label style={labelStyle}>Tag a Scripture (optional)</label>
+              <input value={imageVerseRef} onChange={(e) => setImageVerseRef(e.target.value)} placeholder="e.g. Psalm 23:1" maxLength={80} style={inputStyle} />
+              <textarea value={imageVerseText} onChange={(e) => setImageVerseText(e.target.value)} placeholder="Paste the verse text here…" maxLength={600} rows={2} style={textareaStyle} />
+            </div>
+
+            {error && <ErrorMsg msg={error} />}
+
+            <button
+              onClick={handlePublishImage}
+              disabled={!imageFile || !imageCaption.trim() || imageUploading}
+              style={publishBtnStyle(!imageFile || !imageCaption.trim() || imageUploading)}
+            >
+              {imageUploading ? 'Publishing…' : 'Publish Image'}
             </button>
           </>
         )}
@@ -273,21 +382,8 @@ export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               <label style={labelStyle}>Tag a Scripture (optional)</label>
-              <input
-                value={postVerseRef}
-                onChange={(e) => setPostVerseRef(e.target.value)}
-                placeholder="e.g. Psalm 23:1"
-                maxLength={80}
-                style={inputStyle}
-              />
-              <textarea
-                value={postVerseText}
-                onChange={(e) => setPostVerseText(e.target.value)}
-                placeholder="Paste the verse text here…"
-                maxLength={600}
-                rows={2}
-                style={textareaStyle}
-              />
+              <input value={postVerseRef} onChange={(e) => setPostVerseRef(e.target.value)} placeholder="e.g. Psalm 23:1" maxLength={80} style={inputStyle} />
+              <textarea value={postVerseText} onChange={(e) => setPostVerseText(e.target.value)} placeholder="Paste the verse text here…" maxLength={600} rows={2} style={textareaStyle} />
             </div>
 
             {error && <ErrorMsg msg={error} />}
@@ -324,6 +420,38 @@ function ErrorMsg({ msg }: { msg: string }) {
     </p>
   );
 }
+
+function RemoveButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        position: 'absolute', top: 'var(--space-2)', right: 'var(--space-2)',
+        width: 28, height: 28, borderRadius: 'var(--radius-full)',
+        background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff',
+        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+      aria-label="Remove selected file"
+    >
+      <X size={14} />
+    </button>
+  );
+}
+
+const dropZoneStyle: React.CSSProperties = {
+  height: 180,
+  border: '2px dashed var(--color-border)',
+  borderRadius: 'var(--radius-lg)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 'var(--space-2)',
+  cursor: 'pointer',
+  color: 'var(--color-text-muted)',
+  fontSize: 'var(--font-size-sm)',
+  transition: 'border-color 0.15s',
+};
 
 const labelStyle: React.CSSProperties = {
   fontSize: 'var(--font-size-xs)',

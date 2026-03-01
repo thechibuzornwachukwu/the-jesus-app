@@ -5,6 +5,7 @@ import { Video as VideoIcon } from 'lucide-react';
 import type { FeedItem, ReactionType } from '../../lib/explore/types';
 import { VideoCard } from './VideoCard';
 import { TextPostCard } from './TextPostCard';
+import { ImageCard } from './ImageCard';
 import { getUnifiedFeed } from '../../lib/explore/actions';
 import { EmptyState } from '../shared-ui';
 
@@ -115,6 +116,19 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
     []
   );
 
+  const handleImageLikeChanged = useCallback(
+    (postId: string, liked: boolean, likeCount: number) => {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.kind === 'image' && item.data.id === postId
+            ? { ...item, data: { ...item.data, user_liked: liked, like_count: likeCount } }
+            : item
+        )
+      );
+    },
+    []
+  );
+
   if (items.length === 0) {
     return (
       <div style={{ height: feedHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -149,6 +163,23 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
                 onComment={() => onComment(item.data.id)}
                 onReactionChanged={handleVideoReactionChanged}
                 height={feedHeight}
+              />
+            </div>
+          );
+        }
+
+        if (item.kind === 'image') {
+          return (
+            <div
+              key={item.data.id}
+              ref={(el) => { cardRefs.current[idx] = el; }}
+              style={{ height: feedHeight, scrollSnapAlign: 'start', flexShrink: 0 }}
+            >
+              <ImageCard
+                post={item.data}
+                height={feedHeight}
+                onComment={() => onComment(item.data.id)}
+                onLikeChanged={handleImageLikeChanged}
               />
             </div>
           );
