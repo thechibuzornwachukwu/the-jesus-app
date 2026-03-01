@@ -21,7 +21,6 @@ export async function GET(req: Request) {
 
   const supabase = getAdmin();
   const now = new Date();
-  const utcHour = now.getUTCHours();
 
   // Batch: up to 50 users with push subscriptions
   const { data: subs } = await supabase
@@ -33,9 +32,7 @@ export async function GET(req: Request) {
 
   const userIds = [...new Set(subs.map((s: { user_id: string }) => s.user_id))];
 
-  await Promise.allSettled(
-    userIds.map((userId) => notifyUser(userId, supabase, utcHour, now))
-  );
+  await Promise.allSettled(userIds.map((userId) => notifyUser(userId, supabase, now)));
 
   return NextResponse.json({ ok: true, users: userIds.length });
 }
@@ -43,13 +40,12 @@ export async function GET(req: Request) {
 async function notifyUser(
   userId: string,
   supabase: ReturnType<typeof createClient>,
-  utcHour: number,
   now: Date
 ) {
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toISOString().slice(0, 10);
-  const oneHourAgo = new Date(now.getTime() - 3_600_000).toISOString();
+  const oneDayAgo = new Date(now.getTime() - 86_400_000).toISOString();
 
   // ── 1. Unread cell messages ─────────────────────────────────────────────────
   const { data: memberships } = await supabase
@@ -60,7 +56,6 @@ async function notifyUser(
 
   if (memberships?.length) {
     const cellIds = memberships.map((m: { cell_id: string }) => m.cell_id);
-
     const { data: channels } = await supabase
       .from('channels')
       .select('id, cell_id')
@@ -99,9 +94,7 @@ async function notifyUser(
             totalUnread += count;
             if (!topCell) {
               const ch = (channels ?? []).find((c: { id: string }) => c.id === chId);
-              const mem = memberships.find(
-                (m: { cell_id: string }) => m.cell_id === ch?.cell_id
-              );
+              const mem = memberships.find((m: { cell_id: string }) => m.cell_id === ch?.cell_id);
               topCell = (mem as unknown as { cells: { name: string } } | null)?.cells?.name ?? null;
             }
           }
@@ -119,7 +112,7 @@ async function notifyUser(
     }
   }
 
-  // ── 2. New posts from friends ───────────────────────────────────────────────
+  // ── 2. New posts from friends (past 24h) ────────────────────────────────────
   const { data: friends } = await supabase
     .from('friendships')
     .select('requester_id, addressee_id')
@@ -132,24 +125,18 @@ async function notifyUser(
       f.requester_id === userId ? f.addressee_id : f.requester_id
     );
 
-    const { data: newPosts } = await supabase
+    const { data: newPost } = await supabase
       .from('posts')
       .select('user_id, profiles(username)')
       .in('user_id', friendIds)
-      .gt('created_at', oneHourAgo)
+      .gt('created_at', oneDayAgo)
       .limit(1)
       .maybeSingle();
 
-    if (newPosts) {
+    if (newPost) {
       const username =
-        (newPosts as unknown as { profiles: { username: string } }).profiles?.username ??
-        'A friend';
-      void sendPushToUser(
-        userId,
-        'New perspective',
-        `${username} shared a new perspective`,
-        '/explore'
-      );
+        (newPost as unknown as { profiles: { username: string } }).profiles?.username ?? 'A friend';
+      void sendPushToUser(userId, 'New perspective', `${username} shared a new perspective`, '/explore');
     }
   }
 
@@ -160,41 +147,20 @@ async function notifyUser(
     .eq('user_id', userId)
     .maybeSingle();
 
-  if (
-    streak &&
-    (streak as { current_streak: number; last_active_date: string | null }).last_active_date ===
-      yesterdayStr &&
-    (streak as { current_streak: number }).current_streak > 1
-  ) {
+  const s = streak as { current_streak: number; last_active_date: string | null } | null;
+  if (s && s.last_active_date === yesterdayStr && s.current_streak > 1) {
     void sendPushToUser(
       userId,
       "Don't break your streak!",
-      `Keep your ${(streak as { current_streak: number }).current_streak}-day streak alive — open the app now`,
+      `Keep your ${s.current_streak}-day streak alive — open the app now`,
       '/'
     );
   }
 
-  // ── 4. New badge earned recently ────────────────────────────────────────────
-  const { data: recentBadges } = await supabase
-    .from('user_badges')
-    .select('badge_id, badges(name, description), awarded_at')
-    .eq('user_id', userId)
-    .gt('awarded_at', oneHourAgo)
-    .limit(3);
+  // ── 4. Daily verse ──────────────────────────────────────────────────────────
+  const verse = getDailyVerse();
+  void sendPushToUser(userId, "Today's verse", verse.reference, '/explore');
 
-  for (const ub of recentBadges ?? []) {
-    const b = (ub as unknown as { badges: { name: string; description: string } }).badges;
-    if (b) {
-      void sendPushToUser(userId, `You earned the ${b.name} badge!`, b.description ?? '', '/profile');
-    }
-  }
-
-  // ── 5. Daily verse at 9am UTC ──────────────────────────────────────────────
-  if (utcHour === 9) {
-    const verse = getDailyVerse();
-    void sendPushToUser(userId, "Today's verse", verse.reference, '/explore');
-  }
-
-  // ── 6. Check & award any new badges ────────────────────────────────────────
+  // ── 5. Check & award any new badges ────────────────────────────────────────
   await checkAndAwardBadges(userId, supabase);
 }
