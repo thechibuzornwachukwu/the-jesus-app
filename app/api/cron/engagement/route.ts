@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getDailyVerse } from '../../../../lib/explore/daily-verses';
 import { sendPushToUser } from '../../../../lib/notifications/push';
 import { checkAndAwardBadges } from '../../../../lib/gamification/check-badges';
@@ -39,7 +39,7 @@ export async function GET(req: Request) {
 
 async function notifyUser(
   userId: string,
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   now: Date
 ) {
   const yesterday = new Date(now);
