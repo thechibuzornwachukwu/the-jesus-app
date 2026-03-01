@@ -182,13 +182,6 @@ export async function getStreakData(): Promise<StreakData> {
 }
 
 // ────────────────────────────────────────────────────────────
-// logStreakEvent  no-op stub (streak derived from saved_verses)
-// ────────────────────────────────────────────────────────────
-export async function logStreakEvent(_type: string): Promise<void> {
-  // Streak is computed from saved_verses activity; no separate table needed.
-}
-
-// ────────────────────────────────────────────────────────────
 // getSavedVerses  includes note column (Phase 9)
 // ────────────────────────────────────────────────────────────
 export async function getSavedVerses(): Promise<SavedVerse[]> {
