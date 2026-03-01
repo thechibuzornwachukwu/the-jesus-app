@@ -82,7 +82,7 @@ export default function LandingPage() {
             }} />
           </div>
 
-          {/* Floating verse fragments — decorative */}
+          {/* Floating verse fragments  decorative */}
           {VERSE_FRAGMENTS.map((v, i) => (
             <span
               key={i}
@@ -212,7 +212,7 @@ export default function LandingPage() {
             margin: '0 auto',
           }}>
 
-            {/* Tile A — Community */}
+            {/* Tile A  Community */}
             <div className="lp-tile" style={{
               background: 'var(--color-surface-high)',
               border: '1px solid var(--color-border)',
@@ -259,14 +259,14 @@ export default function LandingPage() {
                       </span>
                     </div>
                     <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: 'var(--color-text-muted)', lineHeight: 1.5, margin: 0 }}>
-                      "Let's dig into Romans 8 tonight — who's joining the call?"
+                      "Let's dig into Romans 8 tonight  who's joining the call?"
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Tile B — Verse Feed */}
+            {/* Tile B  Verse Feed */}
             <div className="lp-tile" style={{
               background: 'var(--color-surface-high)',
               border: '1px solid var(--color-border)',
@@ -293,7 +293,7 @@ export default function LandingPage() {
               {/* Body */}
               <div style={{ padding: '1.25rem 1.5rem 1.5rem' }}>
                 <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '1rem', lineHeight: 1.7, color: 'var(--color-text)', marginBottom: '0.5rem' }}>
-                  "For I know the plans I have for you, declares the Lord — plans to prosper you."
+                  "For I know the plans I have for you, declares the Lord  plans to prosper you."
                 </p>
                 <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--color-accent)', fontWeight: 600, letterSpacing: '0.06em', marginBottom: '1rem', margin: '0 0 1rem' }}>
                   Jeremiah 29:11
@@ -308,7 +308,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Tile C — Learn */}
+            {/* Tile C  Learn */}
             <div className="lp-tile" style={{
               background: 'var(--color-surface-high)',
               border: '1px solid var(--color-border)',
@@ -389,15 +389,15 @@ export default function LandingPage() {
                 {[
                   {
                     label: 'Engage',
-                    body: 'Real communities built around scripture — cells, channels, and honest conversations with believers near and far.',
+                    body: 'Real communities built around scripture  cells, channels, and honest conversations with believers near and far.',
                   },
                   {
                     label: 'Explore',
-                    body: 'A feed of short-form scripture perspectives, testimonies, and daily verses — curated for reflection, not distraction.',
+                    body: 'A feed of short-form scripture perspectives, testimonies, and daily verses  curated for reflection, not distraction.',
                   },
                   {
                     label: 'Learn',
-                    body: 'Faith courses, AI-powered spiritual guidance, and sermon extraction — so the Word goes deeper than the pew.',
+                    body: 'Faith courses, AI-powered spiritual guidance, and sermon extraction  so the Word goes deeper than the pew.',
                   },
                 ].map((p) => (
                   <div key={p.label} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
