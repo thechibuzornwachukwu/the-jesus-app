@@ -55,6 +55,31 @@ export type CellWithPreview = Cell & {
   member_preview: MemberPreview[];
   last_activity: string | null;
   default_channel_id?: string | null;
+  last_message?: { content: string | null; message_type: string; created_at: string } | null;
+  unread_count?: number;
+};
+
+// ─── Phase 12: Stories ──────────────────────────────────────────────────────
+
+export type Story = {
+  id: string;
+  cell_id: string;
+  created_by: string;
+  media_url: string;
+  media_type: 'image' | 'video';
+  caption: string | null;
+  expires_at: string;
+  created_at: string;
+  profiles?: { username: string; avatar_url: string | null };
+};
+
+export type CellStoryGroup = {
+  cellId: string;
+  cellName: string;
+  cellAvatarUrl: string | null;
+  cellSlug: string;
+  hasUnseen: boolean;
+  stories: Story[];
 };
 
 export type CellMember = {

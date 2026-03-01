@@ -901,3 +901,133 @@ export async function updateScheduledMessage(
   if (error) return { error: 'Failed to update scheduled message.' };
   return { success: true };
 }
+
+// ─── Phase 12: Stories ──────────────────────────────────────────────────────
+
+import type { Story, CellStoryGroup } from './types';
+
+export async function getStoriesForCells(
+  cellIds: string[],
+  userId: string
+): Promise<CellStoryGroup[]> {
+  if (cellIds.length === 0) return [];
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+
+  const [cellsRes, storiesRes] = await Promise.all([
+    supabase.from('cells').select('id, name, avatar_url, slug').in('id', cellIds),
+    supabase
+      .from('cell_stories')
+      .select('id, cell_id, created_by, media_url, media_type, caption, expires_at, created_at, profiles(username, avatar_url)')
+      .in('cell_id', cellIds)
+      .gt('expires_at', now)
+      .order('created_at', { ascending: true }),
+  ]);
+
+  const stories = (storiesRes.data ?? []) as unknown as Story[];
+
+  // Fetch viewed story IDs
+  const storyIds = stories.map((s) => s.id);
+  const viewedIds = new Set<string>();
+  if (storyIds.length > 0) {
+    const { data: views } = await supabase
+      .from('story_views')
+      .select('story_id')
+      .eq('user_id', userId)
+      .in('story_id', storyIds);
+    (views ?? []).forEach((v: { story_id: string }) => viewedIds.add(v.story_id));
+  }
+
+  const storyMap = new Map<string, Story[]>();
+  for (const s of stories) {
+    const list = storyMap.get(s.cell_id) ?? [];
+    list.push(s);
+    storyMap.set(s.cell_id, list);
+  }
+
+  type CellRow = { id: string; name: string; avatar_url: string | null; slug: string };
+  const cellRows = (cellsRes.data ?? []) as unknown as CellRow[];
+
+  return cellIds
+    .map((cellId) => {
+      const info = cellRows.find((c) => c.id === cellId);
+      if (!info) return null;
+      const cellStories = storyMap.get(cellId) ?? [];
+      return {
+        cellId,
+        cellName: info.name,
+        cellAvatarUrl: info.avatar_url,
+        cellSlug: info.slug ?? cellId,
+        hasUnseen: cellStories.some((s) => !viewedIds.has(s.id)),
+        stories: cellStories,
+      };
+    })
+    .filter((g): g is CellStoryGroup => g !== null);
+}
+
+export async function createStory(
+  cellId: string,
+  mediaUrl: string,
+  mediaType: 'image' | 'video',
+  caption: string | null
+): Promise<{ id: string } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated.' };
+
+  const { data: membership } = await supabase
+    .from('cell_members')
+    .select('role')
+    .eq('cell_id', cellId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (membership?.role !== 'admin') return { error: 'Only admins can post stories.' };
+
+  const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from('cell_stories')
+    .insert({ cell_id: cellId, created_by: user.id, media_url: mediaUrl, media_type: mediaType, caption, expires_at })
+    .select('id')
+    .single();
+
+  if (error) return { error: 'Failed to create story.' };
+  return { id: (data as { id: string }).id };
+}
+
+export async function markStoryViewed(storyId: string): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase
+    .from('story_views')
+    .upsert({ story_id: storyId, user_id: user.id }, { onConflict: 'story_id,user_id' });
+}
+
+export async function getLastMessages(
+  cellIds: string[]
+): Promise<Record<string, { content: string | null; message_type: string; created_at: string } | null>> {
+  if (cellIds.length === 0) return {};
+  const supabase = await createClient();
+
+  const result: Record<string, { content: string | null; message_type: string; created_at: string } | null> = {};
+  cellIds.forEach((id) => { result[id] = null; });
+
+  const { data } = await supabase
+    .from('chat_messages')
+    .select('cell_id, content, message_type, created_at')
+    .in('cell_id', cellIds)
+    .order('created_at', { ascending: false })
+    .limit(cellIds.length * 5);
+
+  for (const row of (data ?? []) as { cell_id: string; content: string | null; message_type: string; created_at: string }[]) {
+    if (result[row.cell_id] === null) {
+      result[row.cell_id] = { content: row.content, message_type: row.message_type, created_at: row.created_at };
+    }
+  }
+  return result;
+}
