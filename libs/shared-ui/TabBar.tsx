@@ -5,6 +5,7 @@ import React from 'react';
 interface TabItem {
   id: string;
   label: string;
+  icon?: React.ReactNode;
 }
 
 interface TabBarProps {
@@ -73,6 +74,11 @@ export function TabBar({ tabs, activeId, onChange, variant = 'underline' }: TabB
             key={tab.id}
             onClick={() => onChange(tab.id)}
             style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 'var(--space-1)',
+              flex: 1,
               padding: `var(--space-3) var(--space-2)`,
               border: 'none',
               borderBottom: isActive
@@ -90,6 +96,7 @@ export function TabBar({ tabs, activeId, onChange, variant = 'underline' }: TabB
               whiteSpace: 'nowrap',
             }}
           >
+            {tab.icon && <span style={{ transition: 'color 0.15s ease' }}>{tab.icon}</span>}
             {tab.label}
           </button>
         );

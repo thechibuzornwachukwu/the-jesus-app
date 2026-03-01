@@ -18,19 +18,30 @@ export function StreakWidget({ current, longest, totalPoints, weeklyActivity }: 
     <div
       style={{
         margin: 'var(--space-3) var(--space-4) 0',
-        background: 'var(--color-surface)',
+        background: active ? 'var(--color-surface-high)' : 'var(--color-surface)',
         border: '1px solid var(--color-border)',
         borderRadius: 'var(--radius-lg)',
         padding: 'var(--space-4)',
         display: 'flex',
         alignItems: 'center',
         gap: 'var(--space-5)',
+        boxShadow: 'var(--shadow-sm)',
+        transition: 'background 0.3s, box-shadow 0.3s',
       }}
     >
       <style>{`
         @keyframes flame-pulse {
           0%, 100% { transform: scaleY(1) scaleX(1); }
           50% { transform: scaleY(1.06) scaleX(0.97); }
+        }
+        @keyframes flame-glow {
+          0%, 100% { filter: drop-shadow(0 2px 4px rgba(212,146,42,0.3)); }
+          50%      { filter: drop-shadow(0 4px 12px rgba(212,146,42,0.65)); }
+        }
+        @keyframes dot-earn {
+          0%   { transform: scale(0.6); opacity: 0; }
+          60%  { transform: scale(1.15); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
         }
       `}</style>
 
@@ -49,7 +60,7 @@ export function StreakWidget({ current, longest, totalPoints, weeklyActivity }: 
           height="44"
           viewBox="0 0 36 44"
           fill="none"
-          style={active ? { animation: 'flame-pulse 1.8s ease-in-out infinite' } : {}}
+          style={active ? { animation: 'flame-pulse 1.8s ease-in-out infinite, flame-glow 1.8s ease-in-out infinite' } : {}}
           aria-hidden="true"
         >
           <path
@@ -58,7 +69,7 @@ export function StreakWidget({ current, longest, totalPoints, weeklyActivity }: 
           />
           <path
             d="M18 28C15.8 28 14 26.2 14 24C14 21.5 15.5 19.5 18 17C20.5 19.5 22 21.5 22 24C22 26.2 20.2 28 18 28Z"
-            fill={active ? 'var(--color-orange-sharp, #f7bd95)' : 'var(--color-surface)'}
+            fill={active ? 'var(--color-orange-sharp)' : 'var(--color-surface)'}
           />
         </svg>
 
@@ -111,6 +122,10 @@ export function StreakWidget({ current, longest, totalPoints, weeklyActivity }: 
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'background 0.2s',
+                  ...(weeklyActivity[i] && {
+                    animation: 'dot-earn 0.4s ease-out both',
+                    animationDelay: `${i * 40}ms`,
+                  }),
                 }}
               >
                 {weeklyActivity[i] && (

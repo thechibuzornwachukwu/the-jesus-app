@@ -24,7 +24,7 @@ export function FullScreenModal({
   action,
   footerContent,
   children,
-  zIndex = 'var(--z-modal)',
+  zIndex = '35',
 }: FullScreenModalProps) {
   if (!open) return null;
 
@@ -99,7 +99,7 @@ export function FullScreenModal({
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>{children}</div>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(var(--nav-height, 64px) + env(safe-area-inset-bottom, 0px) + var(--space-8))' }}>{children}</div>
 
       {/* Optional footer */}
       {footerContent && <div style={{ flexShrink: 0 }}>{footerContent}</div>}

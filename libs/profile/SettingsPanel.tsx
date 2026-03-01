@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
+import { User, Lock, Sliders, Bell, AlertTriangle, Settings } from 'lucide-react';
 import { Input } from '../shared-ui/Input';
 import { Button } from '../shared-ui/Button';
 import { FullScreenModal, ChipGroup } from '../shared-ui';
@@ -110,11 +111,11 @@ export function SettingsPanel({
   }
 
   return (
-    <FullScreenModal open={open} onClose={onClose} title="Settings">
-      <div style={{ padding: 'var(--space-6) var(--space-4)' }}>
+    <FullScreenModal open={open} onClose={onClose} title="Settings" icon={<Settings size={18} />}>
+      <div style={{ padding: 'var(--space-6) var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
         {/* ── Account ── */}
-        <Section title="Account">
+        <Section title="Account" icon={<User size={14} />}>
           <form onSubmit={handleEmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <Input name="email" label="Change Email" type="email" placeholder="new@email.com" />
             <Button type="submit" variant="ghost">Update Email</Button>
@@ -128,10 +129,8 @@ export function SettingsPanel({
           </form>
         </Section>
 
-        <Divider thick />
-
         {/* ── Privacy ── */}
-        <Section title="Privacy">
+        <Section title="Privacy" icon={<Lock size={14} />}>
           <ToggleRow
             label="Public profile"
             description="Others can see your profile"
@@ -170,10 +169,8 @@ export function SettingsPanel({
           )}
         </Section>
 
-        <Divider thick />
-
         {/* ── Preferences ── */}
-        <Section title="Content Preferences">
+        <Section title="Content Preferences" icon={<Sliders size={14} />}>
           <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>
             Select topics you care about
           </p>
@@ -186,26 +183,22 @@ export function SettingsPanel({
           />
         </Section>
 
-        <Divider thick />
-
         {/* ── Notifications ── */}
-        <Section title="Notifications">
+        <Section title="Notifications" icon={<Bell size={14} />}>
           <Button variant="ghost" onClick={handleEnablePush}>
             Enable push notifications
           </Button>
           {pushMsg && <Msg text={pushMsg} style={{ marginTop: 'var(--space-2)' }} />}
         </Section>
 
-        <Divider thick />
-
         {/* ── Danger Zone ── */}
-        <Section title="Danger Zone">
+        <Section title="Danger Zone" icon={<AlertTriangle size={14} />}>
           <Button variant="ghost" onClick={handleSignOut}>
             Sign Out
           </Button>
           <div style={{ marginTop: 'var(--space-6)' }}>
-            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-accent-2)', marginBottom: 'var(--space-2)' }}>
-              Delete account  type <strong>DELETE</strong> to confirm
+            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-error)', marginBottom: 'var(--space-2)' }}>
+              Delete account — type <strong>DELETE</strong> to confirm
             </p>
             <Input
               label=""
@@ -218,10 +211,10 @@ export function SettingsPanel({
               disabled={deleteConfirm !== 'DELETE'}
               style={{
                 marginTop: 'var(--space-3)',
-                background: 'rgba(139,46,18,0.15)',
-                color: 'var(--color-accent-2)',
+                background: 'var(--color-error-soft)',
+                color: 'var(--color-error)',
                 opacity: deleteConfirm !== 'DELETE' ? 0.4 : 1,
-                border: '1px solid rgba(139,46,18,0.3)',
+                border: '1px solid var(--color-error-border)',
               }}
             >
               Permanently Delete Account
@@ -235,33 +228,50 @@ export function SettingsPanel({
 }
 
 // ── Small helpers ──────────────────────────────────────────
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 'var(--space-4)' }}>
-      <h3
+    <div
+      style={{
+        background: 'var(--color-surface)',
+        borderRadius: 'var(--radius-lg)',
+        overflow: 'hidden',
+      }}
+    >
+      <div
         style={{
-          fontSize: 'var(--font-size-sm)',
-          fontWeight: 'var(--font-weight-semibold)' as React.CSSProperties['fontWeight'],
-          color: 'var(--color-text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: 'var(--letter-spacing-wide)',
-          marginBottom: 'var(--space-4)',
+          background: 'var(--color-surface-high)',
+          padding: 'var(--space-3) var(--space-4)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-2)',
         }}
       >
-        {title}
-      </h3>
-      {children}
+        <span style={{ color: 'var(--color-accent)', display: 'flex', alignItems: 'center' }}>{icon}</span>
+        <h3
+          style={{
+            margin: 0,
+            fontSize: 'var(--font-size-xs)',
+            fontWeight: 'var(--font-weight-semibold)' as React.CSSProperties['fontWeight'],
+            color: 'var(--color-text-muted)',
+            textTransform: 'uppercase',
+            letterSpacing: 'var(--letter-spacing-wide)',
+          }}
+        >
+          {title}
+        </h3>
+      </div>
+      <div style={{ padding: 'var(--space-4)' }}>{children}</div>
     </div>
   );
 }
 
-function Divider({ thick }: { thick?: boolean }) {
+function Divider() {
   return (
     <div
       style={{
-        height: thick ? 1 : 1,
+        height: 1,
         background: 'var(--color-border)',
-        margin: `var(--space-6) 0`,
+        margin: `var(--space-4) 0`,
       }}
     />
   );
