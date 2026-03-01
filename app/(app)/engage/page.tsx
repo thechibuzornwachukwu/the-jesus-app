@@ -5,6 +5,7 @@ import {
   getMyCellsWithPreviews,
   getLastMessages,
   getStoriesForCells,
+  getDefaultChannelIds,
 } from '../../../lib/cells/actions';
 import { EngageClient } from './EngageClient';
 
@@ -25,12 +26,13 @@ export default async function EngagePage() {
 
   const joinedIds = myCells.map((c) => c.id);
 
-  const [discoverCells, lastMessages, storyGroups] = await Promise.all([
+  const [discoverCells, lastMessages, storyGroups, defaultChannelIds] = await Promise.all([
     getCellsWithMemberPreviews(joinedIds),
     getLastMessages(joinedIds),
     joinedIds.length > 0
       ? getStoriesForCells(joinedIds, user.id).catch(() => [])
       : Promise.resolve([]),
+    getDefaultChannelIds(joinedIds),
   ]);
 
   const userCategories =
@@ -44,6 +46,7 @@ export default async function EngagePage() {
       userCategories={userCategories}
       lastMessages={lastMessages}
       storyGroups={storyGroups}
+      defaultChannelIds={defaultChannelIds}
     />
   );
 }

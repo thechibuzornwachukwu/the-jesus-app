@@ -1008,6 +1008,23 @@ export async function markStoryViewed(storyId: string): Promise<void> {
     .upsert({ story_id: storyId, user_id: user.id }, { onConflict: 'story_id,user_id' });
 }
 
+export async function getDefaultChannelIds(
+  cellIds: string[]
+): Promise<Record<string, string>> {
+  if (cellIds.length === 0) return {};
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('channels')
+    .select('cell_id, id')
+    .in('cell_id', cellIds)
+    .order('position', { ascending: true });
+  const map: Record<string, string> = {};
+  for (const row of (data ?? []) as { cell_id: string; id: string }[]) {
+    if (!map[row.cell_id]) map[row.cell_id] = row.id;
+  }
+  return map;
+}
+
 export async function getLastMessages(
   cellIds: string[]
 ): Promise<Record<string, { content: string | null; message_type: string; created_at: string } | null>> {

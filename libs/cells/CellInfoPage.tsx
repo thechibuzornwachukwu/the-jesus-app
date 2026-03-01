@@ -29,6 +29,7 @@ interface CellInfoPageProps {
   isMember: boolean;
   userRole: 'admin' | 'member' | null;
   permanentInviteCode?: string | null;
+  defaultChannelId?: string;
 }
 
 export function CellInfoPage({
@@ -38,6 +39,7 @@ export function CellInfoPage({
   isMember,
   userRole,
   permanentInviteCode,
+  defaultChannelId,
 }: CellInfoPageProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -400,7 +402,7 @@ export function CellInfoPage({
 
         {isMember ? (
           <button
-            onClick={() => router.push(`/engage/${cell.slug}`)}
+            onClick={() => router.push(defaultChannelId ? `/engage/${cell.slug}/${defaultChannelId}` : `/engage/${cell.slug}`)}
             style={{
               width: '100%',
               padding: 'var(--space-3)',

@@ -1,6 +1,10 @@
+import { createClient } from '../lib/supabase/server';
 import { redirect } from 'next/navigation';
+import LandingPage from '../libs/landing/LandingPage';
 
-// Root redirects to Engage tab (middleware handles auth check)
-export default function RootPage() {
-  redirect('/engage');
+export default async function RootPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) redirect('/engage');
+  return <LandingPage />;
 }

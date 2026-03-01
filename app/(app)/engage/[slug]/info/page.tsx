@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '../../../../../lib/supabase/server';
 import { CellInfoPage } from '../../../../../libs/cells/CellInfoPage';
-import { getOrCreatePermanentInvite } from '../../../../../lib/cells/actions';
+import { getOrCreatePermanentInvite, getDefaultChannelIds } from '../../../../../lib/cells/actions';
 import type { CellMemberWithProfile } from '../../../../../lib/cells/types';
 
 interface InfoPageProps {
@@ -58,8 +58,10 @@ export default async function CellInfoRoute({ params }: InfoPageProps) {
   const isMember = !!membershipResult.data;
   const userRole = (membershipResult.data?.role as 'admin' | 'member' | null) ?? null;
 
-  // Get or create the permanent invite link (auto-creates for admins; read-only for members)
-  const permanentInviteCode = isMember ? await getOrCreatePermanentInvite(cell.id) : null;
+  const [permanentInviteCode, defaultChannelMap] = await Promise.all([
+    isMember ? getOrCreatePermanentInvite(cell.id) : Promise.resolve(null),
+    getDefaultChannelIds([cell.id]),
+  ]);
 
   return (
     <CellInfoPage
@@ -69,6 +71,7 @@ export default async function CellInfoRoute({ params }: InfoPageProps) {
       isMember={isMember}
       userRole={userRole}
       permanentInviteCode={permanentInviteCode}
+      defaultChannelId={defaultChannelMap[cell.id]}
     />
   );
 }

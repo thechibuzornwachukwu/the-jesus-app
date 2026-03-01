@@ -42,15 +42,17 @@ interface CommunityRowProps {
   cell: CellWithPreview;
   lastMsg?: { content: string | null; message_type: string; created_at: string } | null;
   onLeave: () => void;
+  defaultChannelId?: string;
 }
 
-function CommunityRow({ cell, lastMsg, onLeave }: CommunityRowProps) {
+function CommunityRow({ cell, lastMsg, onLeave, defaultChannelId }: CommunityRowProps) {
   const router = useRouter();
   const [pressed, setPressed] = useState(false);
 
   const handleClick = () => {
     vibrate([8]);
-    router.push(`/engage/${cell.slug}`);
+    if (defaultChannelId) router.push(`/engage/${cell.slug}/${defaultChannelId}`);
+    else router.push(`/engage/${cell.slug}/info`);
   };
 
   return (
@@ -167,6 +169,7 @@ interface EngageClientProps {
   userCategories: string[];
   lastMessages: Record<string, { content: string | null; message_type: string; created_at: string } | null>;
   storyGroups: CellStoryGroup[];
+  defaultChannelIds: Record<string, string>;
 }
 
 export function EngageClient({
@@ -176,6 +179,7 @@ export function EngageClient({
   userCategories,
   lastMessages,
   storyGroups,
+  defaultChannelIds,
 }: EngageClientProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -354,6 +358,7 @@ export function EngageClient({
                 key={cell.id}
                 cell={cell}
                 lastMsg={lastMessages[cell.id]}
+                defaultChannelId={defaultChannelIds[cell.id]}
                 onLeave={() => {
                   setJoinedIds((p) => { const n = new Set(p); n.delete(cell.id); return n; });
                   setLocalMyCells((p) => p.filter((c) => c.id !== cell.id));
