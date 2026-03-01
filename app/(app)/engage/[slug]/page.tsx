@@ -46,6 +46,33 @@ export default async function CellPage({ params }: CellPageProps) {
     redirect(`/engage/${slug}/${defaultChannel.id}`);
   }
 
-  // No channels exist yet  fall back to info page
+  // No channels yet — auto-create a default General channel so the user lands in chat
+  const { data: newCategory } = await supabase
+    .from('channel_categories')
+    .insert({ cell_id: cell.id, name: 'General', position: 0 })
+    .select('id')
+    .single();
+
+  if (newCategory) {
+    const { data: newChannel } = await supabase
+      .from('channels')
+      .insert({
+        cell_id: cell.id,
+        category_id: (newCategory as { id: string }).id,
+        name: 'general',
+        emoji: '💬',
+        channel_type: 'text',
+        position: 0,
+        created_by: user.id,
+      })
+      .select('id')
+      .single();
+
+    if (newChannel) {
+      redirect(`/engage/${slug}/${(newChannel as { id: string }).id}`);
+    }
+  }
+
+  // All else fails
   redirect(`/engage/${slug}/info`);
 }

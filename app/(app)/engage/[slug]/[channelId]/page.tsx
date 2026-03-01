@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '../../../../../lib/supabase/server';
 import { CellShell } from '../../../../../libs/cells/CellShell';
 import { getBlockedUsers } from '../../../../../lib/profile/actions';
-import { getChannelCategories, getUnreadCounts, getCellMembers } from '../../../../../lib/cells/actions';
+import { getChannelCategories, getUnreadCounts, getCellMembers, getStoriesForCells } from '../../../../../lib/cells/actions';
 import type { Cell, Message, Profile } from '../../../../../lib/cells/types';
 
 interface ChannelPageProps {
@@ -73,8 +73,8 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
     avatar_url: null,
   };
 
-  // Parallel: messages for this channel, blocked users, categories, unread counts, members
-  const [messagesResult, blockedUserIds, categories, unreadCounts, members] = await Promise.all([
+  // Parallel: messages for this channel, blocked users, categories, unread counts, members, stories
+  const [messagesResult, blockedUserIds, categories, unreadCounts, members, storyGroups] = await Promise.all([
     supabase
       .from('chat_messages')
       .select('*, profiles(username, avatar_url)')
@@ -86,6 +86,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
     getChannelCategories(cell.id),
     getUnreadCounts(cell.id),
     getCellMembers(cell.id),
+    getStoriesForCells([cell.id], user.id).catch(() => []),
   ]);
 
   // Mark this channel as read
@@ -107,6 +108,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
       members={members}
       unreadCounts={clearedUnread}
       blockedUserIds={blockedUserIds}
+      storyGroups={storyGroups}
     />
   );
 }

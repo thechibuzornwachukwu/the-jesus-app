@@ -1,23 +1,172 @@
 'use client';
 
 import React, { useState, useRef, useTransition } from 'react';
-import Image from 'next/image';
 import { Search, Plus, Users } from 'lucide-react';
-import { CellCard } from '../../../libs/cells/CellCard';
+import { useRouter } from 'next/navigation';
+import { Avatar } from '../../../libs/shared-ui/Avatar';
 import { CreateCellSheet } from '../../../libs/cells/CreateCellSheet';
 import { SwipeToAction } from '../../../libs/cells/SwipeToAction';
+import { StoriesStrip } from '../../../libs/cells/StoriesStrip';
 import { ChipGroup, SectionHeader, EmptyState } from '../../../libs/shared-ui';
+import { CellCard } from '../../../libs/cells/CellCard';
 import type { CellWithPreview } from '../../../lib/cells/types';
+import type { CellStoryGroup } from '../../../lib/cells/types';
 import { getDiscoverCellsWithActivityMatch } from '../../../lib/cells/actions';
 import { getActivityMatchScore } from '../../../lib/cells/notification-scoring';
+import { vibrate } from '../../../libs/shared-ui/haptics';
 
 const CATEGORIES = ['For You', 'All', 'Prayer', 'Bible Study', 'Youth', 'Worship', 'Discipleship', 'General'];
+
+function relativeTime(ts: string | null | undefined): string {
+  if (!ts) return '';
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
+}
+
+function lastMessagePreview(
+  lastMsg: { content: string | null; message_type: string } | null | undefined
+): string {
+  if (!lastMsg) return 'No messages yet';
+  if (lastMsg.message_type === 'audio') return '🎤 Voice message';
+  if (lastMsg.message_type === 'image') return '📷 Image';
+  if (lastMsg.content) return lastMsg.content;
+  return '';
+}
+
+interface CommunityRowProps {
+  cell: CellWithPreview;
+  lastMsg?: { content: string | null; message_type: string; created_at: string } | null;
+  onLeave: () => void;
+}
+
+function CommunityRow({ cell, lastMsg, onLeave }: CommunityRowProps) {
+  const router = useRouter();
+  const [pressed, setPressed] = useState(false);
+
+  const handleClick = () => {
+    vibrate([8]);
+    router.push(`/engage/${cell.slug}`);
+  };
+
+  return (
+    <SwipeToAction onLeave={onLeave}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleClick}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); }}
+        onMouseDown={() => setPressed(true)}
+        onMouseUp={() => setPressed(false)}
+        onMouseLeave={() => setPressed(false)}
+        onTouchStart={() => setPressed(true)}
+        onTouchEnd={() => setPressed(false)}
+        onTouchCancel={() => setPressed(false)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '10px 16px',
+          background: pressed ? 'var(--color-surface)' : 'transparent',
+          cursor: 'pointer',
+          outline: 'none',
+          WebkitTapHighlightColor: 'transparent',
+          transform: pressed ? 'scale(0.98)' : 'scale(1)',
+          transition: 'background 0.12s, transform 0.1s',
+        }}
+      >
+        {/* Avatar */}
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: '50%',
+            overflow: 'hidden',
+            flexShrink: 0,
+            border: '2px solid var(--color-border)',
+          }}
+        >
+          <Avatar src={cell.avatar_url} name={cell.name} size={48} />
+        </div>
+
+        {/* Text */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--color-text)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {cell.name}
+          </p>
+          <p
+            style={{
+              margin: '2px 0 0',
+              fontSize: 12,
+              color: 'var(--color-text-muted)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {lastMessagePreview(lastMsg)}
+          </p>
+        </div>
+
+        {/* Right: time + badge */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: 4,
+            flexShrink: 0,
+          }}
+        >
+          <span style={{ fontSize: 11, color: 'var(--color-text-faint)' }}>
+            {relativeTime(lastMsg?.created_at ?? cell.last_activity)}
+          </span>
+          {/* unread badge placeholder — will be driven by DB count */}
+          {(cell.unread_count ?? 0) > 0 && (
+            <div
+              style={{
+                minWidth: 18,
+                height: 18,
+                borderRadius: 9,
+                background: 'var(--color-accent)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0 5px',
+              }}
+            >
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-accent-text)' }}>
+                {cell.unread_count}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    </SwipeToAction>
+  );
+}
 
 interface EngageClientProps {
   myCells: CellWithPreview[];
   discoverCells: CellWithPreview[];
   currentUserId: string;
   userCategories: string[];
+  lastMessages: Record<string, { content: string | null; message_type: string; created_at: string } | null>;
+  storyGroups: CellStoryGroup[];
 }
 
 export function EngageClient({
@@ -25,6 +174,8 @@ export function EngageClient({
   discoverCells,
   currentUserId: _currentUserId,
   userCategories,
+  lastMessages,
+  storyGroups,
 }: EngageClientProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -39,11 +190,8 @@ export function EngageClient({
 
   const handleSearchToggle = () => {
     setSearchOpen((prev) => {
-      if (!prev) {
-        setTimeout(() => searchInputRef.current?.focus(), 50);
-      } else {
-        setSearch('');
-      }
+      if (!prev) setTimeout(() => searchInputRef.current?.focus(), 50);
+      else setSearch('');
       return !prev;
     });
   };
@@ -68,14 +216,9 @@ export function EngageClient({
   const filteredDiscover =
     categoryFilter === 'For You'
       ? (forYouCells ?? []).filter((c) => {
-          if (search) {
-            const q = search.toLowerCase();
-            return (
-              c.name.toLowerCase().includes(q) ||
-              (c.description?.toLowerCase().includes(q) ?? false)
-            );
-          }
-          return true;
+          if (!search) return true;
+          const q = search.toLowerCase();
+          return c.name.toLowerCase().includes(q) || (c.description?.toLowerCase().includes(q) ?? false);
         })
       : discoverCells.filter((c) => {
           if (joinedIds.has(c.id)) return false;
@@ -88,123 +231,78 @@ export function EngageClient({
           return true;
         });
 
-  const [featuredCell, ...gridCells] = filteredDiscover;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-      {/* ── Stage 5.1 Hero ── */}
-      <div style={{ position: 'relative', height: 200, flexShrink: 0, overflow: 'hidden' }}>
-        <Image
-          src="/engage-hero.png"
-          alt="Community"
-          fill
-          priority
-          style={{ objectFit: 'cover', objectPosition: 'center 30%' }}
-          sizes="100vw"
-        />
-        {/* gradient overlay */}
-        <div
+      {/* ── Sticky header ── */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          height: 56,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 var(--space-4)',
+          background: 'var(--color-bg)',
+          borderBottom: '1px solid var(--color-border)',
+          flexShrink: 0,
+          gap: 'var(--space-2)',
+        }}
+      >
+        <h1
           style={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'var(--gradient-hero)',
+            flex: 1,
+            margin: 0,
+            fontFamily: "'Archivo Condensed', var(--font-display)",
+            fontSize: '1.6rem',
+            fontWeight: 900,
+            letterSpacing: '-0.01em',
+            color: 'var(--color-text)',
+            lineHeight: 1,
           }}
-        />
-
-        {/* top action bar (search + create) */}
-        <div
+        >
+          Engage
+        </h1>
+        <button
+          onClick={handleSearchToggle}
+          aria-label="Search cells"
           style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 56,
+            width: 36,
+            height: 36,
+            borderRadius: 'var(--radius-full)',
+            border: 'none',
+            background: searchOpen ? 'var(--color-accent)' : 'var(--color-surface)',
+            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-end',
-            padding: '0 var(--space-4)',
-            gap: 'var(--space-2)',
+            justifyContent: 'center',
+            color: searchOpen ? 'var(--color-accent-text)' : 'var(--color-text-muted)',
+            transition: 'background 0.15s',
+            flexShrink: 0,
           }}
         >
-          <button
-            onClick={handleSearchToggle}
-            aria-label="Search cells"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 'var(--radius-full)',
-              border: 'none',
-              background: searchOpen ? 'var(--color-accent)' : 'rgba(255,255,255,0.18)',
-              backdropFilter: 'blur(6px)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--color-bright)',
-              transition: 'background 0.15s',
-              flexShrink: 0,
-            }}
-          >
-            <Search size={17} />
-          </button>
-
-          <button
-            onClick={() => setCreateOpen(true)}
-            aria-label="Create a new cell"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 'var(--radius-full)',
-              border: 'none',
-              background: 'var(--color-accent)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--color-accent-text)',
-              flexShrink: 0,
-            }}
-          >
-            <Plus size={18} />
-          </button>
-        </div>
-
-        {/* hero text */}
-        <div
+          <Search size={17} />
+        </button>
+        <button
+          onClick={() => setCreateOpen(true)}
+          aria-label="Create a new cell"
           style={{
-            position: 'absolute',
-            bottom: 20,
-            left: 'var(--space-4)',
+            width: 36,
+            height: 36,
+            borderRadius: 'var(--radius-full)',
+            border: 'none',
+            background: 'var(--color-accent)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--color-accent-text)',
+            flexShrink: 0,
           }}
         >
-          <h1
-            style={{
-              margin: 0,
-              fontFamily: "'Archivo Condensed', var(--font-display)",
-              fontSize: 'clamp(2.4rem, 10vw, 3rem)',
-              fontWeight: 900,
-              letterSpacing: '-0.02em',
-              color: '#f5f7f7',
-              lineHeight: 1,
-              textShadow: '0 2px 12px rgba(4,5,3,0.6)',
-            }}
-          >
-            Engage
-          </h1>
-          <p
-            style={{
-              margin: '4px 0 0',
-              fontSize: 'var(--font-size-sm)',
-              color: 'rgba(245,247,247,0.75)',
-              fontWeight: 'var(--font-weight-medium)',
-              letterSpacing: '0.01em',
-            }}
-          >
-            Find your people. Go deeper.
-          </p>
-        </div>
+          <Plus size={18} />
+        </button>
       </div>
 
       {/* Inline search bar */}
@@ -238,93 +336,47 @@ export function EngageClient({
       )}
 
       {/* Scrollable content */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-4) 0 var(--space-6)' }}>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
 
-        {/* ── Stage 5.2 Your Communities ── */}
-        <section style={{ marginBottom: 'var(--space-5)', padding: '0 var(--space-4)' }}>
-          <SectionHeader>Your Communities</SectionHeader>
-          {localMyCells.length === 0 ? (
+        {/* ── Stories strip ── */}
+        {storyGroups.length > 0 && (
+          <StoriesStrip groups={storyGroups} />
+        )}
+
+        {/* ── Your Communities ── */}
+        {localMyCells.length > 0 && (
+          <section style={{ marginBottom: 'var(--space-2)' }}>
+            <div style={{ padding: 'var(--space-3) var(--space-4) var(--space-1)' }}>
+              <SectionHeader>Your Communities</SectionHeader>
+            </div>
+            {localMyCells.map((cell) => (
+              <CommunityRow
+                key={cell.id}
+                cell={cell}
+                lastMsg={lastMessages[cell.id]}
+                onLeave={() => {
+                  setJoinedIds((p) => { const n = new Set(p); n.delete(cell.id); return n; });
+                  setLocalMyCells((p) => p.filter((c) => c.id !== cell.id));
+                }}
+              />
+            ))}
+          </section>
+        )}
+
+        {localMyCells.length === 0 && (
+          <section style={{ padding: 'var(--space-4)' }}>
             <EmptyState
               message="Every revival starts with a room. Create your first cell and call your people in."
               imageSrc="/engage-hero.png"
             />
-          ) : (
-            <div className="stagger-list" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              {localMyCells.map((cell) => (
-                <SwipeToAction
-                  key={cell.id}
-                  onLeave={() => {
-                    setJoinedIds((p) => { const n = new Set(p); n.delete(cell.id); return n; });
-                    setLocalMyCells((p) => p.filter((c) => c.id !== cell.id));
-                  }}
-                >
-                  {/* online badge wrapper */}
-                  <div style={{ position: 'relative' }}>
-                    <CellCard cell={cell} isMember />
-                    {/* online member count badge */}
-                    {typeof (cell as CellWithPreview & { online_count?: number }).online_count === 'number' &&
-                      (cell as CellWithPreview & { online_count?: number }).online_count! > 0 && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 10,
-                          right: 10,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          background: 'rgba(4,5,3,0.72)',
-                          backdropFilter: 'blur(4px)',
-                          borderRadius: 'var(--radius-full)',
-                          padding: '2px 8px 2px 6px',
-                          pointerEvents: 'none',
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: 7,
-                            height: 7,
-                            borderRadius: '50%',
-                            background: 'var(--color-success)',
-                            flexShrink: 0,
-                          }}
-                        />
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: '#f5f7f7',
-                            lineHeight: 1,
-                          }}
-                        >
-                          {(cell as CellWithPreview & { online_count?: number }).online_count}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </SwipeToAction>
-              ))}
-            </div>
-          )}
-        </section>
+          </section>
+        )}
 
-        <div
-          style={{
-            height: 1,
-            background: 'var(--color-border)',
-            margin: '0 var(--space-4) var(--space-5)',
-          }}
-        />
+        <div style={{ height: 1, background: 'var(--color-border)', margin: '0 var(--space-4) var(--space-4)' }} />
 
-        {/* ── Stage 5.3 Discover ── */}
-        <section style={{ padding: '0 var(--space-4)' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 'var(--space-1)',
-            }}
-          >
+        {/* ── Discover ── */}
+        <section style={{ padding: '0 var(--space-4) var(--space-6)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-1)' }}>
             <SectionHeader>Discover</SectionHeader>
             <button
               style={{
@@ -341,7 +393,6 @@ export function EngageClient({
             </button>
           </div>
 
-          {/* reordered chips: Prayer first */}
           <div style={{ marginBottom: 'var(--space-3)' }}>
             <ChipGroup
               options={CATEGORIES}
@@ -355,7 +406,6 @@ export function EngageClient({
           {categoryFilter === 'For You' && forYouLoading ? (
             <EmptyState message="Finding cells for you…" />
           ) : filteredDiscover.length === 0 ? (
-            /* warm empty state */
             <div
               style={{
                 display: 'flex',
@@ -366,7 +416,6 @@ export function EngageClient({
                 textAlign: 'center',
               }}
             >
-              {/* inline cross icon */}
               <svg width={36} height={36} viewBox="0 0 36 36" fill="none" aria-hidden>
                 <rect x={15} y={4} width={6} height={28} rx={3} fill="var(--color-accent)" />
                 <rect x={4} y={13} width={28} height={6} rx={3} fill="var(--color-accent)" />
@@ -375,63 +424,19 @@ export function EngageClient({
                 {categoryFilter === 'For You'
                   ? 'No matching cells found. Update your interests in Profile → Settings.'
                   : search || categoryFilter !== 'All'
-                  ? 'No cells match your filter  try a different category.'
+                  ? 'No cells match your filter — try a different category.'
                   : 'No public cells yet. Be the first to create a community!'}
               </p>
             </div>
           ) : (
             <>
-              {/* Featured  full-width card with brand photo background */}
-              <div style={{ marginBottom: 'var(--space-3)', position: 'relative' }}>
-                <div
-                  style={{
-                    position: 'relative',
-                    borderRadius: 'var(--radius-xl)',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {/* background photo */}
-                  <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-                    <Image
-                      src="/engage-discover.png"
-                      alt=""
-                      fill
-                      style={{ objectFit: 'cover', objectPosition: 'center' }}
-                      sizes="100vw"
-                    />
-                    <div
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        background:
-                          'var(--gradient-card-overlay)',
-                      }}
-                    />
-                  </div>
-                  {/* card content on top */}
-                  <div style={{ position: 'relative', zIndex: 1 }}>
-                    <CellCard cell={featuredCell} isMember={false} featured />
-                  </div>
-                </div>
+              {/* Full-width photo cards */}
+              <div className="stagger-list" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                {filteredDiscover.map((cell) => (
+                  <CellCard key={cell.id} cell={cell} isMember={false} featured />
+                ))}
               </div>
 
-              {/* Grid  2 columns with stagger animation */}
-              {gridCells.length > 0 && (
-                <div
-                  className="stagger-list"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: 'var(--space-3)',
-                  }}
-                >
-                  {gridCells.map((cell) => (
-                    <CellCard key={cell.id} cell={cell} isMember={false} />
-                  ))}
-                </div>
-              )}
-
-              {/* member count hint */}
               {filteredDiscover.length > 0 && (
                 <div
                   style={{

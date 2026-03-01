@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useTransition, useEffect } from 'react';
-import { Menu, Users, CalendarPlus } from 'lucide-react';
+import { ChevronLeft, Users, MoreVertical, Hash, Megaphone, Calendar, CalendarPlus } from 'lucide-react';
 import {
   applyScore,
   NOTIFICATION_CLICK,
@@ -11,9 +11,9 @@ import {
 } from '../../lib/cells/notification-scoring';
 import { useRouter } from 'next/navigation';
 import { Chat } from './Chat';
-import { ChannelSidebar } from './ChannelSidebar';
-import type { UpcomingMeetingHint } from './ChannelSidebar';
-import { OnlineUsersPanel } from './OnlineUsersPanel';
+import { StoriesStrip } from './StoriesStrip';
+import { CreateStorySheet } from './CreateStorySheet';
+import { MemberList } from './MemberList';
 import { CreateChannelSheet } from './CreateChannelSheet';
 import { MeetingCard } from './MeetingCard';
 import { ScheduleMeetingSheet } from './ScheduleMeetingSheet';
@@ -31,10 +31,12 @@ import type { ScheduledMeeting, MeetingWithRsvps } from '../../lib/cells/meeting
 import type {
   Cell,
   ChannelCategory,
+  Channel,
   CellMemberWithProfile,
   Message,
   Profile,
   NotificationScore,
+  CellStoryGroup,
 } from '../../lib/cells/types';
 
 interface CellShellProps {
@@ -47,6 +49,7 @@ interface CellShellProps {
   members: CellMemberWithProfile[];
   unreadCounts: Record<string, number>;
   blockedUserIds: string[];
+  storyGroups?: CellStoryGroup[];
 }
 
 export function CellShell({
@@ -59,27 +62,28 @@ export function CellShell({
   members,
   unreadCounts: initialUnreadCounts,
   blockedUserIds,
+  storyGroups = [],
 }: CellShellProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
 
   const [activeChannelId, setActiveChannelId] = useState(initialChannelId);
-  const [leftOpen, setLeftOpen] = useState(false);
-  const [rightCollapsed, setRightCollapsed] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>(initialUnreadCounts);
-  const [createSheetOpen, setCreateSheetOpen] = useState(false);
-  const [createSheetCategoryId, setCreateSheetCategoryId] = useState<string>('');
   const [localCategories, setLocalCategories] = useState<ChannelCategory[]>(categories);
+  const [memberListOpen, setMemberListOpen] = useState(false);
+  const [createSheetOpen, setCreateSheetOpen] = useState(false);
+  const [createStoryOpen, setCreateStoryOpen] = useState(false);
 
-  // ── Meeting state ──────────────────────────────────────────────────────────
+  // ── Meeting state ────────────────────────────────────────────────────────
   const [meetingsData, setMeetingsData] = useState<Record<string, MeetingWithRsvps[]>>({});
-  const [upcomingHints, setUpcomingHints] = useState<UpcomingMeetingHint[]>([]);
   const [scheduleMeetingOpen, setScheduleMeetingOpen] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<ScheduledMeeting | null>(null);
 
-  const activeChannel = localCategories
-    .flatMap((c) => c.channels ?? [])
-    .find((ch) => ch.id === activeChannelId);
+  // Flatten all channels into a single ordered list for horizontal tabs
+  const allChannels: Channel[] = localCategories.flatMap((c) => c.channels ?? []);
+
+  const activeChannel = allChannels.find((ch) => ch.id === activeChannelId);
+  const onlineCount = members.length; // simplified; presence would give real count
 
   const notificationScores: NotificationScore = Object.fromEntries(
     Object.entries(unreadCounts).map(([id, count]) => [id, count * 5])
@@ -95,27 +99,21 @@ export function CellShell({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load upcoming meetings when the active channel is a meeting channel
+  // Load upcoming meetings for meeting channels
   useEffect(() => {
     if (activeChannel?.channel_type !== 'meeting') return;
-
-    // Fetch all upcoming meetings for the whole cell (for sidebar hints)
     getUpcomingMeetings(cell.id).then((meetings) => {
-      setUpcomingHints(meetings.map((m) => ({ channelId: m.channel_id, scheduledAt: m.scheduled_at })));
-
-      // Fetch full RSVP detail for meetings in this channel
       const channelMeetings = meetings.filter((m) => m.channel_id === activeChannelId);
       Promise.all(channelMeetings.map((m) => getMeetingWithRsvps(m.id))).then((results) => {
         const valid = results.filter((r): r is MeetingWithRsvps => r !== null);
         setMeetingsData((prev) => ({ ...prev, [activeChannelId]: valid }));
       });
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeChannelId]);
 
   const handleChannelSelect = useCallback(
     (channelId: string) => {
-      // Score the channel we're leaving
       const prevId = activeChannelId;
       const notifKey = `notif_channel_${prevId}`;
       const wasFromNotif =
@@ -128,14 +126,8 @@ export function CellShell({
       }
 
       setActiveChannelId(channelId);
-      setLeftOpen(false);
-      // Optimistically clear unread for this channel
       setUnreadCounts((prev) => ({ ...prev, [channelId]: 0 }));
-      // Update read state on server
-      startTransition(() => {
-        updateReadState(channelId);
-      });
-      // Navigate to new channel URL
+      startTransition(() => { updateReadState(channelId); });
       router.push(`/engage/${cell.slug}/${channelId}`);
     },
     [cell.slug, router, activeChannelId]
@@ -144,11 +136,6 @@ export function CellShell({
   const handleMessageSent = useCallback(() => {
     applyScore(activeChannelId, MESSAGE_SENT);
   }, [activeChannelId]);
-
-  const handleAddChannel = useCallback((categoryId: string) => {
-    setCreateSheetCategoryId(categoryId);
-    setCreateSheetOpen(true);
-  }, []);
 
   const handleCreateChannel = useCallback(
     async (data: {
@@ -166,7 +153,6 @@ export function CellShell({
         categoryId: data.categoryId,
       });
       if ('id' in result) {
-        // Optimistically add to local categories
         setLocalCategories((prev) =>
           prev.map((cat) => {
             if (cat.id !== data.categoryId) return cat;
@@ -207,254 +193,332 @@ export function CellShell({
           channels: (cat.channels ?? []).filter((ch) => ch.id !== channelId),
         }))
       );
-      // If deleted the active channel, switch to first available
       if (channelId === activeChannelId) {
-        const first = localCategories.flatMap((c) => c.channels ?? []).find((ch) => ch.id !== channelId);
+        const first = allChannels.find((ch) => ch.id !== channelId);
         if (first) handleChannelSelect(first.id);
       }
     },
-    [activeChannelId, handleChannelSelect, localCategories]
+    [activeChannelId, handleChannelSelect, allChannels]
   );
 
-  const handleReorderChannels = useCallback(
-    async (updates: { id: string; position: number }[]) => {
-      await reorderChannels(updates);
-    },
-    []
-  );
+  const handleReorderChannels = useCallback(async (updates: { id: string; position: number }[]) => {
+    await reorderChannels(updates);
+  }, []);
+
+  function channelIcon(ch: Channel) {
+    if (ch.channel_type === 'announcement') return <Megaphone size={13} />;
+    if (ch.channel_type === 'meeting') return <Calendar size={13} />;
+    return <Hash size={13} />;
+  }
 
   return (
     <div
       style={{
         display: 'flex',
+        flexDirection: 'column',
         height: 'calc(100dvh - var(--nav-height) - var(--safe-bottom) - var(--safe-top))',
         overflow: 'hidden',
-        position: 'relative',
       }}
     >
-      {/* ── Mobile overlay backdrop ── */}
-      {leftOpen && (
-        <div
-          onClick={() => setLeftOpen(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 29,
-            background: 'rgba(0,0,0,0.5)',
-            backdropFilter: 'blur(2px)',
-          }}
-        />
-      )}
-
-      {/* ── Left: Channel sidebar ── */}
-      {/* Desktop: always visible in grid */}
-      <div
-        className="cell-sidebar-desktop"
-        style={{ display: 'none', flexShrink: 0 }}
-      >
-        <ChannelSidebar
-          cellName={cell.name}
-          cellSlug={cell.slug}
-          cellId={cell.id}
-          categories={localCategories}
-          activeChannelId={activeChannelId}
-          onChannelSelect={handleChannelSelect}
-          userRole={userRole}
-          unreadCounts={unreadCounts}
-          notificationScores={notificationScores}
-          onAddChannel={handleAddChannel}
-          onEditChannel={() => {}}
-          onDeleteChannel={handleDeleteChannel}
-          onReorderChannels={handleReorderChannels}
-          upcomingMeetings={upcomingHints}
-        />
-      </div>
-
-      {/* Mobile: overlay drawer */}
+      {/* ── Header ── */}
       <div
         style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          bottom: 0,
-          zIndex: 30,
-          transform: leftOpen ? 'translateX(0)' : 'translateX(-100%)',
-          transition: 'transform 0.25s ease',
-          display: 'block',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-2)',
+          height: 48,
+          padding: '0 var(--space-3)',
+          borderBottom: '1px solid var(--color-border)',
+          background: 'var(--color-bg)',
+          flexShrink: 0,
         }}
-        className="cell-sidebar-mobile"
       >
-        <ChannelSidebar
-          cellName={cell.name}
-          cellSlug={cell.slug}
-          cellId={cell.id}
-          categories={localCategories}
-          activeChannelId={activeChannelId}
-          onChannelSelect={handleChannelSelect}
-          userRole={userRole}
-          unreadCounts={unreadCounts}
-          notificationScores={notificationScores}
-          onAddChannel={handleAddChannel}
-          onEditChannel={() => {}}
-          onDeleteChannel={handleDeleteChannel}
-          onReorderChannels={handleReorderChannels}
-          onClose={() => setLeftOpen(false)}
-          upcomingMeetings={upcomingHints}
-        />
-      </div>
-
-      {/* ── Center: Chat area ── */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Mobile header with sidebar toggle */}
-        <div
-          className="cell-mobile-header"
+        <button
+          onClick={() => router.push('/engage')}
+          aria-label="Back"
           style={{
-            display: 'none',
+            background: 'none',
+            border: 'none',
+            color: 'var(--color-text-muted)',
+            cursor: 'pointer',
+            display: 'flex',
             alignItems: 'center',
-            gap: 'var(--space-2)',
-            padding: '0 var(--space-3)',
-            height: 44,
-            borderBottom: '1px solid var(--color-border)',
-            background: 'var(--color-panel)',
+            padding: 4,
             flexShrink: 0,
           }}
         >
-          <button
-            onClick={() => setLeftOpen(true)}
-            aria-label="Open channels"
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--color-text-muted)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              padding: 4,
-            }}
-          >
-            <Menu size={18} />
-          </button>
-          <span
-            style={{
-              flex: 1,
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--color-text)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {activeChannel?.emoji ? `${activeChannel.emoji} ` : '#'}{activeChannel?.name ?? ''}
-          </span>
-          <button
-            onClick={() => setRightCollapsed((v) => !v)}
-            aria-label="Toggle members"
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--color-text-muted)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              padding: 4,
-            }}
-          >
-            <Users size={16} />
-          </button>
-        </div>
+          <ChevronLeft size={20} />
+        </button>
+        <span
+          style={{
+            flex: 1,
+            fontSize: 'var(--font-size-sm)',
+            fontWeight: 'var(--font-weight-semibold)',
+            color: 'var(--color-text)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {cell.name}
+        </span>
+        {/* Online count button */}
+        <button
+          onClick={() => setMemberListOpen(true)}
+          aria-label={`${onlineCount} members`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--color-text-muted)',
+            padding: '4px 6px',
+            borderRadius: 'var(--radius-sm)',
+          }}
+        >
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-success)', flexShrink: 0 }} />
+          <Users size={14} />
+          <span style={{ fontSize: 12, fontWeight: 500 }}>{onlineCount}</span>
+        </button>
+        <button
+          onClick={() => router.push(`/engage/${cell.slug}/info`)}
+          aria-label="Cell info"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--color-text-muted)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            padding: 4,
+          }}
+        >
+          <MoreVertical size={18} />
+        </button>
+      </div>
 
-        {/* Meeting channel: admin header + meeting cards */}
-        {activeChannel?.channel_type === 'meeting' && (
+      {/* ── Banner (collapsible — just shown as a thin coloured strip if no image) ── */}
+      {cell.banner_url && (
+        <div
+          style={{
+            height: 100,
+            position: 'relative',
+            overflow: 'hidden',
+            flexShrink: 0,
+          }}
+        >
+          <img
+            src={cell.banner_url}
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
           <div
             style={{
-              padding: 'var(--space-2) var(--space-3)',
-              borderBottom: '1px solid var(--color-border)',
-              flexShrink: 0,
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to bottom, transparent 40%, var(--color-bg) 100%)',
             }}
-          >
-            {/* Admin "Schedule Meeting" button in channel header */}
-            {userRole === 'admin' && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-2)' }}>
-                <button
-                  onClick={() => { setEditingMeeting(null); setScheduleMeetingOpen(true); }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-1)',
-                    padding: '5px 12px',
-                    background: 'var(--color-accent)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-full)',
-                    color: 'var(--color-accent-text)',
-                    fontSize: '0.8125rem',
-                    fontWeight: 'var(--font-weight-semibold)',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-sans)',
-                  }}
-                >
-                  <CalendarPlus size={13} />
-                  Schedule Meeting
-                </button>
-              </div>
-            )}
+          />
+        </div>
+      )}
 
-            {/* Meeting cards */}
-            {(meetingsData[activeChannelId] ?? []).map(({ meeting, rsvps }) => (
-              <MeetingCard
-                key={meeting.id}
-                meeting={meeting}
-                rsvps={rsvps}
-                currentUserId={currentUser.id}
-                userRole={userRole}
-                cellId={cell.id}
-                onEdit={(m) => { setEditingMeeting(m); setScheduleMeetingOpen(true); }}
-                onCancelled={(id) => {
-                  setMeetingsData((prev) => ({
-                    ...prev,
-                    [activeChannelId]: (prev[activeChannelId] ?? []).filter((mw) => mw.meeting.id !== id),
-                  }));
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        <Chat
-          cellId={cell.id}
-          cellName={cell.name}
-          cellAvatar={cell.avatar_url}
-          currentUser={currentUser}
-          initialMessages={initialMessages}
-          blockedUserIds={blockedUserIds}
+      {/* ── Stories strip (admin-posted cell announcements) ── */}
+      {(storyGroups.length > 0 || userRole === 'admin') && (
+        <StoriesStrip
+          groups={storyGroups}
           userRole={userRole}
-          channelId={activeChannelId}
-          channelTopic={activeChannel?.topic ?? null}
-          onMessageSent={handleMessageSent}
+          activeCellId={cell.id}
+          onCreateStory={userRole === 'admin' ? () => setCreateStoryOpen(true) : undefined}
         />
-      </div>
+      )}
 
-      {/* ── Right: Online users panel (desktop) ── */}
-      <div className="cell-users-panel-desktop" style={{ display: 'none' }}>
-        <OnlineUsersPanel
-          members={members}
-          onlineMemberIds={new Set<string>()}
-          currentUserId={currentUser.id}
-          collapsed={rightCollapsed}
-          onToggle={() => setRightCollapsed((v) => !v)}
-        />
-      </div>
+      {/* ── Horizontal channel tabs ── */}
+      {allChannels.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            overflowX: 'auto',
+            gap: 6,
+            padding: '6px 12px',
+            borderBottom: '1px solid var(--color-border)',
+            background: 'var(--color-bg)',
+            scrollbarWidth: 'none',
+            flexShrink: 0,
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          {allChannels.map((ch) => {
+            const isActive = ch.id === activeChannelId;
+            const unread = unreadCounts[ch.id] ?? 0;
+            return (
+              <button
+                key={ch.id}
+                onClick={() => handleChannelSelect(ch.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '5px 12px',
+                  borderRadius: 'var(--radius-full)',
+                  border: 'none',
+                  background: isActive ? 'var(--color-accent)' : 'var(--color-surface)',
+                  color: isActive ? 'var(--color-accent-text)' : 'var(--color-text-muted)',
+                  fontSize: 12,
+                  fontWeight: isActive ? 600 : 400,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  position: 'relative',
+                  transition: 'background 0.15s, color 0.15s',
+                }}
+              >
+                {ch.emoji ? (
+                  <span style={{ fontSize: 13 }}>{ch.emoji}</span>
+                ) : (
+                  channelIcon(ch)
+                )}
+                <span>{ch.name}</span>
+                {unread > 0 && !isActive && (
+                  <span
+                    style={{
+                      minWidth: 16,
+                      height: 16,
+                      borderRadius: 8,
+                      background: 'var(--color-accent)',
+                      color: 'var(--color-accent-text)',
+                      fontSize: 9,
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 4px',
+                    }}
+                  >
+                    {unread}
+                  </span>
+                )}
+              </button>
+            );
+          })}
 
-      {/* ── Create channel sheet ── */}
+          {/* Admin: add channel */}
+          {userRole === 'admin' && (
+            <button
+              onClick={() => setCreateSheetOpen(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '5px 12px',
+                borderRadius: 'var(--radius-full)',
+                border: '1px dashed var(--color-border)',
+                background: 'transparent',
+                color: 'var(--color-text-faint)',
+                fontSize: 12,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              + channel
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Meeting channel header ── */}
+      {activeChannel?.channel_type === 'meeting' && (
+        <div
+          style={{
+            padding: 'var(--space-2) var(--space-3)',
+            borderBottom: '1px solid var(--color-border)',
+            flexShrink: 0,
+          }}
+        >
+          {userRole === 'admin' && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-2)' }}>
+              <button
+                onClick={() => { setEditingMeeting(null); setScheduleMeetingOpen(true); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-1)',
+                  padding: '5px 12px',
+                  background: 'var(--color-accent)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: 'var(--color-accent-text)',
+                  fontSize: '0.8125rem',
+                  fontWeight: 'var(--font-weight-semibold)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                <CalendarPlus size={13} />
+                Schedule Meeting
+              </button>
+            </div>
+          )}
+          {(meetingsData[activeChannelId] ?? []).map(({ meeting, rsvps }) => (
+            <MeetingCard
+              key={meeting.id}
+              meeting={meeting}
+              rsvps={rsvps}
+              currentUserId={currentUser.id}
+              userRole={userRole}
+              cellId={cell.id}
+              onEdit={(m) => { setEditingMeeting(m); setScheduleMeetingOpen(true); }}
+              onCancelled={(id) => {
+                setMeetingsData((prev) => ({
+                  ...prev,
+                  [activeChannelId]: (prev[activeChannelId] ?? []).filter((mw) => mw.meeting.id !== id),
+                }));
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── Chat ── */}
+      <Chat
+        cellId={cell.id}
+        cellName={cell.name}
+        cellAvatar={cell.avatar_url}
+        currentUser={currentUser}
+        initialMessages={initialMessages}
+        blockedUserIds={blockedUserIds}
+        userRole={userRole}
+        channelId={activeChannelId}
+        channelTopic={activeChannel?.topic ?? null}
+        onMessageSent={handleMessageSent}
+      />
+
+      {/* ── Sheets ── */}
+      <MemberList
+        open={memberListOpen}
+        onClose={() => setMemberListOpen(false)}
+        cellId={cell.id}
+        onlineMemberIds={new Set<string>()}
+        currentUserId={currentUser.id}
+        userRole={userRole}
+      />
+
       <CreateChannelSheet
         open={createSheetOpen}
         onClose={() => setCreateSheetOpen(false)}
         categories={localCategories}
-        defaultCategoryId={createSheetCategoryId}
+        defaultCategoryId={localCategories[0]?.id ?? ''}
         onSubmit={handleCreateChannel}
       />
 
-      {/* ── Schedule meeting sheet ── */}
+      <CreateStorySheet
+        open={createStoryOpen}
+        onClose={() => setCreateStoryOpen(false)}
+        cellId={cell.id}
+      />
+
       <ScheduleMeetingSheet
         open={scheduleMeetingOpen}
         onClose={() => { setScheduleMeetingOpen(false); setEditingMeeting(null); }}
@@ -462,7 +526,6 @@ export function CellShell({
         cellId={cell.id}
         editMeeting={editingMeeting}
         onSaved={(meetingId) => {
-          // Reload meetings for this channel
           getMeetingWithRsvps(meetingId).then((mw) => {
             if (!mw) return;
             setMeetingsData((prev) => {
@@ -475,28 +538,9 @@ export function CellShell({
               }
               return { ...prev, [activeChannelId]: [...existing, mw] };
             });
-            // Update sidebar hints too
-            setUpcomingHints((prev) => {
-              const filtered = prev.filter((h) => h.channelId !== mw.meeting.channel_id ||
-                h.scheduledAt !== mw.meeting.scheduled_at);
-              return [...filtered, { channelId: mw.meeting.channel_id, scheduledAt: mw.meeting.scheduled_at }];
-            });
           });
         }}
       />
-
-      <style>{`
-        @media (min-width: 768px) {
-          .cell-sidebar-mobile { display: none !important; }
-          .cell-sidebar-desktop { display: flex !important; }
-          .cell-users-panel-desktop { display: flex !important; }
-          .cell-mobile-header { display: none !important; }
-        }
-        @media (max-width: 767px) {
-          .cell-sidebar-desktop { display: none !important; }
-          .cell-mobile-header { display: flex !important; }
-        }
-      `}</style>
     </div>
   );
 }
