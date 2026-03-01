@@ -10,7 +10,7 @@ type Mode = 'video' | 'post' | 'image';
 interface UploadSheetProps {
   open: boolean;
   onClose: () => void;
-  onUploaded?: (id: string, kind: 'video' | 'post' | 'image') => void;
+  onUploaded?: (id: string, kind: "video" | "post" | "image") => void | Promise<void>;
 }
 
 const MAX_VIDEO_MB = 100;
