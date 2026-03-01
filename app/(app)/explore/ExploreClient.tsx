@@ -65,7 +65,12 @@ const handleUploaded = async (
 
       {/* Daily verse banner  fixed height */}
       <div style={{ flexShrink: 0, height: VERSE_BANNER_H, overflow: 'hidden' }}>
-        <DailyVerse verse={dailyVerse} />
+        <DailyVerse
+          verse={dailyVerse}
+          initialLikeCount={0}
+          initialUserLiked={false}
+          initialCommentCount={0}
+        />
       </div>
 
       {/* Unified feed */}
