@@ -34,7 +34,10 @@ export function ExploreClient({
   const [uploadOpen, setUploadOpen] = useState(false);
   const feedRef = useRef<PerspectiveFeedHandle>(null);
 
-  const handleUploaded = async (_id: string, _kind: 'video' | 'post') => {
+  const handleUploaded = async (
+  _id: string,
+  _kind: "video" | "post" | "image"
+  ): Promise<void> => {
     showToast('Perspective published!', 'success');
     setUploadOpen(false);
     // Refresh the feed so the new item is fetched with all profile data correctly
