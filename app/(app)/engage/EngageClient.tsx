@@ -333,16 +333,10 @@ export function EngageClient({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search cells…"
+            className="field-input"
             style={{
-              width: '100%',
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-full)',
               padding: 'var(--space-2) var(--space-4)',
-              color: 'var(--color-text)',
-              fontSize: 'var(--font-size-sm)',
-              outline: 'none',
-              boxSizing: 'border-box',
             }}
           />
         </div>

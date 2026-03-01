@@ -802,16 +802,13 @@ export function Chat({
               }}
               placeholder="Share something with grace…"
               rows={1}
+              className="field-textarea"
               style={{
                 flex: 1,
                 background: 'transparent',
                 border: 'none',
-                color: 'var(--color-text)',
+                boxShadow: 'none',
                 fontSize: 'var(--font-size-base)',
-                resize: 'none',
-                outline: 'none',
-                fontFamily: 'var(--font-sans)',
-                lineHeight: 'var(--line-height-normal)',
                 maxHeight: '80px',
                 overflowY: 'auto',
                 padding: '8px 4px',

@@ -208,19 +208,8 @@ export function CreateCellSheet({ open, onClose }: CreateCellSheetProps) {
             placeholder="What's this cell about?"
             maxLength={200}
             rows={3}
-            style={{
-              width: '100%',
-              background: 'var(--color-bg-surface)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-md)',
-              padding: 'var(--space-3) var(--space-4)',
-              color: 'var(--color-text-primary)',
-              fontSize: 'var(--font-size-base)',
-              resize: 'none',
-              outline: 'none',
-              fontFamily: 'var(--font-sans)',
-              lineHeight: 'var(--line-height-normal)',
-            }}
+            className="field-textarea"
+            style={{ fontSize: 'var(--font-size-base)', padding: 'var(--space-3) var(--space-4)' }}
           />
           <span
             style={{

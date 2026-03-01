@@ -61,18 +61,8 @@ export function EditProfileSheet({ profile, open, onClose, onSaved }: EditProfil
             placeholder="A short faith bio…"
             maxLength={200}
             rows={3}
-            style={{
-              background: 'var(--color-bg)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-md)',
-              padding: 'var(--space-3)',
-              color: 'var(--color-text)',
-              fontSize: 'var(--font-size-base)',
-              resize: 'vertical',
-              fontFamily: 'var(--font-sans)',
-              lineHeight: 'var(--line-height-normal)',
-              outline: 'none',
-            }}
+            className="field-textarea"
+            style={{ fontSize: 'var(--font-size-base)', resize: 'vertical' }}
           />
         </div>
         <Input

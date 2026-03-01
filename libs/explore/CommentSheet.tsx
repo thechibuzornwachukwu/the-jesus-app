@@ -108,15 +108,11 @@ export function CommentSheet({ videoId, onClose }: CommentSheetProps) {
             onChange={(e) => setText(e.target.value)}
             placeholder="Add a comment…"
             maxLength={500}
+            className="field-input"
             style={{
               flex: 1,
-              background: 'var(--color-surface-high)',
-              border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-full)',
               padding: 'var(--space-2) var(--space-4)',
-              color: 'var(--color-text-primary)',
-              fontSize: 'var(--font-size-sm)',
-              outline: 'none',
             }}
           />
           <button

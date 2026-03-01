@@ -119,18 +119,10 @@ export function SpiritualGuide({ externalOpen, onExternalClose }: SpiritualGuide
         onKeyDown={handleKeyDown}
         placeholder="Ask anything about faith, Scripture, life…"
         rows={1}
+        className="field-textarea"
         style={{
           flex: 1,
-          background: 'var(--color-bg-primary)',
-          border: '1px solid var(--color-border)',
           borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-3)',
-          color: 'var(--color-text-primary)',
-          fontSize: 'var(--font-size-sm)',
-          resize: 'none',
-          outline: 'none',
-          fontFamily: 'var(--font-sans)',
-          lineHeight: 'var(--line-height-normal)',
           maxHeight: 120,
           overflowY: 'auto',
         }}

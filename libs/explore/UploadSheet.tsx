@@ -270,14 +270,14 @@ export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
                 placeholder="Share what God is doing…"
                 maxLength={300}
                 rows={2}
-                style={textareaStyle}
+                className="field-textarea"
               />
             </FieldGroup>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               <label style={labelStyle}>Tag a Scripture (optional)</label>
-              <input value={videoVerseRef} onChange={(e) => setVideoVerseRef(e.target.value)} placeholder="e.g. John 3:16" maxLength={80} style={inputStyle} />
-              <textarea value={videoVerseText} onChange={(e) => setVideoVerseText(e.target.value)} placeholder="Paste the verse text here…" maxLength={600} rows={2} style={textareaStyle} />
+              <input value={videoVerseRef} onChange={(e) => setVideoVerseRef(e.target.value)} placeholder="e.g. John 3:16" maxLength={80} className="field-input" />
+              <textarea value={videoVerseText} onChange={(e) => setVideoVerseText(e.target.value)} placeholder="Paste the verse text here…" maxLength={600} rows={2} className="field-textarea" />
             </div>
 
             {error && <ErrorMsg msg={error} />}
@@ -345,14 +345,14 @@ export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
                 onChange={(e) => setImageCaption(e.target.value.slice(0, 300))}
                 placeholder="Share what God is doing…"
                 rows={2}
-                style={textareaStyle}
+                className="field-textarea"
               />
             </FieldGroup>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               <label style={labelStyle}>Tag a Scripture (optional)</label>
-              <input value={imageVerseRef} onChange={(e) => setImageVerseRef(e.target.value)} placeholder="e.g. Psalm 23:1" maxLength={80} style={inputStyle} />
-              <textarea value={imageVerseText} onChange={(e) => setImageVerseText(e.target.value)} placeholder="Paste the verse text here…" maxLength={600} rows={2} style={textareaStyle} />
+              <input value={imageVerseRef} onChange={(e) => setImageVerseRef(e.target.value)} placeholder="e.g. Psalm 23:1" maxLength={80} className="field-input" />
+              <textarea value={imageVerseText} onChange={(e) => setImageVerseText(e.target.value)} placeholder="Paste the verse text here…" maxLength={600} rows={2} className="field-textarea" />
             </div>
 
             {error && <ErrorMsg msg={error} />}
@@ -376,14 +376,14 @@ export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
                 onChange={(e) => setPostContent(e.target.value.slice(0, 1000))}
                 placeholder="Share what's on your heart…"
                 rows={5}
-                style={textareaStyle}
+                className="field-textarea"
               />
             </FieldGroup>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               <label style={labelStyle}>Tag a Scripture (optional)</label>
-              <input value={postVerseRef} onChange={(e) => setPostVerseRef(e.target.value)} placeholder="e.g. Psalm 23:1" maxLength={80} style={inputStyle} />
-              <textarea value={postVerseText} onChange={(e) => setPostVerseText(e.target.value)} placeholder="Paste the verse text here…" maxLength={600} rows={2} style={textareaStyle} />
+              <input value={postVerseRef} onChange={(e) => setPostVerseRef(e.target.value)} placeholder="e.g. Psalm 23:1" maxLength={80} className="field-input" />
+              <textarea value={postVerseText} onChange={(e) => setPostVerseText(e.target.value)} placeholder="Paste the verse text here…" maxLength={600} rows={2} className="field-textarea" />
             </div>
 
             {error && <ErrorMsg msg={error} />}
@@ -461,31 +461,6 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 'var(--space-1)',
 };
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  background: 'var(--color-bg-primary)',
-  border: '1px solid var(--color-border)',
-  borderRadius: 'var(--radius-md)',
-  padding: 'var(--space-2) var(--space-3)',
-  color: 'var(--color-text-primary)',
-  fontSize: 'var(--font-size-sm)',
-  outline: 'none',
-  boxSizing: 'border-box',
-};
-
-const textareaStyle: React.CSSProperties = {
-  width: '100%',
-  background: 'var(--color-bg-primary)',
-  border: '1px solid var(--color-border)',
-  borderRadius: 'var(--radius-md)',
-  padding: 'var(--space-3)',
-  color: 'var(--color-text-primary)',
-  fontSize: 'var(--font-size-sm)',
-  resize: 'none',
-  outline: 'none',
-  lineHeight: 'var(--line-height-normal)',
-  boxSizing: 'border-box',
-};
 
 const publishBtnStyle = (disabled: boolean): React.CSSProperties => ({
   width: '100%',

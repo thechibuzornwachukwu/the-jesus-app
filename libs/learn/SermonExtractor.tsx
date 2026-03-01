@@ -127,20 +127,14 @@ export function SermonExtractor() {
           onChange={(e) => setTranscript(e.target.value)}
           placeholder="Paste sermon transcript or notes here…"
           rows={6}
+          className="field-textarea"
           style={{
-            width: '100%',
-            background: 'var(--color-bg-surface)',
             border: '1.5px dashed var(--color-border)',
             borderRadius: 'var(--radius-lg)',
             padding: 'var(--space-4)',
             paddingRight: 'calc(var(--space-4) + 36px)',
-            color: 'var(--color-text-primary)',
-            fontSize: 'var(--font-size-sm)',
             lineHeight: 'var(--line-height-relaxed)',
             resize: 'vertical',
-            outline: 'none',
-            fontFamily: 'var(--font-sans)',
-            boxSizing: 'border-box',
           }}
         />
         <button
