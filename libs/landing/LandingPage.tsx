@@ -17,15 +17,15 @@ const VERSE_FRAGMENTS = [
   { text: 'The truth will set you free',          top: '88%', left: '68%', delay: '0.7s', duration: '14s' },
 ];
 
-function CrossDivider() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', maxWidth: '160px', margin: '0 auto' }}>
-      <span style={{ flex: 1, height: '1px', background: 'var(--color-border)', display: 'block' }} />
-      <span style={{ color: 'var(--color-accent)', fontSize: '0.75rem', opacity: 0.6, lineHeight: 1 }}></span>
-      <span style={{ flex: 1, height: '1px', background: 'var(--color-border)', display: 'block' }} />
-    </div>
-  );
-}
+// function CrossDivider() {
+//   return (
+//     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', maxWidth: '160px', margin: '0 auto' }}>
+//       <span style={{ flex: 1, height: '1px', background: 'var(--color-border)', display: 'block' }} />
+//       <span style={{ color: 'var(--color-accent)', fontSize: '0.75rem', opacity: 0.6, lineHeight: 1 }}></span>
+//       <span style={{ flex: 1, height: '1px', background: 'var(--color-border)', display: 'block' }} />
+//     </div>
+//   );
+// }
 
 export default function LandingPage() {
   return (
@@ -161,7 +161,7 @@ export default function LandingPage() {
           </div>
 
           {/* Verse callout  above headline */}
-          <div className="lp-f2" style={{ marginBottom: '1.5rem', position: 'relative', zIndex: 2 }}>
+          {/* <div className="lp-f2" style={{ marginBottom: '1.5rem', position: 'relative', zIndex: 2 }}>
             <p style={{
               fontFamily: 'var(--font-serif)',
               fontStyle: 'italic',
@@ -183,7 +183,7 @@ export default function LandingPage() {
             }}>
               John 1:1
             </span>
-          </div>
+          </div> */}
 
           {/* Headline */}
           <h1 className="lp-f3" style={{
@@ -198,11 +198,11 @@ export default function LandingPage() {
             position: 'relative',
             zIndex: 2,
           }}>
-            The Word. In your world.<br />Among your people.
+            The Word. <br /> In your world.<br /> With HIS people.
           </h1>
 
           {/* Subline */}
-          <p className="lp-f4" style={{
+          {/* <p className="lp-f4" style={{
             fontFamily: 'var(--font-sans)',
             fontSize: 'clamp(0.95rem, 2vw, 1.15rem)',
             lineHeight: 1.65,
@@ -213,7 +213,7 @@ export default function LandingPage() {
             zIndex: 2,
           }}>
             A Kingdom community platform built for believers who live it out.
-          </p>
+          </p> */}
 
           {/* CTAs */}
           <div className="lp-f5" style={{
@@ -253,9 +253,9 @@ export default function LandingPage() {
         {/* ══ S2  FEATURE TILES ════════════════════════════════════════════ */}
         <section style={{ background: 'var(--color-surface)', padding: '5rem 1.5rem' }}>
 
-          <div style={{ marginBottom: '3rem' }}>
+          {/* <div style={{ marginBottom: '3rem' }}>
             <CrossDivider />
-          </div>
+          </div> */}
 
           <h2 style={{
             fontFamily: 'var(--font-display)',
@@ -266,7 +266,7 @@ export default function LandingPage() {
             color: 'var(--color-text)',
             marginBottom: '3rem',
           }}>
-            What it looks like inside
+            Yes, media can be Holy.
           </h2>
 
           <div style={{
@@ -319,7 +319,7 @@ export default function LandingPage() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                       <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '0.8rem', color: 'var(--color-text)' }}>
-                        Pastor James
+                        Pastor Paul
                       </span>
                       <span style={{
                         background: 'var(--color-accent)', color: 'var(--color-accent-text)',
@@ -329,7 +329,7 @@ export default function LandingPage() {
                       </span>
                     </div>
                     <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: 'var(--color-text-muted)', lineHeight: 1.5, margin: 0 }}>
-                      &ldquo;Let&apos;s dig into Romans 8 tonight &mdash; who&apos;s joining the call?&rdquo;
+                      &ldquo;Let&apos;s dig into Romans 8 tonight who&apos;s joining the call?&rdquo;
                     </p>
                   </div>
                 </div>
@@ -419,7 +419,7 @@ export default function LandingPage() {
                   Grace &amp; Identity
                 </p>
                 <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
-                  Lesson 3 of 5 · Faith Courses
+                  Lesson 3 of 5 · New Creation
                 </p>
                 <div style={{ height: '5px', borderRadius: '99px', background: 'var(--color-border)', overflow: 'hidden', marginBottom: '1.25rem' }}>
                   <div style={{ width: '60%', height: '100%', background: 'var(--color-accent)', borderRadius: '99px' }} />
@@ -462,23 +462,21 @@ export default function LandingPage() {
               {/* Blockquote with gold left border */}
               <blockquote style={{
                 fontFamily: 'var(--font-serif)',
-                fontStyle: 'italic',
                 fontSize: 'clamp(1.05rem, 2.4vw, 1.3rem)',
                 lineHeight: 1.75,
                 color: 'var(--color-text)',
                 margin: '0 0 3rem',
                 padding: '0 0 0 1.25rem',
-                borderLeft: '2px solid var(--color-accent)',
               }}>
-                &ldquo;The JESUS App exists to empower believers, foster collaboration,
-                cultivate discipleship, and reflect Christ in digital culture.&rdquo;
+                The JESUS App is a movement to reflect Christ by 
+                empowering believers, cultivate discipleship in today's digital culture.
               </blockquote>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
                 {[
                   {
                     label: 'Engage',
-                    body: 'Real communities built around scripture  cells, channels, and honest conversations with believers near and far.',
+                    body: 'Real communities built around scripture groups, and honest conversations with brethren.',
                   },
                   {
                     label: 'Explore',
@@ -486,7 +484,7 @@ export default function LandingPage() {
                   },
                   {
                     label: 'Learn',
-                    body: 'Faith courses, AI-powered spiritual guidance, and sermon extraction  so the Word goes deeper than the pew.',
+                    body: 'With faith-building course materials, and insights, so the Word goes deeper than the pew.',
                   },
                 ].map((p) => (
                   <div key={p.label} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
@@ -543,9 +541,9 @@ export default function LandingPage() {
           </div>
 
           <div style={{ position: 'relative', zIndex: 1, padding: '7rem 1.5rem 8rem' }}>
-            <div style={{ marginBottom: '2.25rem' }}>
+            {/* <div style={{ marginBottom: '2.25rem' }}>
               <CrossDivider />
-            </div>
+            </div> */}
             <h2 style={{
               fontFamily: 'var(--font-display)',
               fontWeight: 900,
@@ -557,7 +555,7 @@ export default function LandingPage() {
             }}>
               Your community is waiting.
             </h2>
-            <p style={{
+            {/* <p style={{
               fontFamily: 'var(--font-serif)',
               fontStyle: 'italic',
               fontSize: 'clamp(0.85rem, 1.8vw, 1rem)',
@@ -565,8 +563,8 @@ export default function LandingPage() {
               opacity: 0.82,
               marginBottom: '2.25rem',
             }}>
-              &ldquo;Where two or three are gathered in my name&rdquo; &mdash; Matthew 18:20
-            </p>
+              &ldquo;Where two or three are gathered in my name&rdquo; Matthew 18:20
+            </p> */}
             <Link href="/sign-up" className="lp-primary" style={{
               fontFamily: 'var(--font-sans)',
               fontSize: '1.05rem',
