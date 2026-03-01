@@ -3,7 +3,7 @@ import type { CourseTrack } from "../../libs/learn/types";
 export const COURSE_TRACKS: CourseTrack[] = [
   {
     id: "salvation",
-    image: "/courses/salvation.jfif",
+    image: "/courses/salvation.png",
     title: "Salvation",
     description: "Understand the gift of eternal life through Jesus Christ.",
     lessons: [
@@ -52,7 +52,7 @@ export const COURSE_TRACKS: CourseTrack[] = [
 
   {
     id: "prayer",
-    image: "/courses/prayer.jfif",
+    image: "/courses/prayer.png",
     title: "Prayer",
     description: "Learn to commune with the Father through Scripture-grounded prayer.",
     lessons: [
