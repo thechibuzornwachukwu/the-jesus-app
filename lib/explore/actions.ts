@@ -2,7 +2,7 @@
 
 import { createClient } from '../supabase/server';
 import { z } from 'zod';
-import type { Video, Comment, Post, FeedItem, ReactionType } from './types';
+import type { Video, Comment, Post, ImagePost, FeedItem, ReactionType } from './types';
 
 const PAGE_SIZE = 5;
 
@@ -354,43 +354,120 @@ export async function getVideoReactions(videoId: string): Promise<{
 }
 
 // ---------------------------------------------------------------------------
-// getComments — fetch comments for a video
+// getComments — fetch comments for a video or post
 // ---------------------------------------------------------------------------
-export async function getComments(videoId: string): Promise<Comment[]> {
-  const parsed = z.string().uuid().safeParse(videoId);
+export async function getComments(
+  targetId: string,
+  targetType: 'video' | 'post' = 'video'
+): Promise<Comment[]> {
+  const parsed = z.string().uuid().safeParse(targetId);
   if (!parsed.success) return [];
 
   const supabase = await createClient();
+
+  const table = targetType === 'post' ? 'post_comments' : 'comments';
+  const idField = targetType === 'post' ? 'post_id' : 'video_id';
+
   const { data } = await supabase
-    .from('comments')
-    .select('id, video_id, user_id, content, created_at')
-    .eq('video_id', videoId)
+    .from(table)
+    .select(`id, ${idField}, user_id, content, created_at`)
+    .eq(idField, targetId)
     .order('created_at', { ascending: true })
     .limit(50);
 
   if (!data || data.length === 0) return [];
 
-  type RawComment = { id: string; video_id: string; user_id: string; content: string; created_at: string };
+  type RawComment = { id: string; user_id: string; content: string; created_at: string } & Record<string, string>;
   const rows = data as RawComment[];
   const ids = [...new Set(rows.map((c) => c.user_id))];
   const profileMap = await fetchProfiles(supabase, ids);
 
-  return rows.map((c) => ({ ...c, profiles: profileMap.get(c.user_id) ?? null })) as Comment[];
+  return rows.map((c) => ({
+    id: c.id,
+    video_id: targetType === 'video' ? c[idField] : c.id,
+    user_id: c.user_id,
+    content: c.content,
+    created_at: c.created_at,
+    profiles: profileMap.get(c.user_id) ?? null,
+  })) as Comment[];
 }
 
 // ---------------------------------------------------------------------------
-// addComment — add a comment to a video
+// addComment — add a comment to a video or post
 // ---------------------------------------------------------------------------
 const commentSchema = z.object({
-  videoId: z.string().uuid(),
+  targetId: z.string().uuid(),
   content: z.string().min(1).max(500).trim(),
+  targetType: z.enum(['video', 'post']),
 });
 
 export async function addComment(
-  videoId: string,
-  content: string
+  targetId: string,
+  content: string,
+  targetType: 'video' | 'post' = 'video'
 ): Promise<{ comment?: Comment; error?: string }> {
-  const parsed = commentSchema.safeParse({ videoId, content });
+  const parsed = commentSchema.safeParse({ targetId, content, targetType });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthenticated' };
+
+  const table = parsed.data.targetType === 'post' ? 'post_comments' : 'comments';
+  const idField = parsed.data.targetType === 'post' ? 'post_id' : 'video_id';
+
+  const { data, error } = await supabase
+    .from(table)
+    .insert({ [idField]: parsed.data.targetId, user_id: user.id, content: parsed.data.content })
+    .select(`id, ${idField}, user_id, content, created_at`)
+    .single();
+
+  if (error || !data) return { error: error?.message ?? 'Failed to post comment' };
+
+  // Increment comment_count on parent
+  if (parsed.data.targetType === 'post') {
+    await supabase.rpc('increment_post_comment_count', { post_id: parsed.data.targetId }).catch(() => {
+      // RPC may not exist — fallback raw update
+      supabase
+        .from('posts')
+        .update({ comment_count: supabase.rpc('coalesce_plus_one' as never) })
+        .eq('id', parsed.data.targetId);
+    });
+  }
+
+  const profileMap = await fetchProfiles(supabase, [user.id]);
+  type RawRow = { id: string; user_id: string; content: string; created_at: string } & Record<string, string>;
+  const row = data as RawRow;
+  const comment: Comment = {
+    id: row.id,
+    video_id: row[idField],
+    user_id: row.user_id,
+    content: row.content,
+    created_at: row.created_at,
+    profiles: profileMap.get(user.id) ?? null,
+  };
+  return { comment };
+}
+
+// ---------------------------------------------------------------------------
+// createImagePost — create an image post
+// ---------------------------------------------------------------------------
+const imagePostSchema = z.object({
+  imageUrl: z.string().url(),
+  caption: z.string().min(1).max(500).trim(),
+  verseReference: z.string().max(100).trim().optional(),
+  verseText: z.string().max(2000).trim().optional(),
+});
+
+export async function createImagePost(
+  imageUrl: string,
+  caption: string,
+  verseReference?: string,
+  verseText?: string
+): Promise<{ postId: string } | { error: string }> {
+  const parsed = imagePostSchema.safeParse({ imageUrl, caption, verseReference, verseText });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
@@ -400,20 +477,19 @@ export async function addComment(
   if (!user) return { error: 'Unauthenticated' };
 
   const { data, error } = await supabase
-    .from('comments')
-    .insert({ video_id: parsed.data.videoId, user_id: user.id, content: parsed.data.content })
-    .select('id, video_id, user_id, content, created_at')
+    .from('posts')
+    .insert({
+      user_id: user.id,
+      content: parsed.data.caption,
+      image_url: parsed.data.imageUrl,
+      verse_reference: parsed.data.verseReference ?? null,
+      verse_text: parsed.data.verseText ?? null,
+    })
+    .select('id')
     .single();
 
-  if (error || !data) return { error: error?.message ?? 'Failed to post comment' };
-
-  const profileMap = await fetchProfiles(supabase, [user.id]);
-  type RawComment = { id: string; video_id: string; user_id: string; content: string; created_at: string };
-  const comment: Comment = {
-    ...(data as RawComment),
-    profiles: profileMap.get(user.id) ?? null,
-  };
-  return { comment };
+  if (error || !data) return { error: error?.message ?? 'Failed to create post' };
+  return { postId: data.id };
 }
 
 // ---------------------------------------------------------------------------
@@ -697,17 +773,20 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
     },
   }));
 
-  const postItems: FeedItem[] = posts.map((p) => ({
-    kind: 'post' as const,
-    data: {
+  const postItems: FeedItem[] = posts.map((p) => {
+    const base = {
       id: p.id, user_id: p.user_id, content: p.content, image_url: p.image_url,
       verse_reference: p.verse_reference, verse_text: p.verse_text,
       like_count: p.like_count ?? 0,
       comment_count: commentMapPost.get(p.id) ?? 0,
       user_liked: userLikedPosts.has(p.id),
       created_at: p.created_at, profiles: profileMap.get(p.user_id) ?? null,
-    },
-  }));
+    };
+    if (p.image_url) {
+      return { kind: 'image' as const, data: base as ImagePost };
+    }
+    return { kind: 'post' as const, data: base as Post };
+  });
 
   // Merge and sort by created_at DESC, take first 5
   const merged = [...videoItems, ...postItems].sort(

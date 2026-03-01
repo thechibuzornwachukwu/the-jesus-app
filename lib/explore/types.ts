@@ -52,6 +52,21 @@ export type Post = {
   profiles: { username: string; avatar_url: string | null } | null;
 };
 
+export type ImagePost = {
+  id: string;
+  user_id: string;
+  content: string;
+  image_url: string;
+  verse_reference: string | null;
+  verse_text: string | null;
+  like_count: number;
+  comment_count: number;
+  user_liked: boolean;
+  created_at: string;
+  profiles: { username: string; avatar_url: string | null } | null;
+};
+
 export type FeedItem =
   | { kind: 'video'; data: Video }
-  | { kind: 'post'; data: Post };
+  | { kind: 'post'; data: Post }
+  | { kind: 'image'; data: ImagePost };

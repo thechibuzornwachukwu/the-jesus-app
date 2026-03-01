@@ -13,6 +13,10 @@ import type {
   Post,
   AppNotification,
 } from '../../libs/profile/types';
+import {
+  sendFriendRequest as _sendFriendRequest,
+  acceptFriendRequest as _acceptFriendRequest,
+} from '../friends/actions';
 
 const KNOWN_CATEGORIES = [
   'Prayer',
@@ -105,7 +109,7 @@ export async function updateProfile(
 }
 
 // ────────────────────────────────────────────────────────────
-// getSavedVerses
+// getSavedVerses — includes note column (Phase 9)
 // ────────────────────────────────────────────────────────────
 export async function getSavedVerses(): Promise<SavedVerse[]> {
   const supabase = await createClient();
@@ -116,12 +120,40 @@ export async function getSavedVerses(): Promise<SavedVerse[]> {
 
   const { data } = await supabase
     .from('saved_verses')
-    .select('verse_reference, verse_text, saved_at')
+    .select('verse_reference, verse_text, note, saved_at')
     .eq('user_id', user.id)
     .order('saved_at', { ascending: false })
     .limit(50);
 
   return (data ?? []) as SavedVerse[];
+}
+
+// ────────────────────────────────────────────────────────────
+// updateVerseNote — set or clear a note on a saved verse
+// ────────────────────────────────────────────────────────────
+export async function updateVerseNote(
+  verseReference: string,
+  note: string
+): Promise<{ error?: string }> {
+  const parsed = z.object({
+    verseReference: z.string().min(1).max(100),
+    note: z.string().max(2000).trim(),
+  }).safeParse({ verseReference, note });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthenticated' };
+
+  const { error } = await supabase
+    .from('saved_verses')
+    .update({ note: parsed.data.note || null })
+    .eq('user_id', user.id)
+    .eq('verse_reference', parsed.data.verseReference);
+
+  return error ? { error: error.message } : {};
 }
 
 // ────────────────────────────────────────────────────────────
@@ -454,6 +486,24 @@ export async function notifyMention(
 
   // Fire-and-forget push
   sendPushToUser(mentionedUserId, 'You were mentioned', preview.slice(0, 80), `/engage/${cellId}`);
+}
+
+// ────────────────────────────────────────────────────────────
+// sendFriendRequest — wrapper (re-exported from friends/actions)
+// ────────────────────────────────────────────────────────────
+export async function sendFriendRequest(
+  targetId: string
+): Promise<{ error?: string }> {
+  return _sendFriendRequest(targetId);
+}
+
+// ────────────────────────────────────────────────────────────
+// acceptFriendRequest — wrapper (re-exported from friends/actions)
+// ────────────────────────────────────────────────────────────
+export async function acceptFriendRequest(
+  requesterId: string
+): Promise<{ error?: string }> {
+  return _acceptFriendRequest(requesterId);
 }
 
 // ────────────────────────────────────────────────────────────

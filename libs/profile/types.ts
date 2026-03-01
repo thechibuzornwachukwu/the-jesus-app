@@ -13,6 +13,7 @@ export interface FullProfile {
 export interface SavedVerse {
   verse_reference: string;
   verse_text: string;
+  note: string | null;
   saved_at: string;
 }
 
