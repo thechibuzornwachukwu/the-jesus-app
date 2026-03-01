@@ -116,9 +116,6 @@ export function AuthForm({ mode, action }: AuthFormProps) {
       <div style={{ width: '100%' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-5)' }}>
-            <CrossIcon />
-          </div>
           <h1
             style={{
               fontFamily: '"Archivo Condensed", sans-serif',

@@ -1,3 +1,14 @@
+import Link from 'next/link';
+
+function CrossSVG() {
+  return (
+    <svg width="24" height="30" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="13" y="0" width="6" height="40" rx="2" fill="var(--color-accent)" />
+      <rect x="0" y="12" width="32" height="6" rx="2" fill="var(--color-accent)" />
+    </svg>
+  );
+}
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -28,6 +39,32 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         }}
       />
 
+      {/* Back to home */}
+      <Link
+        href="/"
+        style={{
+          position: 'absolute',
+          top: 'calc(var(--safe-top) + var(--space-4))',
+          left: 'var(--space-5)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-1)',
+          fontSize: 'var(--font-size-sm)',
+          color: 'var(--color-text-muted)',
+          textDecoration: 'none',
+          fontFamily: '"Plus Jakarta Sans", sans-serif',
+          fontWeight: 500,
+          transition: 'color 0.15s',
+          zIndex: 10,
+        }}
+        onMouseOver={undefined}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        Home
+      </Link>
+
       {/* Orange radial glow at bottom-centre */}
       <div
         style={{
@@ -41,6 +78,29 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           pointerEvents: 'none',
         }}
       />
+
+      {/* Branding above card */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-3)',
+          marginBottom: 'var(--space-5)',
+        }}
+      >
+        <CrossSVG />
+        <span
+          style={{
+            fontFamily: '"Archivo Condensed", sans-serif',
+            fontWeight: 900,
+            fontSize: 'var(--font-size-xl)',
+            letterSpacing: '-0.01em',
+            color: 'var(--color-text)',
+          }}
+        >
+          The JESUS App
+        </span>
+      </div>
 
       {/* Content card */}
       <div
