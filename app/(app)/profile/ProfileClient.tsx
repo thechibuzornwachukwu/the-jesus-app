@@ -83,141 +83,163 @@ export function ProfileClient({
   }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100%',
-        background: 'var(--color-bg-primary)',
-      }}
-    >
-      {/* Top bar */}
+    <>
+      <style>{`
+        @keyframes profile-slide-up {
+          from { opacity: 0; transform: translateY(18px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .profile-section {
+          animation: profile-slide-up 0.35s ease both;
+        }
+        .profile-section:nth-child(1) { animation-delay: 0ms; }
+        .profile-section:nth-child(2) { animation-delay: 60ms; }
+        .profile-section:nth-child(3) { animation-delay: 120ms; }
+        .profile-section:nth-child(4) { animation-delay: 180ms; }
+        .profile-icon-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: var(--color-text);
+          padding: var(--space-2);
+          position: relative;
+          line-height: 1;
+          display: flex;
+          align-items: center;
+          border-radius: var(--radius-full);
+          transition: background 0.15s, color 0.15s, transform 0.1s;
+        }
+        .profile-icon-btn:hover {
+          background: var(--color-accent-soft);
+          color: var(--color-accent);
+        }
+        .profile-icon-btn:active {
+          transform: scale(0.93);
+        }
+      `}</style>
+
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: 'var(--space-4) var(--space-4) var(--space-2)',
-          flexShrink: 0,
+          flexDirection: 'column',
+          minHeight: '100%',
+          background: 'var(--color-bg)',
         }}
       >
-        <h1
+        {/* Top bar */}
+        <div
+          className="profile-section"
           style={{
-            margin: 0,
-            fontSize: 'var(--font-size-xl)',
-            fontWeight: 'var(--font-weight-bold)',
-            fontFamily: 'var(--font-display)',
-            color: 'var(--color-text)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 'var(--space-4) var(--space-4) var(--space-2)',
+            flexShrink: 0,
           }}
         >
-          Profile
-        </h1>
-        <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-          {/* Bell */}
-          <button
-            onClick={openNotifications}
-            aria-label="Notifications"
+          <h1
             style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
+              margin: 0,
+              fontSize: 'var(--font-size-2xl)',
+              fontWeight: 900,
+              fontFamily: 'var(--font-display)',
               color: 'var(--color-text)',
-              padding: 'var(--space-2)',
-              position: 'relative',
-              lineHeight: 1,
-              display: 'flex',
-              alignItems: 'center',
             }}
           >
-            <Bell size={22} />
-            {unreadCount > 0 && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: 2,
-                  right: 2,
-                  width: 16,
-                  height: 16,
-                  borderRadius: 'var(--radius-full)',
-                  background: 'var(--color-accent)',
-                  color: '#fff',
-                  fontSize: '0.6rem',
-                  fontWeight: 'var(--font-weight-bold)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  lineHeight: 1,
-                }}
-              >
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </button>
+            Profile
+          </h1>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+            {/* Bell */}
+            <button
+              className="profile-icon-btn"
+              onClick={openNotifications}
+              aria-label="Notifications"
+            >
+              <Bell size={22} />
+              {unreadCount > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    right: 2,
+                    width: 16,
+                    height: 16,
+                    borderRadius: 'var(--radius-full)',
+                    background: 'var(--color-accent)',
+                    color: '#fff',
+                    fontSize: '0.6rem',
+                    fontWeight: 'var(--font-weight-bold)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                  }}
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
 
-          {/* Gear */}
-          <button
-            onClick={() => setSettingsOpen(true)}
-            aria-label="Settings"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--color-text)',
-              padding: 'var(--space-2)',
-              lineHeight: 1,
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <Settings size={22} />
-          </button>
+            {/* Gear */}
+            <button
+              className="profile-icon-btn"
+              onClick={() => setSettingsOpen(true)}
+              aria-label="Settings"
+            >
+              <Settings size={22} />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Profile Header (Instagram-style) */}
-      <ProfileHeader
-        profile={profile}
-        friendCount={friendCount}
-        streakCount={streakData.current}
-      />
+        {/* Profile Header */}
+        <div className="profile-section">
+          <ProfileHeader
+            profile={profile}
+            friendCount={friendCount}
+            streakCount={streakData.current}
+          />
+        </div>
 
-      {/* Streak Widget */}
-      <StreakWidget
-        current={streakData.current}
-        longest={streakData.longest}
-        totalPoints={streakData.totalPoints}
-        weeklyActivity={streakData.weeklyActivity}
-      />
+        {/* Streak Widget */}
+        <div className="profile-section">
+          <StreakWidget
+            current={streakData.current}
+            longest={streakData.longest}
+            totalPoints={streakData.totalPoints}
+            weeklyActivity={streakData.weeklyActivity}
+          />
+        </div>
 
-      {/* Content Tabs */}
-      <div style={{ marginTop: 'var(--space-4)' }}>
-        <ContentTabs
-          savedVerses={savedVerses}
-          joinedCells={joinedCells}
-          postedVideos={postedVideos}
-          posts={posts}
-          streak={streakData.current}
-          longestStreak={streakData.longest}
+        {/* Content Tabs */}
+        <div className="profile-section" style={{ marginTop: 'var(--space-4)' }}>
+          <ContentTabs
+            savedVerses={savedVerses}
+            joinedCells={joinedCells}
+            postedVideos={postedVideos}
+            posts={posts}
+            streak={streakData.current}
+            longestStreak={streakData.longest}
+          />
+        </div>
+
+        {/* Overlays */}
+        <NotificationCenter
+          open={notifOpen}
+          onClose={() => setNotifOpen(false)}
+          notifications={notifications}
+          onMarkAll={handleMarkAll}
+          onMarkRead={handleMarkRead}
+        />
+
+        <SettingsPanel
+          profile={profile}
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          onProfileUpdate={setProfile}
+          blockedUserIds={blockedUserIds}
+          onUnblock={handleUnblock}
         />
       </div>
-
-      {/* Overlays */}
-      <NotificationCenter
-        open={notifOpen}
-        onClose={() => setNotifOpen(false)}
-        notifications={notifications}
-        onMarkAll={handleMarkAll}
-        onMarkRead={handleMarkRead}
-      />
-
-      <SettingsPanel
-        profile={profile}
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        onProfileUpdate={setProfile}
-        blockedUserIds={blockedUserIds}
-        onUnblock={handleUnblock}
-      />
-    </div>
+    </>
   );
 }

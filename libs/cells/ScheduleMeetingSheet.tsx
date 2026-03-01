@@ -109,27 +109,12 @@ export function ScheduleMeetingSheet({
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
 
         {/* Title */}
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '0.75rem',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--color-text-muted)',
-              marginBottom: 'var(--space-1)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-            }}
-          >
-            Title
-          </label>
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Weekly Prayer Call"
-            maxLength={80}
-          />
-        </div>
+        <Input
+          label="Meeting Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={80}
+        />
 
         {/* Date + time */}
         <div>

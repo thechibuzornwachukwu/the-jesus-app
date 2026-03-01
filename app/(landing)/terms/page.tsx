@@ -18,7 +18,7 @@ export default function TermsPage() {
         <h1 style={{ fontFamily: '"Archivo Condensed", sans-serif', fontWeight: 900, fontSize: 'clamp(2rem, 6vw, 2.75rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', margin: '0 0 var(--space-2)' }}>
           Terms of Service
         </h1>
-        <p style={{ fontFamily: '"Lora", serif', fontStyle: 'italic', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', margin: '0 0 var(--space-8)' }}>
+        <p style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', margin: '0 0 var(--space-8)' }}>
           Effective date: 01 March 2026
         </p>
 

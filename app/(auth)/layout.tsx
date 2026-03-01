@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 function CrossSVG() {
   return (
-    <svg width="24" height="30" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <svg width="36" height="45" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <rect x="13" y="0" width="6" height="40" rx="2" fill="var(--color-accent)" />
       <rect x="0" y="12" width="32" height="6" rx="2" fill="var(--color-accent)" />
     </svg>
@@ -13,7 +13,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div
       style={{
-        position: 'relative',
         minHeight: '100dvh',
         display: 'flex',
         flexDirection: 'column',
@@ -23,22 +22,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         paddingTop: 'calc(var(--safe-top) + var(--space-6))',
         paddingBottom: 'calc(var(--safe-bottom) + var(--space-6))',
         backgroundColor: 'var(--color-bg)',
-        overflow: 'hidden',
+        position: 'relative',
       }}
     >
-      {/* Top accent strip */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 3,
-          background: 'linear-gradient(90deg, transparent, var(--color-accent), transparent)',
-          opacity: 0.6,
-        }}
-      />
-
       {/* Back to home */}
       <Link
         href="/"
@@ -52,12 +38,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           fontSize: 'var(--font-size-sm)',
           color: 'var(--color-text-muted)',
           textDecoration: 'none',
-          fontFamily: '"Plus Jakarta Sans", sans-serif',
+          fontFamily: 'var(--font-sans)',
           fontWeight: 500,
-          transition: 'color 0.15s',
           zIndex: 10,
         }}
-        onMouseOver={undefined}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -65,56 +49,42 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         Home
       </Link>
 
-      {/* Orange radial glow at bottom-centre */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '80vw',
-          height: '60vh',
-          background: 'radial-gradient(ellipse at bottom center, rgba(244,117,33,0.18) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Branding above card */}
+      {/* Brand mark */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 'var(--space-3)',
-          marginBottom: 'var(--space-5)',
+          marginBottom: 'var(--space-6)',
         }}
       >
         <CrossSVG />
         <span
           style={{
-            fontFamily: '"Archivo Condensed", sans-serif',
+            fontFamily: 'var(--font-display)',
             fontWeight: 900,
             fontSize: 'var(--font-size-xl)',
             letterSpacing: '-0.01em',
             color: 'var(--color-text)',
           }}
         >
-          The JESUS App
+          THE JESUS APP
         </span>
       </div>
 
       {/* Content card */}
       <div
         style={{
-          position: 'relative',
           width: '100%',
-          maxWidth: 400,
-          background: 'rgba(23,22,56,0.88)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
+          maxWidth: 420,
+          background: 'rgba(22,16,9,0.92)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           border: '1px solid var(--color-border)',
           borderRadius: 'var(--radius-xl)',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
           padding: 'var(--space-8) var(--space-6)',
+          animation: 'toast-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
         }}
       >
         {children}

@@ -1,6 +1,6 @@
 export { Heading, Body, Label, Display } from './Typography';
 export { Button } from './Button';
-export { Input } from './Input';
+export { Input, TextareaInput } from './Input';
 export { Card } from './Card';
 export { Avatar } from './Avatar';
 export { BottomSheet } from './BottomSheet';

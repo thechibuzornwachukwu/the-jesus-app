@@ -18,13 +18,13 @@ export default function PurityPage() {
         <h1 style={{ fontFamily: '"Archivo Condensed", sans-serif', fontWeight: 900, fontSize: 'clamp(2rem, 6vw, 2.75rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', margin: '0 0 var(--space-2)' }}>
           Purity Pledge
         </h1>
-        <p style={{ fontFamily: '"Lora", serif', fontStyle: 'italic', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', margin: '0 0 var(--space-4)' }}>
+        <p style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', margin: '0 0 var(--space-4)' }}>
           Effective date: 01 March 2026
         </p>
 
         {/* Scripture */}
         <blockquote style={{ margin: '0 0 var(--space-10)', padding: 'var(--space-5) var(--space-6)', borderLeft: '3px solid var(--color-accent)', background: 'var(--color-accent-soft)', borderRadius: '0 var(--radius-md) var(--radius-md) 0' }}>
-          <p style={{ fontFamily: '"Lora", serif', fontStyle: 'italic', fontSize: 'var(--font-size-lg)', lineHeight: 1.7, color: 'var(--color-text)', margin: '0 0 var(--space-2)' }}>
+          <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 'var(--font-size-lg)', lineHeight: 1.7, color: 'var(--color-text)', margin: '0 0 var(--space-2)' }}>
             "Finally, brothers and sisters, whatever is true, whatever is noble, whatever is right, whatever is pure, whatever is lovely, whatever is admirable  if anything is excellent or praiseworthy  think about such things."
           </p>
           <cite style={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', fontStyle: 'normal', fontWeight: 600 }}>

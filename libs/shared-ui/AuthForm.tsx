@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Mail } from 'lucide-react';
 import { Input } from './Input';
 import { Button } from './Button';
 
@@ -17,7 +18,9 @@ const initialState = { error: undefined, success: undefined };
 
 function CrossIcon() {
   return (
-    <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <svg width="48" height="60" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"
+      style={{ filter: 'drop-shadow(0 0 8px rgba(212,146,42,0.35))' }}
+    >
       <rect x="13" y="0" width="6" height="40" rx="2" fill="var(--color-accent)" />
       <rect x="0" y="12" width="32" height="6" rx="2" fill="var(--color-accent)" />
     </svg>
@@ -45,7 +48,7 @@ function SignUpSuccessModal({ onDone }: { onDone: () => void }) {
         position: 'fixed', inset: 0, zIndex: 200,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 'var(--space-6)',
-        background: 'rgba(4,5,3,0.85)',
+        background: 'rgba(11,9,5,0.85)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
         animation: 'toast-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
@@ -54,7 +57,7 @@ function SignUpSuccessModal({ onDone }: { onDone: () => void }) {
       <div
         style={{
           width: '100%', maxWidth: 360,
-          background: 'rgba(23,22,56,0.96)',
+          background: 'rgba(22,16,9,0.96)',
           border: '1px solid var(--color-border)',
           borderRadius: 'var(--radius-xl)',
           boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
@@ -66,7 +69,7 @@ function SignUpSuccessModal({ onDone }: { onDone: () => void }) {
         <CrossIcon />
         <h2
           style={{
-            fontFamily: '"Archivo Condensed", sans-serif',
+            fontFamily: 'var(--font-display)',
             fontWeight: 900,
             fontSize: 'var(--font-size-2xl)',
             letterSpacing: '-0.02em',
@@ -78,8 +81,7 @@ function SignUpSuccessModal({ onDone }: { onDone: () => void }) {
         </h2>
         <p
           style={{
-            fontFamily: '"Newsreader", serif',
-            fontStyle: 'italic',
+            fontFamily: 'var(--font-sans)',
             fontSize: 'var(--font-size-base)',
             color: 'var(--color-text-muted)',
             margin: 0,
@@ -118,27 +120,16 @@ export function AuthForm({ mode, action }: AuthFormProps) {
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
           <h1
             style={{
-              fontFamily: '"Archivo Condensed", sans-serif',
+              fontFamily: 'var(--font-display)',
               fontWeight: 900,
-              fontSize: 'var(--font-size-3xl)',
+              fontSize: 'var(--font-size-4xl)',
               letterSpacing: '-0.02em',
               color: 'var(--color-text)',
-              margin: '0 0 var(--space-2)',
-            }}
-          >
-            {isSignIn ? 'Welcome back' : 'Join the community'}
-          </h1>
-          <p
-            style={{
-              fontFamily: '"Newsreader", serif',
-              fontStyle: 'italic',
-              fontSize: 'var(--font-size-base)',
-              color: 'var(--color-text-muted)',
               margin: 0,
             }}
           >
-            {isSignIn ? 'Enter through the narrow gate' : 'You are known and loved'}
-          </p>
+            {isSignIn ? 'Welcome back' : 'Join the family'}
+          </h1>
         </div>
 
         <form action={formAction} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
@@ -150,6 +141,7 @@ export function AuthForm({ mode, action }: AuthFormProps) {
             placeholder="you@example.com"
             autoComplete="email"
             required
+            icon={<Mail size={16} />}
           />
           <Input
             id="password"

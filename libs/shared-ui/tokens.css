@@ -43,6 +43,13 @@
   --color-border:       rgba(245,247,247,0.10);
   --color-border-focus: var(--color-orange-dark);
 
+  /* ─── Input ─────────────────────────────────────────────── */
+  --input-height:       2.875rem;                        /* 46px — generous tap target */
+  --input-bg:           var(--color-surface-high);       /* slightly elevated bg */
+  --input-focus-ring:   0 0 0 2.5px rgba(212,146,42,0.30); /* gold glow shadow */
+  --input-label-color:  var(--color-text-muted);         /* resting label color */
+  --input-label-active: var(--color-accent);             /* floating label color */
+
   /* ─── Backward-compat aliases ───────────────────────────── */
   --color-bg-primary:   var(--color-bg);
   --color-bg-surface:   var(--color-surface);
@@ -52,7 +59,7 @@
 
   /* ─── Typography ────────────────────────────────────────── */
   --font-sans:    'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-serif:   'Lora', Georgia, serif;
+  --font-serif:   'Newsreader', Georgia, serif;
   --font-display: 'Archivo Condensed', 'Archivo', system-ui, sans-serif;
   --font-size-xs:   0.75rem;   /* 12px */
   --font-size-sm:   0.875rem;  /* 14px */
