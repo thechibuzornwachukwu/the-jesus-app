@@ -3,6 +3,7 @@
 import { createClient } from '../supabase/server';
 import { z } from 'zod';
 import type { Video, Comment, Post, ImagePost, FeedItem, ReactionType } from './types';
+import { logStreakEvent } from '../streaks/actions';
 
 const PAGE_SIZE = 5;
 
@@ -426,6 +427,8 @@ export async function addComment(
 
   if (error || !data) return { error: error?.message ?? 'Failed to post comment' };
 
+  void logStreakEvent('post_content');
+
   // Increment comment_count on parent (fire-and-forget)
   if (parsed.data.targetType === 'video') {
     void supabase.rpc('increment_video_comment_count', { p_video_id: parsed.data.targetId });
@@ -485,6 +488,7 @@ export async function createImagePost(
     .single();
 
   if (error || !data) return { error: error?.message ?? 'Failed to create post' };
+  void logStreakEvent('post_content');
   return { postId: data.id };
 }
 
@@ -515,6 +519,7 @@ export async function saveVerse(
     verse_text: parsed.data.verseText,
   });
 
+  if (!error) void logStreakEvent('verse_save');
   return error ? { error: error.message } : {};
 }
 
@@ -553,6 +558,7 @@ export async function createPost(
     .single();
 
   if (error || !data) return { error: error?.message ?? 'Failed to create post' };
+  void logStreakEvent('post_content');
   return { postId: data.id };
 }
 

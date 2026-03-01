@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '../supabase/server';
+import { checkAndAwardBadges } from '../gamification/check-badges';
 
 export type StreakEventType =
   | 'verse_save'
@@ -144,9 +145,9 @@ export async function logStreakEvent(
     last_active_date: today,
   };
 
-  // Check for newly earned badges
-  await awardBadgeIfEarned(user.id, 'streak_days', newStreak);
-  await awardBadgeIfEarned(user.id, 'verse_save', totalPoints);
+  // Check & award all badge criteria (fire-and-forget)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  void checkAndAwardBadges(user.id, supabase as any);
 
   return { points, streak };
 }

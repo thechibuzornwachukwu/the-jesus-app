@@ -13,6 +13,7 @@ import { ScheduleSheet } from './ScheduleSheet';
 import { ScheduledMessagesList } from './ScheduledMessagesList';
 import { TimestampReplyBar } from './TimestampReplyBar';
 import { scheduleMessage } from '../../lib/cells/actions';
+import { logStreakEvent } from '../../lib/streaks/actions';
 import type { Message, Profile } from '../../lib/cells/types';
 
 function formatTime(isoStr: string): string {
@@ -269,6 +270,7 @@ export function Chat({
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         setSendError('Failed to send. Please try again.');
       } else {
+        void logStreakEvent('cell_message');
         if (content.includes('@')) {
           const mentionMatches = content.match(/@(\w+)/g) ?? [];
           if (mentionMatches.length > 0) {

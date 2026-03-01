@@ -2,6 +2,7 @@
 
 import { createClient } from '../supabase/server';
 import type { CourseProgress } from '../../libs/learn/types';
+import { logStreakEvent } from '../streaks/actions';
 
 // ─── Course Progress ─────────────────────────────────────────────────────────
 
@@ -41,6 +42,8 @@ export async function upsertCourseProgress(
     },
     { onConflict: 'user_id,track_id' }
   );
+
+  if (completed) void logStreakEvent('course_complete');
 }
 
 // ─── Conversation History ─────────────────────────────────────────────────────

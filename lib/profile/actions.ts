@@ -17,6 +17,7 @@ import {
   sendFriendRequest as _sendFriendRequest,
   acceptFriendRequest as _acceptFriendRequest,
 } from '../friends/actions';
+import { logStreakEvent } from '../streaks/actions';
 
 const KNOWN_CATEGORIES = [
   'Prayer',
@@ -232,6 +233,7 @@ export async function updateVerseNote(
     .eq('user_id', user.id)
     .eq('verse_reference', parsed.data.verseReference);
 
+  if (!error && parsed.data.note) void logStreakEvent('verse_save_with_note');
   return error ? { error: error.message } : {};
 }
 
