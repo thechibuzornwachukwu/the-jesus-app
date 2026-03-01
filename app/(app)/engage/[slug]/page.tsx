@@ -47,7 +47,7 @@ export default async function CellPage({ params }: CellPageProps) {
     redirect(`/engage/${slug}/${defaultChannel.id}`);
   }
 
-  // No channels yet — auto-create General channel using service role (bypasses RLS for all members)
+  // No channels yet  auto-create General channel using service role (bypasses RLS for all members)
   const adminClient = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!

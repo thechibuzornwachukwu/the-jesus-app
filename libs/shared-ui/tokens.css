@@ -44,7 +44,7 @@
   --color-border-focus: var(--color-orange-dark);
 
   /* ─── Input ─────────────────────────────────────────────── */
-  --input-height:       2.875rem;                        /* 46px — generous tap target */
+  --input-height:       2.875rem;                        /* 46px  generous tap target */
   --input-bg:           var(--color-surface-high);       /* slightly elevated bg */
   --input-focus-ring:   0 0 0 2.5px rgba(212,146,42,0.30); /* gold glow shadow */
   --input-label-color:  var(--color-text-muted);         /* resting label color */

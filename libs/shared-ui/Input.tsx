@@ -41,7 +41,7 @@ export function Input({
           </span>
         )}
 
-        {/* Input — placeholder=" " enables the CSS :placeholder-shown trick */}
+        {/* Input  placeholder=" " enables the CSS :placeholder-shown trick */}
         <input
           id={id}
           type={inputType}
@@ -124,7 +124,7 @@ export function TextareaInput({
   return (
     <div className="flex flex-col gap-[var(--space-1)] w-full">
       <div className="relative">
-        {/* Textarea — placeholder=" " enables :placeholder-shown trick */}
+        {/* Textarea  placeholder=" " enables :placeholder-shown trick */}
         <textarea
           id={id}
           rows={rows}
