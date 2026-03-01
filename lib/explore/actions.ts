@@ -2,7 +2,7 @@
 
 import { createClient } from '../supabase/server';
 import { z } from 'zod';
-import type { Video, Comment, Post, ImagePost, FeedItem, ReactionType } from './types';
+import type { Video, Comment, Post, ImagePost, FeedItem, ReactionType, VerseComment } from './types';
 import { logStreakEvent } from '../streaks/actions';
 
 const PAGE_SIZE = 5;

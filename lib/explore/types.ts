@@ -70,3 +70,13 @@ export type FeedItem =
   | { kind: 'video'; data: Video }
   | { kind: 'post'; data: Post }
   | { kind: 'image'; data: ImagePost };
+
+export type VerseComment = {
+  id: string;
+  user_id: string;
+  verse_reference: string;
+  verse_date: string;
+  body: string;
+  created_at: string;
+  profiles: { username: string; avatar_url: string | null } | null;
+};
