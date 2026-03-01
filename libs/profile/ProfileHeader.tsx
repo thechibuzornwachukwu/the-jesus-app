@@ -119,20 +119,6 @@ export function ProfileHeader({ profile, friendCount, streakCount }: ProfileHead
         </div>
       </div>
 
-      {/* Display name */}
-      <h2
-        style={{
-          margin: 'var(--space-3) 0 0',
-          fontSize: '1.25rem',
-          fontWeight: 600,
-          fontFamily: 'var(--font-display)',
-          color: 'var(--color-text)',
-          lineHeight: 1.2,
-        }}
-      >
-        {profile.username}
-      </h2>
-
       {/* Bio */}
       {profile.bio && (
         <p

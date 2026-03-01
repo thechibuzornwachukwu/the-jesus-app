@@ -69,7 +69,7 @@ export function CellCard({ cell, isMember, featured }: CellCardProps) {
 
   const handleClick = () => {
     vibrate([8]);
-    router.push(`/engage/${cell.slug}/info`);
+    router.push(isMember ? `/engage/${cell.slug}` : `/engage/${cell.slug}/info`);
   };
 
   const bannerHeight = featured ? 120 : 80;

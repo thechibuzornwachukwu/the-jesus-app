@@ -110,7 +110,7 @@ export function ProfileClient({
             color: 'var(--color-text)',
           }}
         >
-          {profile.username}
+          Profile
         </h1>
         <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
           {/* Bell */}
