@@ -1,9 +1,14 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '../../../lib/supabase/server';
-import { getCellsWithMemberPreviews, getMyCellsWithPreviews } from '../../../lib/cells/actions';
+import {
+  getCellsWithMemberPreviews,
+  getMyCellsWithPreviews,
+  getLastMessages,
+  getStoriesForCells,
+} from '../../../lib/cells/actions';
 import { EngageClient } from './EngageClient';
 
-export const metadata = { title: 'Engage  The JESUS App' };
+export const metadata = { title: 'Engage — The JESUS App' };
 
 export default async function EngagePage() {
   const supabase = await createClient();
@@ -17,8 +22,17 @@ export default async function EngagePage() {
     getMyCellsWithPreviews(user.id),
     supabase.from('profiles').select('content_categories').eq('id', user.id).single(),
   ]);
+
   const joinedIds = myCells.map((c) => c.id);
-  const discoverCells = await getCellsWithMemberPreviews(joinedIds);
+
+  const [discoverCells, lastMessages, storyGroups] = await Promise.all([
+    getCellsWithMemberPreviews(joinedIds),
+    getLastMessages(joinedIds),
+    joinedIds.length > 0
+      ? getStoriesForCells(joinedIds, user.id).catch(() => [])
+      : Promise.resolve([]),
+  ]);
+
   const userCategories =
     (profileRes.data as { content_categories?: string[] } | null)?.content_categories ?? [];
 
@@ -28,6 +42,8 @@ export default async function EngagePage() {
       discoverCells={discoverCells}
       currentUserId={user.id}
       userCategories={userCategories}
+      lastMessages={lastMessages}
+      storyGroups={storyGroups}
     />
   );
 }
