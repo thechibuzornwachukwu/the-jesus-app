@@ -75,9 +75,9 @@ export function DailyVerse({
   };
 
   const handleShare = async () => {
-    const text = `"${verse.text}" — ${verse.reference}`;
+    const text = `"${verse.text}"  ${verse.reference}`;
     if (typeof navigator !== 'undefined' && navigator.share) {
-      try { await navigator.share({ title: `${verse.reference} — The JESUS App`, text }); }
+      try { await navigator.share({ title: `${verse.reference}  The JESUS App`, text }); }
       catch { /* dismissed */ }
     } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
       await navigator.clipboard.writeText(text);

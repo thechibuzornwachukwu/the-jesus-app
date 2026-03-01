@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export const metadata = { title: 'Privacy Policy — The JESUS App' };
+export const metadata = { title: 'Privacy Policy  The JESUS App' };
 
 export default function PrivacyPage() {
   return (
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="2. Data We Collect">
-          We collect the following categories of data: (a) Account data — email address and password (stored securely via Supabase Auth); (b) Profile data — display name, bio, avatar, church, city, and content preferences you choose to provide; (c) Content data — posts, videos, comments, voice notes, saved verses, and course progress you create; (d) Community data — cells you join or create, messages sent within cells, and reactions; (e) Usage data — pages visited, features used, and interaction timestamps, collected to improve the App.
+          We collect the following categories of data: (a) Account data  email address and password (stored securely via Supabase Auth); (b) Profile data  display name, bio, avatar, church, city, and content preferences you choose to provide; (c) Content data  posts, videos, comments, voice notes, saved verses, and course progress you create; (d) Community data  cells you join or create, messages sent within cells, and reactions; (e) Usage data  pages visited, features used, and interaction timestamps, collected to improve the App.
         </Section>
 
         <Section title="3. How We Use Your Data">
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="4. Data Sharing">
-          We do not sell your personal data. Data may be shared with: Supabase (database and authentication infrastructure); OpenAI (AI feature processing — see their privacy policy); Vercel (hosting and edge functions); web-push providers (for push notifications). All third parties are subject to data processing agreements.
+          We do not sell your personal data. Data may be shared with: Supabase (database and authentication infrastructure); OpenAI (AI feature processing  see their privacy policy); Vercel (hosting and edge functions); web-push providers (for push notifications). All third parties are subject to data processing agreements.
         </Section>
 
         <Section title="5. Push Notifications">

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export const metadata = { title: 'Purity Pledge — The JESUS App' };
+export const metadata = { title: 'Purity Pledge  The JESUS App' };
 
 export default function PurityPage() {
   return (
@@ -25,7 +25,7 @@ export default function PurityPage() {
         {/* Scripture */}
         <blockquote style={{ margin: '0 0 var(--space-10)', padding: 'var(--space-5) var(--space-6)', borderLeft: '3px solid var(--color-accent)', background: 'var(--color-accent-soft)', borderRadius: '0 var(--radius-md) var(--radius-md) 0' }}>
           <p style={{ fontFamily: '"Lora", serif', fontStyle: 'italic', fontSize: 'var(--font-size-lg)', lineHeight: 1.7, color: 'var(--color-text)', margin: '0 0 var(--space-2)' }}>
-            "Finally, brothers and sisters, whatever is true, whatever is noble, whatever is right, whatever is pure, whatever is lovely, whatever is admirable — if anything is excellent or praiseworthy — think about such things."
+            "Finally, brothers and sisters, whatever is true, whatever is noble, whatever is right, whatever is pure, whatever is lovely, whatever is admirable  if anything is excellent or praiseworthy  think about such things."
           </p>
           <cite style={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', fontStyle: 'normal', fontWeight: 600 }}>
             Philippians 4:8 (NIV)
@@ -33,7 +33,7 @@ export default function PurityPage() {
         </blockquote>
 
         <Section title="Our Commitment">
-          The JESUS App is a sacred space built on the foundation of Christ. We believe that the digital environments we inhabit shape our hearts and minds. This Purity Pledge defines the standard we hold ourselves and our community to — not out of legalism, but out of love for God and one another.
+          The JESUS App is a sacred space built on the foundation of Christ. We believe that the digital environments we inhabit shape our hearts and minds. This Purity Pledge defines the standard we hold ourselves and our community to  not out of legalism, but out of love for God and one another.
         </Section>
 
         <Section title="What We Do Not Allow">
@@ -49,11 +49,11 @@ export default function PurityPage() {
         </Section>
 
         <Section title="Enforcement">
-          Violations of this pledge may result in: content removal, a warning, temporary suspension, or permanent account removal — depending on the severity and pattern of the violation. Serious violations (e.g., content involving minors) will be reported to the appropriate authorities without exception.
+          Violations of this pledge may result in: content removal, a warning, temporary suspension, or permanent account removal  depending on the severity and pattern of the violation. Serious violations (e.g., content involving minors) will be reported to the appropriate authorities without exception.
         </Section>
 
         <Section title="Grace and Restoration">
-          We believe in redemption. If you have struggled with purity and have posted content that violates this pledge, you may contact our team. We will handle your situation with confidentiality, compassion, and a commitment to your restoration — while still upholding community safety.
+          We believe in redemption. If you have struggled with purity and have posted content that violates this pledge, you may contact our team. We will handle your situation with confidentiality, compassion, and a commitment to your restoration  while still upholding community safety.
         </Section>
 
         <Section title="Personal Pledge">

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export const metadata = { title: 'Terms of Service — The JESUS App' };
+export const metadata = { title: 'Terms of Service  The JESUS App' };
 
 export default function TermsPage() {
   return (
