@@ -261,7 +261,7 @@ export function LearnClient({ initialProgress }: LearnClientProps) {
           paddingTop: courseOpen ? 0 : 'var(--space-5)',
           paddingLeft: 'var(--space-6)',
           paddingRight: 'var(--space-6)',
-          paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom) + 72px)',
+          paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom) + var(--space-6))',
         }}
       >
         {/* Faith Courses  always rendered; manages its own track detail */}
@@ -292,7 +292,7 @@ export function LearnClient({ initialProgress }: LearnClientProps) {
         )}
       </div>
 
-      {/* Floating AI Guide  FAB + modal; modal also controlled externally by BereanSection */}
+      {/* Berean chat sheet, controlled by the Berean section card */}
       <SpiritualGuide
         externalOpen={chatOpen}
         onExternalClose={() => setChatOpen(false)}

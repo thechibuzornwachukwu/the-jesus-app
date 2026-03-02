@@ -6,12 +6,21 @@ interface BottomSheetProps {
   open: boolean;
   onClose: () => void;
   title?: string;
+  contentScrollable?: boolean;
+  contentStyle?: React.CSSProperties;
   children: React.ReactNode;
 }
 
 const DISMISS_THRESHOLD = 120;
 
-export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
+export function BottomSheet({
+  open,
+  onClose,
+  title,
+  contentScrollable = true,
+  contentStyle,
+  children,
+}: BottomSheetProps) {
   const [dragStartY, setDragStartY] = useState<number | null>(null);
   const [dragCurrentY, setDragCurrentY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -148,11 +157,14 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
         {/* Scrollable content */}
         <div
           style={{
-            overflowY: 'auto',
+            overflowY: contentScrollable ? 'auto' : 'hidden',
             overscrollBehavior: 'contain',
             flex: 1,
-            padding: 'var(--space-4) var(--space-6)',
-            paddingBottom: 'calc(var(--safe-bottom, 0px) + var(--space-4))',
+            padding: contentScrollable ? 'var(--space-4) var(--space-6)' : 0,
+            paddingBottom: contentScrollable
+              ? 'calc(var(--safe-bottom, 0px) + var(--space-4))'
+              : 0,
+            ...contentStyle,
           }}
         >
           {children}

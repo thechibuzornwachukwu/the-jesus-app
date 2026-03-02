@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send } from 'lucide-react';
-import { FAB, FullScreenModal } from '../shared-ui';
+import { Send, X } from 'lucide-react';
+import { BottomSheet } from '../shared-ui';
 import type { ChatMessage } from './types';
 
 function newUUID(): string {
@@ -18,11 +18,10 @@ function CrossIcon() {
   );
 }
 
-
 const WELCOME: ChatMessage = {
   role: 'assistant',
   content:
-    "Welcome, Berean. Ask anything about Scripture  a verse, a doctrine, a question of faith. I search the Scriptures to walk with you.",
+    'Welcome, Berean. Ask anything about Scripture, a verse, a doctrine, a question of faith. I search the Scriptures to walk with you.',
 };
 
 interface SpiritualGuideProps {
@@ -31,25 +30,26 @@ interface SpiritualGuideProps {
 }
 
 export function SpiritualGuide({ externalOpen, onExternalClose }: SpiritualGuideProps = {}) {
-  const [open, setOpen] = useState(false);
-  const isOpen = open || (externalOpen ?? false);
+  const isOpen = externalOpen ?? false;
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionId] = useState(() => newUUID());
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesPaneRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const pane = messagesPaneRef.current;
+    if (!pane) return;
+    pane.scrollTo({ top: pane.scrollHeight, behavior: 'smooth' });
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
-      scrollToBottom();
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  }, [isOpen, messages, scrollToBottom]);
+    if (!isOpen) return;
+    scrollToBottom();
+    const id = window.setTimeout(() => inputRef.current?.focus(), 80);
+    return () => window.clearTimeout(id);
+  }, [isOpen, messages, loading, scrollToBottom]);
 
   async function handleSend() {
     const text = input.trim();
@@ -100,84 +100,91 @@ export function SpiritualGuide({ externalOpen, onExternalClose }: SpiritualGuide
     });
   }
 
-  const inputBar = (
-    <div
-      style={{
-        borderTop: '1px solid var(--color-border)',
-        padding: 'var(--space-3) var(--space-4)',
-        paddingBottom: 'calc(var(--safe-bottom) + var(--space-3))',
-        display: 'flex',
-        gap: 'var(--space-2)',
-        alignItems: 'flex-end',
-        background: 'var(--color-bg-surface)',
-      }}
-    >
-      <textarea
-        ref={inputRef}
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Ask anything about faith, Scripture, life…"
-        rows={1}
-        className="field-textarea"
-        style={{
-          flex: 1,
-          borderRadius: 'var(--radius-lg)',
-          maxHeight: 120,
-          overflowY: 'auto',
-        }}
-      />
-      <button
-        onClick={handleSend}
-        disabled={!input.trim() || loading}
-        aria-label="Send"
-        style={{
-          background: 'var(--color-accent)',
-          border: 'none',
-          borderRadius: 'var(--radius-full)',
-          width: 40,
-          height: 40,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--color-text-inverse)',
-          cursor: 'pointer',
-          flexShrink: 0,
-          opacity: !input.trim() || loading ? 0.5 : 1,
-          transition: 'opacity 0.15s',
-        }}
-      >
-        <Send size={18} />
-      </button>
-    </div>
-  );
-
   return (
     <>
-      <FAB
-        onClick={() => setOpen(true)}
-        icon={<CrossIcon />}
-        ariaLabel="Open Berean study guide"
-        size={56}
-        bottomOffset="var(--space-6)"
-        zIndex="var(--z-modal)"
-      />
-
-      <FullScreenModal
+      <BottomSheet
         open={isOpen}
-        onClose={() => { setOpen(false); onExternalClose?.(); }}
-        title="Berean"
-        subtitle="Search the Scriptures daily  Acts 17:11"
-        icon={<CrossIcon />}
-        footerContent={inputBar}
-        zIndex="calc(var(--z-modal) + 1)"
+        onClose={() => onExternalClose?.()}
+        contentScrollable={false}
+        contentStyle={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: 'min(84dvh, calc(100dvh - var(--space-8)))',
+        }}
       >
         <div
           style={{
+            flexShrink: 0,
+            borderBottom: '1px solid var(--color-border)',
+            padding: 'var(--space-3) var(--space-4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 'var(--space-3)',
+            background: 'var(--color-bg-surface)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <div style={{ color: 'var(--color-accent)' }}>
+              <CrossIcon />
+            </div>
+            <div>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 'var(--font-size-md)',
+                  fontWeight: 'var(--font-weight-bold)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                Berean
+              </p>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                Search the Scriptures daily, Acts 17:11
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onExternalClose?.()}
+            aria-label="Close Berean"
+            style={{
+              border: '1px solid var(--color-border)',
+              background: 'var(--color-bg-surface)',
+              color: 'var(--color-text-muted)',
+              width: 34,
+              height: 34,
+              borderRadius: 'var(--radius-full)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div
+          ref={messagesPaneRef}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
+            WebkitOverflowScrolling: 'touch',
             padding: 'var(--space-4)',
             display: 'flex',
             flexDirection: 'column',
             gap: 'var(--space-4)',
+            background: 'var(--color-bg-surface)',
           }}
         >
           {messages.map((msg, i) => (
@@ -213,6 +220,7 @@ export function SpiritualGuide({ externalOpen, onExternalClose }: SpiritualGuide
               </div>
             </div>
           ))}
+
           {loading && (
             <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
               <div
@@ -241,9 +249,59 @@ export function SpiritualGuide({ externalOpen, onExternalClose }: SpiritualGuide
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
-      </FullScreenModal>
+
+        <div
+          style={{
+            flexShrink: 0,
+            borderTop: '1px solid var(--color-border)',
+            padding: 'var(--space-3) var(--space-4)',
+            paddingBottom: 'calc(var(--safe-bottom, 0px) + var(--space-3))',
+            display: 'flex',
+            gap: 'var(--space-2)',
+            alignItems: 'flex-end',
+            background: 'var(--color-bg-surface)',
+          }}
+        >
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask anything about faith, Scripture, life..."
+            rows={1}
+            className="field-textarea"
+            style={{
+              flex: 1,
+              borderRadius: 'var(--radius-lg)',
+              maxHeight: 120,
+              overflowY: 'auto',
+            }}
+          />
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || loading}
+            aria-label="Send"
+            style={{
+              background: 'var(--color-accent)',
+              border: 'none',
+              borderRadius: 'var(--radius-full)',
+              width: 40,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--color-text-inverse)',
+              cursor: 'pointer',
+              flexShrink: 0,
+              opacity: !input.trim() || loading ? 0.5 : 1,
+              transition: 'opacity 0.15s',
+            }}
+          >
+            <Send size={18} />
+          </button>
+        </div>
+      </BottomSheet>
 
       <style>{`
         @keyframes bounce {
