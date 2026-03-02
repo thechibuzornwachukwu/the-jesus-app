@@ -10,6 +10,9 @@ export type ScheduledMeeting = {
   description: string | null;
   scheduled_at: string;
   duration_min: number;
+  provider: 'jitsi' | 'custom';
+  meeting_url: string;
+  room_code: string | null;
   created_by: string;
   notified_at: string | null;
   cancelled_at: string | null;
@@ -46,6 +49,70 @@ async function assertAdmin(supabase: Awaited<ReturnType<typeof createClient>>, c
   return user.id;
 }
 
+function slugifyRoomFragment(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function normalizeRoomCode(roomCode: string | undefined): string | null {
+  if (!roomCode) return null;
+  const trimmed = roomCode.trim();
+  if (!trimmed) return null;
+  const normalized = trimmed.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '').slice(0, 80);
+  return normalized.length >= 4 ? normalized : null;
+}
+
+function buildDefaultRoomCode(cellId: string, channelId: string, title: string, scheduledAt: string): string {
+  const date = new Date(scheduledAt);
+  const d = Number.isNaN(date.getTime())
+    ? 'meeting'
+    : `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, '0')}${String(date.getUTCDate()).padStart(2, '0')}`;
+  const titlePart = slugifyRoomFragment(title).slice(0, 20) || 'meeting';
+  return `jesusapp-${cellId.slice(0, 6)}-${channelId.slice(0, 6)}-${titlePart}-${d}`.slice(0, 80);
+}
+
+function buildJitsiUrl(roomCode: string): string {
+  return `https://meet.jit.si/${encodeURIComponent(roomCode)}`;
+}
+
+function normalizeMeetingLink(input: {
+  cellId: string;
+  channelId: string;
+  title: string;
+  scheduledAt: string;
+  provider?: 'jitsi' | 'custom';
+  meetingUrl?: string;
+  roomCode?: string;
+}): { provider: 'jitsi' | 'custom'; meeting_url: string; room_code: string | null } {
+  const provider = input.provider ?? 'jitsi';
+
+  if (provider === 'custom') {
+    const raw = (input.meetingUrl ?? '').trim();
+    if (!raw) throw new Error('Custom meeting URL is required');
+    try {
+      const parsed = new URL(raw);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        throw new Error('Custom meeting URL must start with http:// or https://');
+      }
+      return { provider: 'custom', meeting_url: parsed.toString(), room_code: null };
+    } catch {
+      throw new Error('Invalid custom meeting URL');
+    }
+  }
+
+  const roomCode =
+    normalizeRoomCode(input.roomCode) ??
+    buildDefaultRoomCode(input.cellId, input.channelId, input.title, input.scheduledAt);
+  return {
+    provider: 'jitsi',
+    meeting_url: buildJitsiUrl(roomCode),
+    room_code: roomCode,
+  };
+}
+
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 export async function createMeeting(
@@ -56,6 +123,9 @@ export async function createMeeting(
     scheduledAt: string;   // ISO string
     durationMin: number;
     description?: string;
+    provider?: 'jitsi' | 'custom';
+    meetingUrl?: string;
+    roomCode?: string;
   }
 ): Promise<{ id: string } | { error: string }> {
   try {
@@ -73,6 +143,16 @@ export async function createMeeting(
       return { error: 'Invalid meeting channel' };
     }
 
+    const meetingLink = normalizeMeetingLink({
+      cellId: data.cellId,
+      channelId,
+      title: data.title,
+      scheduledAt: data.scheduledAt,
+      provider: data.provider,
+      meetingUrl: data.meetingUrl,
+      roomCode: data.roomCode,
+    });
+
     const { data: meeting, error } = await supabase
       .from('scheduled_meetings')
       .insert({
@@ -82,6 +162,9 @@ export async function createMeeting(
         description: data.description ?? null,
         scheduled_at: data.scheduledAt,
         duration_min: data.durationMin,
+        provider: meetingLink.provider,
+        meeting_url: meetingLink.meeting_url,
+        room_code: meetingLink.room_code,
         created_by: userId,
       })
       .select('id')
@@ -102,13 +185,23 @@ export async function updateMeeting(
     scheduledAt?: string;
     durationMin?: number;
     description?: string;
+    provider?: 'jitsi' | 'custom';
+    meetingUrl?: string;
+    roomCode?: string;
   }
 ): Promise<{ ok: true } | { error: string }> {
   try {
     const supabase = await createClient();
     await assertAdmin(supabase, data.cellId);
 
-    // If time changed significantly AND already notified, reset notified_at so it fires again
+    const { data: existing } = await supabase
+      .from('scheduled_meetings')
+      .select('id, cell_id, channel_id, title, scheduled_at, duration_min, provider, meeting_url, room_code, notified_at')
+      .eq('id', meetingId)
+      .single();
+
+    if (!existing || existing.cell_id !== data.cellId) return { error: 'Meeting not found' };
+
     const updates: Record<string, unknown> = {};
     if (data.title !== undefined) updates.title = data.title;
     if (data.description !== undefined) updates.description = data.description;
@@ -116,20 +209,34 @@ export async function updateMeeting(
 
     if (data.scheduledAt !== undefined) {
       updates.scheduled_at = data.scheduledAt;
-
-      // Check if we need to re-notify (time shift > 15 min)
-      const { data: existing } = await supabase
-        .from('scheduled_meetings')
-        .select('scheduled_at, notified_at')
-        .eq('id', meetingId)
-        .single();
-
-      if (existing?.notified_at) {
+      if (existing.notified_at) {
         const diff = Math.abs(
           new Date(data.scheduledAt).getTime() - new Date(existing.scheduled_at).getTime()
         );
         if (diff > 15 * 60 * 1000) updates.notified_at = null;
       }
+    }
+
+    const shouldRecomputeLink =
+      data.provider !== undefined ||
+      data.meetingUrl !== undefined ||
+      data.roomCode !== undefined ||
+      (data.scheduledAt !== undefined && (data.provider ?? existing.provider) === 'jitsi') ||
+      (data.title !== undefined && (data.provider ?? existing.provider) === 'jitsi');
+
+    if (shouldRecomputeLink) {
+      const link = normalizeMeetingLink({
+        cellId: existing.cell_id,
+        channelId: existing.channel_id,
+        title: data.title ?? existing.title,
+        scheduledAt: data.scheduledAt ?? existing.scheduled_at,
+        provider: data.provider ?? existing.provider,
+        meetingUrl: data.meetingUrl ?? existing.meeting_url,
+        roomCode: data.roomCode ?? existing.room_code ?? undefined,
+      });
+      updates.provider = link.provider;
+      updates.meeting_url = link.meeting_url;
+      updates.room_code = link.room_code;
     }
 
     const { error } = await supabase
@@ -151,6 +258,13 @@ export async function cancelMeeting(
   try {
     const supabase = await createClient();
     await assertAdmin(supabase, cellId);
+
+    const { data: existing } = await supabase
+      .from('scheduled_meetings')
+      .select('id, cell_id')
+      .eq('id', meetingId)
+      .single();
+    if (!existing || existing.cell_id !== cellId) return { error: 'Meeting not found' };
 
     const { error } = await supabase
       .from('scheduled_meetings')

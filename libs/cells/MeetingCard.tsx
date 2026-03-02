@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
-import { Calendar, Clock, Users, MoreVertical, X, Check, Minus } from 'lucide-react';
+import { Calendar, Clock, Users, MoreVertical, X, Check, Minus, Video } from 'lucide-react';
 import type { ScheduledMeeting, MeetingRsvp } from '../../lib/cells/meeting-actions';
 import { upsertRsvp, cancelMeeting } from '../../lib/cells/meeting-actions';
 
@@ -37,6 +37,36 @@ function formatDuration(min: number): string {
   const h = Math.floor(min / 60);
   const m = min % 60;
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+function getJitsiRoomCode(meeting: ScheduledMeeting): string | null {
+  if (meeting.room_code) return meeting.room_code;
+  if (meeting.provider !== 'jitsi') return null;
+  try {
+    const parsed = new URL(meeting.meeting_url);
+    const room = decodeURIComponent(parsed.pathname.replace(/^\/+/, ''));
+    return room || null;
+  } catch {
+    return null;
+  }
+}
+
+function getMobileJoinUrl(meeting: ScheduledMeeting): string {
+  const roomCode = getJitsiRoomCode(meeting);
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : '';
+  const isAndroid = /android/.test(ua);
+  const isIOS = /iphone|ipad|ipod/.test(ua);
+
+  if (meeting.provider === 'jitsi' && roomCode) {
+    if (isAndroid) {
+      return `intent://meet.jit.si/${encodeURIComponent(roomCode)}#Intent;scheme=https;package=org.jitsi.meet;end`;
+    }
+    if (isIOS) {
+      return `org.jitsi.meet://meet.jit.si/${encodeURIComponent(roomCode)}`;
+    }
+  }
+
+  return meeting.meeting_url;
 }
 
 export function MeetingCard({
@@ -90,6 +120,11 @@ export function MeetingCard({
       await cancelMeeting(meeting.id, cellId);
       onCancelled?.(meeting.id);
     });
+  }
+
+  function handleJoinCall() {
+    const target = getMobileJoinUrl(meeting);
+    window.open(target, '_blank', 'noopener,noreferrer');
   }
 
   return (
@@ -235,6 +270,9 @@ export function MeetingCard({
           {meeting.description}
         </p>
       )}
+      <p style={{ margin: '0 0 var(--space-2)', fontSize: '0.75rem', color: 'var(--color-text-faint)' }}>
+        {meeting.meeting_url}
+      </p>
 
       {/* Countdown badge */}
       {countdown && (
@@ -268,6 +306,26 @@ export function MeetingCard({
 
       {/* RSVP section */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+        <button
+          onClick={handleJoinCall}
+          style={{
+            padding: '4px 10px',
+            borderRadius: 'var(--radius-full)',
+            fontSize: '0.75rem',
+            fontWeight: 'var(--font-weight-semibold)',
+            cursor: 'pointer',
+            border: '1px solid var(--color-accent)',
+            background: 'var(--color-accent-soft)',
+            color: 'var(--color-accent)',
+            fontFamily: 'var(--font-sans)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          <Video size={11} />
+          Join Call
+        </button>
         {(['yes', 'maybe', 'no'] as const).map((opt) => {
           const count = opt === 'yes' ? yesCount : opt === 'maybe' ? maybeCount : noCount;
           const rsvpIcon = opt === 'yes' ? <Check size={11} /> : opt === 'no' ? <X size={11} /> : <Minus size={11} />;

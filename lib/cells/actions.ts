@@ -205,7 +205,12 @@ type RawMemberRow = {
   cell_id: string;
   profiles: { username: string; avatar_url: string | null } | null;
 };
-type RawMessageRow = { cell_id: string; created_at: string };
+type RawMessageRow = {
+  cell_id: string;
+  created_at: string;
+  content: string | null;
+  message_type: string;
+};
 
 function buildMemberMap(rows: RawMemberRow[]): Map<string, MemberPreview[]> {
   const map = new Map<string, MemberPreview[]>();
@@ -219,10 +224,34 @@ function buildMemberMap(rows: RawMemberRow[]): Map<string, MemberPreview[]> {
   return map;
 }
 
+function buildMemberCountMap(rows: RawMemberRow[]): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    map.set(row.cell_id, (map.get(row.cell_id) ?? 0) + 1);
+  }
+  return map;
+}
+
 function buildActivityMap(rows: RawMessageRow[]): Map<string, string> {
   const map = new Map<string, string>();
   for (const row of rows) {
     if (!map.has(row.cell_id)) map.set(row.cell_id, row.created_at);
+  }
+  return map;
+}
+
+function buildLastMessageMap(
+  rows: RawMessageRow[]
+): Map<string, { content: string | null; message_type: string; created_at: string }> {
+  const map = new Map<string, { content: string | null; message_type: string; created_at: string }>();
+  for (const row of rows) {
+    if (!map.has(row.cell_id)) {
+      map.set(row.cell_id, {
+        content: row.content,
+        message_type: row.message_type,
+        created_at: row.created_at,
+      });
+    }
   }
   return map;
 }
@@ -242,19 +271,23 @@ async function enrichCells(
       .order('joined_at', { ascending: true }),
     supabase
       .from('chat_messages')
-      .select('cell_id, created_at')
+      .select('cell_id, content, message_type, created_at')
       .in('cell_id', cellIds)
       .order('created_at', { ascending: false })
       .limit(200),
   ]);
 
   const memberMap = buildMemberMap((membersRes.data ?? []) as unknown as RawMemberRow[]);
+  const memberCountMap = buildMemberCountMap((membersRes.data ?? []) as unknown as RawMemberRow[]);
   const activityMap = buildActivityMap((messagesRes.data ?? []) as unknown as RawMessageRow[]);
+  const lastMessageMap = buildLastMessageMap((messagesRes.data ?? []) as unknown as RawMessageRow[]);
 
   return cells.map((cell) => ({
     ...cell,
     member_preview: memberMap.get(cell.id) ?? [],
+    member_count: memberCountMap.get(cell.id) ?? 0,
     last_activity: activityMap.get(cell.id) ?? null,
+    last_message: lastMessageMap.get(cell.id) ?? null,
   }));
 }
 
@@ -809,10 +842,35 @@ export async function getUnreadCounts(cellId: string): Promise<Record<string, nu
 export async function reorderChannels(
   updates: { id: string; position: number }[]
 ): Promise<void> {
+  if (updates.length === 0) return;
   const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const channelIds = updates.map((u) => u.id);
+  const { data: channels } = await supabase
+    .from('channels')
+    .select('id, cell_id')
+    .in('id', channelIds);
+
+  const rows = (channels ?? []) as { id: string; cell_id: string }[];
+  if (rows.length !== channelIds.length) return;
+
+  const cellId = rows[0]?.cell_id;
+  if (!cellId || rows.some((r) => r.cell_id !== cellId)) return;
+
+  const { data: membership } = await supabase
+    .from('cell_members')
+    .select('role')
+    .eq('cell_id', cellId)
+    .eq('user_id', user.id)
+    .single();
+  if (!membership || membership.role !== 'admin') return;
+
   await Promise.all(
     updates.map(({ id, position }) =>
-      supabase.from('channels').update({ position }).eq('id', id)
+      supabase.from('channels').update({ position }).eq('id', id).eq('cell_id', cellId)
     )
   );
 }

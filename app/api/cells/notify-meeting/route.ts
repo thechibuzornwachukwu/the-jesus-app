@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     // Fetch meeting + cell slug
     const { data: meeting } = await supabase
       .from('scheduled_meetings')
-      .select('id, title, channel_id, cell_id, scheduled_at, cancelled_at, notified_at, cells(slug)')
+      .select('id, title, channel_id, cell_id, scheduled_at, cancelled_at, notified_at, provider, meeting_url, room_code, cells(slug)')
       .eq('id', meetingId)
       .single();
 
@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
       : `Meeting: ${meeting.title}`;
 
     const body = type === 'cancel'
-      ? 'This meeting has been cancelled.'
-      : 'Starts in 1 hour';
+      ? `This meeting has been cancelled. Call: ${meeting.meeting_url}`
+      : `Starts in 1 hour. Join: ${meeting.meeting_url}`;
 
     // Send push to all members in parallel (fire-and-forget per user)
     await Promise.allSettled(

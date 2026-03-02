@@ -43,6 +43,28 @@ function defaultDateTime(): string {
   return isoToLocal(d.toISOString());
 }
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function defaultRoomCode(cellId: string, channelId: string, title: string, localDateTime: string): string {
+  const date = localDateTime ? new Date(localDateTime) : new Date();
+  const datePart = Number.isNaN(date.getTime())
+    ? 'meeting'
+    : `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
+  const titlePart = slugify(title).slice(0, 20) || 'meeting';
+  return `jesusapp-${cellId.slice(0, 6)}-${channelId.slice(0, 6)}-${titlePart}-${datePart}`.slice(0, 80);
+}
+
+function normalizeRoomCode(value: string): string {
+  const clean = value.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '').slice(0, 80);
+  return clean;
+}
+
 export function ScheduleMeetingSheet({
   open,
   onClose,
@@ -59,6 +81,15 @@ export function ScheduleMeetingSheet({
   );
   const [durationMin, setDurationMin] = useState(editMeeting?.duration_min ?? 60);
   const [description, setDescription] = useState(editMeeting?.description ?? '');
+  const [useCustomUrl, setUseCustomUrl] = useState(editMeeting?.provider === 'custom');
+  const [customMeetingUrl, setCustomMeetingUrl] = useState(
+    editMeeting?.provider === 'custom' ? editMeeting.meeting_url : ''
+  );
+  const [roomCode, setRoomCode] = useState(
+    editMeeting?.provider === 'jitsi'
+      ? (editMeeting.room_code ?? defaultRoomCode(cellId, channelId, editMeeting.title, isoToLocal(editMeeting.scheduled_at)))
+      : defaultRoomCode(cellId, channelId, editMeeting?.title ?? '', editMeeting ? isoToLocal(editMeeting.scheduled_at) : defaultDateTime())
+  );
   const [error, setError] = useState('');
   const [, startTransition] = useTransition();
 
@@ -69,16 +100,40 @@ export function ScheduleMeetingSheet({
     setDateTime(editMeeting ? isoToLocal(editMeeting.scheduled_at) : defaultDateTime());
     setDurationMin(editMeeting?.duration_min ?? 60);
     setDescription(editMeeting?.description ?? '');
+    setUseCustomUrl(editMeeting?.provider === 'custom');
+    setCustomMeetingUrl(editMeeting?.provider === 'custom' ? editMeeting.meeting_url : '');
+    setRoomCode(
+      editMeeting?.provider === 'jitsi'
+        ? (editMeeting.room_code ?? defaultRoomCode(cellId, channelId, editMeeting.title, isoToLocal(editMeeting.scheduled_at)))
+        : defaultRoomCode(cellId, channelId, editMeeting?.title ?? '', editMeeting ? isoToLocal(editMeeting.scheduled_at) : defaultDateTime())
+    );
     setError('');
-  }, [open, editMeeting]);
+  }, [open, editMeeting, cellId, channelId]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) { setError('Title is required'); return; }
     if (!dateTime) { setError('Date and time are required'); return; }
+    if (useCustomUrl) {
+      try {
+        const parsed = new URL(customMeetingUrl.trim());
+        if (!['https:', 'http:'].includes(parsed.protocol)) {
+          setError('Custom URL must start with http:// or https://');
+          return;
+        }
+      } catch {
+        setError('Enter a valid custom meeting URL');
+        return;
+      }
+    }
 
     setError('');
     startTransition(async () => {
+      const normalizedRoomCode = normalizeRoomCode(roomCode) || defaultRoomCode(cellId, channelId, title.trim(), dateTime);
+      const provider = useCustomUrl ? 'custom' : 'jitsi';
+      const meetingUrl = useCustomUrl
+        ? customMeetingUrl.trim()
+        : `https://meet.jit.si/${encodeURIComponent(normalizedRoomCode)}`;
       if (isEdit && editMeeting) {
         const result = await updateMeeting(editMeeting.id, {
           cellId,
@@ -86,6 +141,9 @@ export function ScheduleMeetingSheet({
           scheduledAt: localToISO(dateTime),
           durationMin,
           description: description.trim() || undefined,
+          provider,
+          meetingUrl,
+          roomCode: provider === 'jitsi' ? normalizedRoomCode : undefined,
         });
         if ('error' in result) { setError(result.error); return; }
         onSaved?.(editMeeting.id);
@@ -96,6 +154,9 @@ export function ScheduleMeetingSheet({
           scheduledAt: localToISO(dateTime),
           durationMin,
           description: description.trim() || undefined,
+          provider,
+          meetingUrl,
+          roomCode: provider === 'jitsi' ? normalizedRoomCode : undefined,
         });
         if ('error' in result) { setError(result.error); return; }
         onSaved?.(result.id);
@@ -226,6 +287,74 @@ export function ScheduleMeetingSheet({
               lineHeight: 1.5,
             }}
           />
+        </div>
+
+        <div>
+          <label
+            style={{
+              display: 'block',
+              fontSize: '0.75rem',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--color-text-muted)',
+              marginBottom: 'var(--space-1)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}
+          >
+            Call Link
+          </label>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+            <button
+              type="button"
+              onClick={() => setUseCustomUrl(false)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-full)',
+                border: !useCustomUrl ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
+                background: !useCustomUrl ? 'var(--color-accent-soft)' : 'transparent',
+                color: !useCustomUrl ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                fontSize: 'var(--font-size-xs)',
+                cursor: 'pointer',
+              }}
+            >
+              Auto Jitsi
+            </button>
+            <button
+              type="button"
+              onClick={() => setUseCustomUrl(true)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-full)',
+                border: useCustomUrl ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
+                background: useCustomUrl ? 'var(--color-accent-soft)' : 'transparent',
+                color: useCustomUrl ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                fontSize: 'var(--font-size-xs)',
+                cursor: 'pointer',
+              }}
+            >
+              Custom URL
+            </button>
+          </div>
+          {useCustomUrl ? (
+            <Input
+              label="Meeting URL"
+              value={customMeetingUrl}
+              onChange={(e) => setCustomMeetingUrl(e.target.value)}
+              placeholder="https://..."
+            />
+          ) : (
+            <div style={{ display: 'grid', gap: 'var(--space-2)' }}>
+              <Input
+                label="Room Code (optional)"
+                value={roomCode}
+                onChange={(e) => setRoomCode(e.target.value)}
+                placeholder="jesusapp-community-night"
+              />
+              <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-text-faint)' }}>
+                Link: {`https://meet.jit.si/${encodeURIComponent(normalizeRoomCode(roomCode) || defaultRoomCode(cellId, channelId, title.trim() || 'meeting', dateTime))}`}
+              </p>
+            </div>
+          )}
         </div>
 
         {error && (

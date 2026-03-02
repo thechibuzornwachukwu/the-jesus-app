@@ -44,12 +44,14 @@ export function ChannelSidebar({
   unreadCounts,
   notificationScores,
   onAddChannel,
+  onEditChannel,
   onDeleteChannel,
   onReorderChannels,
   onClose,
   cellId,
   upcomingMeetings = [],
 }: ChannelSidebarProps) {
+  const isAdmin = userRole === 'admin';
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [contextMenu, setContextMenu] = useState<{
     channelId: string;
@@ -217,27 +219,29 @@ export function ChannelSidebar({
                 >
                   {cat.name}
                 </span>
-                {userRole === 'admin' && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAddChannel(cat.id);
-                    }}
-                    aria-label="Add channel"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--color-text-faint)',
-                      cursor: 'pointer',
-                      padding: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      borderRadius: 4,
-                    }}
-                  >
-                    <Plus size={13} />
-                  </button>
-                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isAdmin) return;
+                    onAddChannel(cat.id);
+                  }}
+                  aria-label={isAdmin ? 'Add channel' : 'Only admins can add channels'}
+                  title={isAdmin ? 'Add channel' : 'Only admins can add channels'}
+                  disabled={!isAdmin}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-text-faint)',
+                    cursor: isAdmin ? 'pointer' : 'not-allowed',
+                    opacity: isAdmin ? 1 : 0.45,
+                    padding: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    borderRadius: 4,
+                  }}
+                >
+                  <Plus size={13} />
+                </button>
               </div>
 
               {/* Channels in category */}
@@ -255,13 +259,13 @@ export function ChannelSidebar({
                   return (
                     <div
                       key={ch.id}
-                      draggable={userRole === 'admin'}
+                      draggable={isAdmin}
                       onDragStart={(e) => handleDragStart(e, ch.id, cat.id, ch.position)}
                       onDragOver={(e) => handleDragOver(e, ch.id, ch.position)}
                       onDragEnd={handleDragEnd}
                       onClick={() => onChannelSelect(ch.id)}
                       onContextMenu={(e) => {
-                        if (userRole !== 'admin') return;
+                        if (!isAdmin) return;
                         e.preventDefault();
                         setContextMenu({ channelId: ch.id, x: e.clientX, y: e.clientY });
                       }}
@@ -371,30 +375,31 @@ export function ChannelSidebar({
                           {unread > 99 ? '99+' : unread}
                         </span>
                       )}
-                      {userRole === 'admin' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setContextMenu({ channelId: ch.id, x: e.clientX, y: e.clientY });
-                          }}
-                          aria-label="Channel options"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--color-text-faint)',
-                            cursor: 'pointer',
-                            padding: 2,
-                            display: 'flex',
-                            alignItems: 'center',
-                            borderRadius: 4,
-                            opacity: 0,
-                            flexShrink: 0,
-                          }}
-                          className="channel-menu-btn"
-                        >
-                          <MoreVertical size={13} />
-                        </button>
-                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isAdmin) return;
+                          setContextMenu({ channelId: ch.id, x: e.clientX, y: e.clientY });
+                        }}
+                        aria-label={isAdmin ? 'Channel options' : 'Only admins can manage channels'}
+                        title={isAdmin ? 'Channel options' : 'Only admins can manage channels'}
+                        disabled={!isAdmin}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--color-text-faint)',
+                          cursor: isAdmin ? 'pointer' : 'not-allowed',
+                          opacity: isAdmin ? 0 : 0.45,
+                          padding: 2,
+                          display: 'flex',
+                          alignItems: 'center',
+                          borderRadius: 4,
+                          flexShrink: 0,
+                        }}
+                        className={isAdmin ? 'channel-menu-btn' : undefined}
+                      >
+                        <MoreVertical size={13} />
+                      </button>
                     </div>
                   );
                 })}
@@ -424,6 +429,26 @@ export function ChannelSidebar({
               minWidth: 140,
             }}
           >
+            <button
+              onClick={() => {
+                const channel = categories.flatMap((cat) => cat.channels ?? []).find((ch) => ch.id === contextMenu.channelId);
+                if (channel) onEditChannel(channel);
+                setContextMenu(null);
+              }}
+              style={{
+                width: '100%',
+                padding: 'var(--space-2) var(--space-3)',
+                background: 'none',
+                border: 'none',
+                color: 'var(--color-text)',
+                fontSize: 'var(--font-size-sm)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              Edit Channel
+            </button>
             <button
               onClick={() => {
                 onDeleteChannel(contextMenu.channelId, cellId);

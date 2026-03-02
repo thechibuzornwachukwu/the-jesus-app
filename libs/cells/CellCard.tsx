@@ -18,6 +18,16 @@ function relativeTime(ts: string | null): string {
   return `Active ${Math.floor(hrs / 24)}d ago`;
 }
 
+function latestActivityPreview(
+  lastMsg: { content: string | null; message_type: string; created_at: string } | null | undefined
+): string {
+  if (!lastMsg) return 'No messages yet';
+  if (lastMsg.message_type === 'audio') return 'Voice message shared';
+  if (lastMsg.message_type === 'image') return 'Image shared';
+  if (lastMsg.message_type === 'gif') return 'GIF shared';
+  return lastMsg.content?.trim() || 'New activity in this community';
+}
+
 function FaintCross() {
   return (
     <svg
@@ -172,6 +182,20 @@ export function CellCard({ cell, isMember, featured }: CellCardProps) {
                 }}
               >
                 {cell.description}
+              </p>
+            )}
+            {!isMember && (
+              <p
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-faint)',
+                  margin: 'var(--space-1) 0 0',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                Latest: {latestActivityPreview(cell.last_message)}
               </p>
             )}
           </div>
