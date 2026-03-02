@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { FaithCourses } from '../../../libs/learn/FaithCourses';
 import { SermonExtractor } from '../../../libs/learn/SermonExtractor';
 import { SpiritualGuide } from '../../../libs/learn/SpiritualGuide';
 import type { CourseProgress } from '../../../libs/learn/types';
-import { showToast } from '../../../libs/shared-ui';
+import { LIBRARY_BOOKS } from '../../../lib/learn/library-content';
 
 interface LearnClientProps {
   initialProgress: CourseProgress[];
+  initialBereanOpen?: boolean;
 }
 
 // ─── Inline helpers ───────────────────────────────────────────────────────────
@@ -42,15 +44,30 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ─── C4: Books Section ────────────────────────────────────────────────────────
 
 function BooksSection() {
-  const BOOK_COUNT = 3;
-
-  function handleBookTap() {
-    showToast('Coming soon  open-source books arriving.');
-  }
-
   return (
     <div>
-      <SectionLabel>Library</SectionLabel>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 'var(--space-3)',
+        }}
+      >
+        <SectionLabel>Library</SectionLabel>
+        <Link
+          href="/library"
+          style={{
+            color: 'var(--color-accent)',
+            fontSize: 'var(--font-size-xs)',
+            fontWeight: 'var(--font-weight-semibold)',
+            textDecoration: 'none',
+            marginTop: -10,
+          }}
+        >
+          See more
+        </Link>
+      </div>
       <div
         style={{
           display: 'flex',
@@ -60,67 +77,102 @@ function BooksSection() {
           scrollbarWidth: 'none',
         }}
       >
-        {Array.from({ length: BOOK_COUNT }).map((_, i) => (
-          <button
-            key={i}
-            onClick={handleBookTap}
+        {LIBRARY_BOOKS.map((book) => (
+          <article
+            key={book.id}
             style={{
               flexShrink: 0,
               width: 160,
-              height: 220,
+              minHeight: 220,
               borderRadius: 'var(--radius-xl)',
-              background: 'var(--color-surface)',
+              background: book.cover.background,
               border: '1px solid var(--color-border)',
-              cursor: 'pointer',
               position: 'relative',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 'var(--space-2)',
-              padding: 0,
+              justifyContent: 'space-between',
+              padding: 'var(--space-3)',
             }}
           >
-            {/* Faint cross watermark with radial vignette */}
             <div
               style={{
-                position: 'absolute',
-                inset: 0,
+                position: 'relative',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                WebkitMaskImage: 'radial-gradient(ellipse at center, black 35%, transparent 75%)',
-                maskImage: 'radial-gradient(ellipse at center, black 35%, transparent 75%)',
+                flexDirection: 'column',
+                gap: 6,
               }}
             >
-              <svg
-                width="80"
-                height="80"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1"
-                strokeLinecap="round"
-                style={{ color: 'var(--color-text-primary)', opacity: 0.07 }}
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: '11px',
+                  color: 'rgba(255,255,255,0.72)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  fontWeight: 'var(--font-weight-semibold)',
+                }}
               >
-                <line x1="12" y1="2" x2="12" y2="22" />
-                <line x1="2" y1="8" x2="22" y2="8" />
-              </svg>
+                {book.author}
+              </p>
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 700,
+                  color: '#f7f5f2',
+                  lineHeight: 1.25,
+                }}
+              >
+                {book.title}
+              </h3>
             </div>
-            <p
+            <div
               style={{
                 margin: 0,
-                fontSize: 'var(--font-size-sm)',
-                fontWeight: 'var(--font-weight-semibold)',
-                color: 'var(--color-text-faint)',
-                position: 'relative',
-                zIndex: 1,
+                display: 'flex',
+                gap: 'var(--space-2)',
               }}
             >
-              Coming Soon
-            </p>
-          </button>
+              <a
+                href={book.filePath}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  flex: 1,
+                  textAlign: 'center',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '7px 10px',
+                  textDecoration: 'none',
+                  border: `1px solid ${book.cover.accent}`,
+                  color: book.cover.accent,
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  background: 'rgba(0,0,0,0.16)',
+                }}
+              >
+                Open
+              </a>
+              <a
+                href={book.filePath}
+                download={book.downloadName}
+                style={{
+                  flex: 1,
+                  textAlign: 'center',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '7px 10px',
+                  textDecoration: 'none',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  color: 'rgba(255,255,255,0.88)',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  background: 'rgba(0,0,0,0.16)',
+                }}
+              >
+                Download
+              </a>
+            </div>
+          </article>
         ))}
       </div>
     </div>
@@ -212,9 +264,13 @@ function BereanSection({ onOpen }: { onOpen: () => void }) {
 
 // ─── Main: LearnClient ────────────────────────────────────────────────────────
 
-export function LearnClient({ initialProgress }: LearnClientProps) {
+export function LearnClient({ initialProgress, initialBereanOpen = false }: LearnClientProps) {
   const [courseOpen, setCourseOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(initialBereanOpen);
+
+  useEffect(() => {
+    if (initialBereanOpen) setChatOpen(true);
+  }, [initialBereanOpen]);
 
   return (
     <div

@@ -5,7 +5,11 @@ import { LearnClient } from './LearnClient';
 
 export const metadata = { title: 'Learn  The JESUS App' };
 
-export default async function LearnPage() {
+type LearnPageProps = {
+  searchParams?: Promise<{ berean?: string }>;
+};
+
+export default async function LearnPage({ searchParams }: LearnPageProps) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -13,6 +17,8 @@ export default async function LearnPage() {
   if (!user) redirect('/sign-in');
 
   const progress = await getCourseProgress();
+  const params = searchParams ? await searchParams : undefined;
+  const initialBereanOpen = params?.berean === '1';
 
-  return <LearnClient initialProgress={progress} />;
+  return <LearnClient initialProgress={progress} initialBereanOpen={initialBereanOpen} />;
 }

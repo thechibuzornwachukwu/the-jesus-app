@@ -97,9 +97,86 @@ function SignUpSuccessModal({ onDone }: { onDone: () => void }) {
   );
 }
 
+function PolicyPreviewModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="policy-preview-title"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 210,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--space-6)',
+        background: 'rgba(11,9,5,0.85)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 520,
+          background: 'rgba(22,16,9,0.97)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-xl)',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
+          padding: 'var(--space-6)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--space-4)',
+        }}
+      >
+        <h2
+          id="policy-preview-title"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--font-size-2xl)',
+            color: 'var(--color-text)',
+            margin: 0,
+          }}
+        >
+          Privacy and Terms Preview
+        </h2>
+        <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+          Before creating your account, please review:
+        </p>
+        <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', display: 'grid', gap: '0.35rem' }}>
+          <li>What information is collected and how it is used in-app.</li>
+          <li>How your data is protected and when it may be shared with providers.</li>
+          <li>Your rights to access, correct, or delete personal information.</li>
+          <li>Account responsibilities and acceptable use requirements.</li>
+        </ul>
+        <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+          Full documents:
+          {' '}
+          <Link href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)', textDecoration: 'none' }}>
+            Privacy Policy
+          </Link>
+          {' '}
+          and
+          {' '}
+          <Link href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)', textDecoration: 'none' }}>
+            Terms of Service
+          </Link>
+          .
+        </p>
+        <Button type="button" onClick={onClose}>
+          I have reviewed this
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function AuthForm({ mode, action }: AuthFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [modalOpen, setModalOpen] = useState(false);
+  const [policyPreviewOpen, setPolicyPreviewOpen] = useState(false);
+  const [hasReviewedPolicies, setHasReviewedPolicies] = useState(false);
   const router = useRouter();
   const isSignIn = mode === 'sign-in';
 
@@ -113,6 +190,14 @@ export function AuthForm({ mode, action }: AuthFormProps) {
     <>
       {modalOpen && (
         <SignUpSuccessModal onDone={() => { setModalOpen(false); router.push('/sign-in'); }} />
+      )}
+      {policyPreviewOpen && (
+        <PolicyPreviewModal
+          onClose={() => {
+            setPolicyPreviewOpen(false);
+            setHasReviewedPolicies(true);
+          }}
+        />
       )}
 
       <div style={{ width: '100%' }}>
@@ -152,6 +237,55 @@ export function AuthForm({ mode, action }: AuthFormProps) {
             autoComplete={isSignIn ? 'current-password' : 'new-password'}
             required
           />
+
+          {!isSignIn && (
+            <div
+              style={{
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-4)',
+                display: 'grid',
+                gap: 'var(--space-3)',
+              }}
+            >
+              <Button type="button" onClick={() => setPolicyPreviewOpen(true)} style={{ width: '100%' }}>
+                Review Privacy and Terms
+              </Button>
+              <label
+                htmlFor="acceptPolicies"
+                style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}
+              >
+                <input
+                  id="acceptPolicies"
+                  name="acceptPolicies"
+                  type="checkbox"
+                  value="true"
+                  required
+                  disabled={!hasReviewedPolicies}
+                  style={{ marginTop: 2 }}
+                />
+                <span>
+                  I agree to the
+                  {' '}
+                  <Link href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)', textDecoration: 'none' }}>
+                    Privacy Policy
+                  </Link>
+                  {' '}
+                  and
+                  {' '}
+                  <Link href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)', textDecoration: 'none' }}>
+                    Terms of Service
+                  </Link>
+                  .
+                </span>
+              </label>
+              {!hasReviewedPolicies && (
+                <p style={{ margin: 0, color: 'var(--color-text-faint)', fontSize: 'var(--font-size-xs)' }}>
+                  Please open the preview first, then check the consent box to continue.
+                </p>
+              )}
+            </div>
+          )}
 
           {state?.error && (
             <p

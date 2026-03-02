@@ -38,6 +38,11 @@ export async function signUp(_: unknown, formData: FormData) {
     return { error: 'Please enter a valid email and a password of at least 8 characters.' };
   }
 
+  const acceptPolicies = formData.get('acceptPolicies');
+  if (acceptPolicies !== 'true' && acceptPolicies !== 'on') {
+    return { error: 'Please review and accept the Privacy Policy and Terms to continue.' };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
     ...parsed.data,

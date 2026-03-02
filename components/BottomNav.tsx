@@ -1,12 +1,13 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { MessageSquare, Globe, Zap, User } from 'lucide-react';
+import { MessageSquare, Globe, Zap, User, BookOpenText } from 'lucide-react';
 import { vibrate } from '../libs/shared-ui/haptics';
 
 const navItems = [
   { href: '/engage',  label: 'Engage',  Icon: MessageSquare },
   { href: '/learn',   label: 'Equip',   Icon: Zap },
+  { href: '/bible',   label: 'Bible',   Icon: BookOpenText, emphasize: true },
   { href: '/explore', label: 'Witness', Icon: Globe },
   { href: '/profile', label: 'Profile', Icon: User },
 ];
@@ -41,7 +42,7 @@ export function BottomNav() {
         WebkitBackdropFilter: 'blur(16px)',
       }}
     >
-      {navItems.map(({ href, label, Icon }) => {
+      {navItems.map(({ href, label, Icon, emphasize }) => {
         const active = pathname.startsWith(href);
         return (
           <button
@@ -59,8 +60,9 @@ export function BottomNav() {
               paddingTop: 'var(--space-2)',
               paddingBottom: 'var(--space-2)',
               height: 'var(--nav-height)',
-              background: 'none',
+              background: emphasize && active ? 'var(--color-accent-soft)' : 'none',
               border: 'none',
+              borderRadius: emphasize && active ? 'var(--radius-lg)' : 0,
               cursor: 'pointer',
               color: active ? 'var(--color-accent)' : 'var(--color-text-muted)',
               transition: 'color 0.15s, transform 0.1s',
@@ -75,12 +77,12 @@ export function BottomNav() {
             onTouchEnd={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
           >
             <Icon
-              size={22}
+              size={emphasize ? (active ? 26 : 24) : 22}
               strokeWidth={1.5}
               fill={active ? 'currentColor' : 'none'}
               aria-hidden
             />
-            <span style={{ fontSize: 11, fontWeight: active ? 600 : 400 }}>
+            <span style={{ fontSize: emphasize ? 12 : 11, fontWeight: active ? 700 : 500 }}>
               {label}
             </span>
           </button>
