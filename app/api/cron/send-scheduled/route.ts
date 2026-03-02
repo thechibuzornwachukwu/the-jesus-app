@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { isCronAuthorized } from '../../../../lib/cron/auth';
 
 // Service-role client  bypasses RLS so the cron can insert on behalf of users
 function getServiceClient() {
@@ -9,10 +10,7 @@ function getServiceClient() {
 }
 
 export async function GET(req: NextRequest) {
-  // Verify Vercel Cron secret
-  const authHeader = req.headers.get('authorization');
-  const expected = `Bearer ${process.env.CRON_SECRET}`;
-  if (authHeader !== expected) {
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

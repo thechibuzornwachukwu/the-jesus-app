@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getDailyVerse } from '../../../../lib/explore/daily-verses';
 import { sendPushToUser } from '../../../../lib/notifications/push';
 import { checkAndAwardBadges } from '../../../../lib/gamification/check-badges';
+import { isCronAuthorized } from '../../../../lib/cron/auth';
 
 export const runtime = 'nodejs';
 
@@ -14,8 +15,7 @@ function getAdmin() {
 }
 
 export async function GET(req: Request) {
-  const authHeader = req.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
