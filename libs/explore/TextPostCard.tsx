@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Heart, MessageCircle, Share2 } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Repeat2 } from 'lucide-react';
 import type { Post } from '../../lib/explore/types';
 import { Avatar } from '../shared-ui/Avatar';
 import { togglePostLike } from '../../lib/explore/actions';
@@ -9,6 +9,7 @@ import { togglePostLike } from '../../lib/explore/actions';
 interface TextPostCardProps {
   post: Post;
   onLikeChanged?: (postId: string, liked: boolean, likeCount: number) => void;
+  onRepost?: (id: string, type: 'video' | 'post') => void;
 }
 
 function relativeTime(iso: string): string {
@@ -21,7 +22,7 @@ function relativeTime(iso: string): string {
   return `${Math.floor(hrs / 24)}d`;
 }
 
-export function TextPostCard({ post, onLikeChanged }: TextPostCardProps) {
+export function TextPostCard({ post, onLikeChanged, onRepost }: TextPostCardProps) {
   const [liked, setLiked] = useState(post.user_liked);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [isPressing, setIsPressing] = useState(false);
@@ -167,6 +168,11 @@ export function TextPostCard({ post, onLikeChanged }: TextPostCardProps) {
           icon={<MessageCircle size={18} color="var(--color-text-muted)" />}
           label={post.comment_count > 0 ? String(post.comment_count) : ''}
           onClick={() => {/* future comment sheet */}}
+        />
+        <ActionButton
+          icon={<Repeat2 size={18} color="var(--color-text-muted)" />}
+          label=""
+          onClick={() => onRepost?.(post.id, 'post')}
         />
         <ActionButton
           icon={<Share2 size={18} color="var(--color-text-muted)" />}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { MessageSquare, Share2, Volume2, VolumeX } from 'lucide-react';
+import { MessageSquare, Share2, Volume2, VolumeX, Repeat2 } from 'lucide-react';
 import type { Video, ReactionType } from '../../lib/explore/types';
 import { ScriptureOverlay } from './ScriptureOverlay';
 import { ReactionPicker } from './ReactionPicker';
@@ -15,9 +15,10 @@ interface VideoCardProps {
   height: string;
   onComment: () => void;
   onReactionChanged: (videoId: string, userReaction: ReactionType | null, counts: Record<ReactionType, number>) => void;
+  onRepost?: (id: string, type: 'video' | 'post') => void;
 }
 
-export function VideoCard({ video, isActive, height, onComment, onReactionChanged }: VideoCardProps) {
+export function VideoCard({ video, isActive, height, onComment, onReactionChanged, onRepost }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [userReaction, setUserReaction] = useState<ReactionType | null>(video.user_reaction);
   const [reactionCounts, setReactionCounts] = useState<Record<ReactionType, number>>(video.reaction_counts);
@@ -298,6 +299,12 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
           label="Comment"
           count={video.comment_count}
           onClick={onComment}
+        />
+        <ActionButton
+          icon={<Repeat2 size={26} color="var(--color-text)" />}
+          label="Repost"
+          onClick={() => onRepost?.(video.id, 'video')}
+          count={null}
         />
         <ActionButton
           icon={<Share2 size={26} color="var(--color-text)" />}

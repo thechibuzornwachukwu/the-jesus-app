@@ -130,7 +130,16 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
     []
   );
 
-  if (items.length === 0) {
+  const q = searchFilter?.trim().toLowerCase() ?? '';
+  const visibleItems = q
+    ? items.filter((item) => {
+        if (item.kind === 'video') return item.data.caption?.toLowerCase().includes(q);
+        if (item.kind === 'repost') return false;
+        return item.data.content?.toLowerCase().includes(q);
+      })
+    : items;
+
+  if (visibleItems.length === 0) {
     return (
       <div style={{ height: feedHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <EmptyState message="No perspectives yet. Be the first to share one!" icon={<VideoIcon size={40} />} />
@@ -150,7 +159,7 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
         scrollbarWidth: 'none',
       }}
     >
-      {items.map((item, idx) => {
+      {visibleItems.map((item, idx) => {
         if (item.kind === 'video') {
           return (
             <div
@@ -187,6 +196,7 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
         }
 
         // Text post  natural height, no full-screen snap
+        if (item.kind !== 'post') return null;
         return (
           <div
             key={item.data.id}

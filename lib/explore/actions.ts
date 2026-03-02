@@ -2,7 +2,7 @@
 
 import { createClient } from '../supabase/server';
 import { z } from 'zod';
-import type { Video, Comment, Post, ImagePost, FeedItem, ReactionType, VerseComment } from './types';
+import type { Video, Comment, Post, ImagePost, FeedItem, ReactionType, VerseComment, Repost } from './types';
 import { logStreakEvent } from '../streaks/actions';
 
 const PAGE_SIZE = 5;
@@ -689,19 +689,33 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
     .order('created_at', { ascending: false })
     .limit(FEED_BATCH);
 
+  let repostQuery = supabase
+    .from('reposts')
+    .select('id, user_id, original_post_id, original_type, quote_content, quote_verse_ref, quote_verse_text, created_at')
+    .order('created_at', { ascending: false })
+    .limit(FEED_BATCH);
+
   if (cursor) {
     videoQuery = videoQuery.lt('created_at', cursor);
     postQuery = postQuery.lt('created_at', cursor);
+    repostQuery = repostQuery.lt('created_at', cursor);
   }
 
-  const [{ data: videoRows }, { data: postRows }] = await Promise.all([videoQuery, postQuery]);
+  const [{ data: videoRows }, { data: postRows }, { data: repostRows }] = await Promise.all([videoQuery, postQuery, repostQuery]);
+
+  type RawRepost = {
+    id: string; user_id: string; original_post_id: string; original_type: 'video' | 'post';
+    quote_content: string | null; quote_verse_ref: string | null; quote_verse_text: string | null;
+    created_at: string;
+  };
 
   const videos = (videoRows ?? []) as unknown as RawVideo[];
   const posts = (postRows ?? []) as unknown as RawPost[];
+  const reposts = (repostRows ?? []) as unknown as RawRepost[];
 
   const videoIds = videos.map((v) => v.id);
   const postIds = posts.map((p) => p.id);
-  const allUserIds = [...new Set([...videos.map((v) => v.user_id), ...posts.map((p) => p.user_id)])];
+  const allUserIds = [...new Set([...videos.map((v) => v.user_id), ...posts.map((p) => p.user_id), ...reposts.map((r) => r.user_id)])];
 
   const REACTION_TYPES_FEED: ReactionType[] = ['heart', 'amen', 'laugh', 'shock'];
 
@@ -790,8 +804,38 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
     return { kind: 'post' as const, data: base as Post };
   });
 
+  // Resolve repost originals
+  const repostVideoIds = reposts.filter((r) => r.original_type === 'video').map((r) => r.original_post_id);
+  const repostPostIds = reposts.filter((r) => r.original_type === 'post').map((r) => r.original_post_id);
+  const [{ data: origVideos }, { data: origPosts }] = await Promise.all([
+    repostVideoIds.length > 0
+      ? supabase.from('videos').select('id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at').in('id', repostVideoIds)
+      : Promise.resolve({ data: [] as unknown[] }),
+    repostPostIds.length > 0
+      ? supabase.from('posts').select('id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at').in('id', repostPostIds)
+      : Promise.resolve({ data: [] as unknown[] }),
+  ]);
+  const origVideoMap = new Map((origVideos ?? []).map((v) => [(v as { id: string }).id, v as unknown as Video]));
+  const origPostMap = new Map((origPosts ?? []).map((p) => [(p as { id: string }).id, p as unknown as Post]));
+
+  const repostItems: FeedItem[] = reposts.map((r) => ({
+    kind: 'repost' as const,
+    data: {
+      id: r.id,
+      user_id: r.user_id,
+      original_post_id: r.original_post_id,
+      original_type: r.original_type,
+      quote_content: r.quote_content,
+      quote_verse_ref: r.quote_verse_ref,
+      quote_verse_text: r.quote_verse_text,
+      created_at: r.created_at,
+      profiles: profileMap.get(r.user_id) ?? null,
+      original: r.original_type === 'video' ? origVideoMap.get(r.original_post_id) ?? null : origPostMap.get(r.original_post_id) ?? null,
+    } as Repost,
+  }));
+
   // Merge and sort by created_at DESC, take first 5
-  const merged = [...videoItems, ...postItems].sort(
+  const merged = [...videoItems, ...postItems, ...repostItems].sort(
     (a, b) => new Date(b.data.created_at).getTime() - new Date(a.data.created_at).getTime()
   );
 
@@ -935,6 +979,73 @@ export async function addVerseComment(
       profiles: profileMap.get(user.id) ?? null,
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// createRepost  repost or quote-repost a video or post
+// ---------------------------------------------------------------------------
+const repostSchema = z.object({
+  originalPostId: z.string().uuid(),
+  originalType: z.enum(['video', 'post']),
+  quoteContent: z.string().max(500).trim().optional(),
+  quoteVerseRef: z.string().max(100).trim().optional(),
+  quoteVerseText: z.string().max(2000).trim().optional(),
+});
+
+export async function createRepost(
+  originalPostId: string,
+  originalType: 'video' | 'post',
+  quoteContent?: string,
+  quoteVerseRef?: string,
+  quoteVerseText?: string
+): Promise<{ repostId: string } | { error: string }> {
+  const parsed = repostSchema.safeParse({ originalPostId, originalType, quoteContent, quoteVerseRef, quoteVerseText });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthenticated' };
+
+  const { data, error } = await supabase
+    .from('reposts')
+    .insert({
+      user_id: user.id,
+      original_post_id: parsed.data.originalPostId,
+      original_type: parsed.data.originalType,
+      quote_content: parsed.data.quoteContent || null,
+      quote_verse_ref: parsed.data.quoteVerseRef || null,
+      quote_verse_text: parsed.data.quoteVerseText || null,
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    // Unique constraint: already reposted
+    if (error.code === '23505') return { error: 'Already reposted' };
+    return { error: error.message };
+  }
+
+  void logStreakEvent('post_content');
+  return { repostId: data.id };
+}
+
+// ---------------------------------------------------------------------------
+// deleteRepost  delete own repost
+// ---------------------------------------------------------------------------
+export async function deleteRepost(repostId: string): Promise<{ error?: string }> {
+  if (!z.string().uuid().safeParse(repostId).success) return { error: 'Invalid ID' };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthenticated' };
+
+  const { error } = await supabase
+    .from('reposts')
+    .delete()
+    .eq('id', repostId)
+    .eq('user_id', user.id);
+
+  return error ? { error: error.message } : {};
 }
 
 // ---------------------------------------------------------------------------

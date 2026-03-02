@@ -5,7 +5,7 @@ import type { FeedItem, DailyVerseType } from '../../../lib/explore/types';
 import { DailyVerse } from '../../../libs/explore/DailyVerse';
 import { PerspectiveFeed, type PerspectiveFeedHandle } from '../../../libs/explore/PerspectiveFeed';
 import { CommentSheet } from '../../../libs/explore/CommentSheet';
-import { UploadSheet } from '../../../libs/explore/UploadSheet';
+import { ComposeSheet } from '../../../libs/explore/ComposeSheet';
 import { showToast } from '../../../libs/shared-ui/Toast';
 import { Plus, Search } from 'lucide-react';
 
@@ -126,7 +126,7 @@ export function ExploreClient({ initialItems, initialCursor, dailyVerse, userId 
       />
 
       <CommentSheet videoId={commentVideoId} onClose={() => setCommentVideoId(null)} />
-      <UploadSheet open={uploadOpen} onClose={() => setUploadOpen(false)} onUploaded={handleUploaded} />
+      <ComposeSheet open={uploadOpen} onClose={() => setUploadOpen(false)} onUploaded={handleUploaded} />
     </div>
   );
 }

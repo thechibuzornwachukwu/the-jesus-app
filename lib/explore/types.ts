@@ -66,10 +66,24 @@ export type ImagePost = {
   profiles: { username: string; avatar_url: string | null } | null;
 };
 
+export type Repost = {
+  id: string;
+  user_id: string;
+  original_post_id: string;
+  original_type: 'video' | 'post';
+  quote_content: string | null;
+  quote_verse_ref: string | null;
+  quote_verse_text: string | null;
+  created_at: string;
+  profiles: { username: string; avatar_url: string | null } | null;
+  original?: Video | Post | ImagePost | null;
+};
+
 export type FeedItem =
   | { kind: 'video'; data: Video }
   | { kind: 'post'; data: Post }
-  | { kind: 'image'; data: ImagePost };
+  | { kind: 'image'; data: ImagePost }
+  | { kind: 'repost'; data: Repost };
 
 export type VerseComment = {
   id: string;
