@@ -15,6 +15,7 @@ interface PerspectiveFeedProps {
   userId: string;
   feedHeight: string;
   onComment: (videoId: string) => void;
+  searchFilter?: string;
 }
 
 export interface PerspectiveFeedHandle {
@@ -24,7 +25,7 @@ export interface PerspectiveFeedHandle {
 
 export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeedProps>(
   function PerspectiveFeed(
-    { initialItems, initialCursor, userId: _userId, feedHeight, onComment },
+    { initialItems, initialCursor, userId: _userId, feedHeight, onComment, searchFilter },
     ref
   ) {
   const [items, setItems] = useState<FeedItem[]>(initialItems);
