@@ -4,8 +4,14 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { createClient } from '../supabase/server';
 import type { Cell, CellMemberWithProfile, CellWithPreview, MemberPreview } from './types';
+import {
+  getDiscoverActivityScore,
+  getDiscoverQualityScore,
+  getDiscoverRankScore,
+} from './notification-scoring';
 
 const CATEGORIES = ['Prayer', 'Bible Study', 'Youth', 'Worship', 'Discipleship', 'General'] as const;
+const REPORT_REASONS = ['spam', 'harassment', 'false_teaching', 'sexual_content', 'other'] as const;
 
 function generateCellSlug(name: string, id: string): string {
   const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -918,10 +924,6 @@ export async function getDiscoverCellsWithActivityMatch(
     .order('created_at', { ascending: false })
     .limit(30);
 
-  if (userCategories.length > 0) {
-    query = query.in('category', userCategories);
-  }
-
   if (excludeIds.length > 0) {
     query = query.not('id', 'in', `(${excludeIds.join(',')})`);
   }
@@ -929,13 +931,102 @@ export async function getDiscoverCellsWithActivityMatch(
   const { data: cells } = await query;
   const enriched = await enrichCells(supabase, (cells as Cell[]) ?? []);
 
-  // Sort by last_activity descending (most recently active first)
-  return enriched.sort((a, b) => {
-    if (!a.last_activity && !b.last_activity) return 0;
-    if (!a.last_activity) return 1;
-    if (!b.last_activity) return -1;
-    return new Date(b.last_activity).getTime() - new Date(a.last_activity).getTime();
+  if (enriched.length === 0) return enriched;
+
+  const cellIds = enriched.map((c) => c.id);
+  const sinceIso = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [openReportsRes, toneStrikesRes] = await Promise.all([
+    supabase.from('cell_reports').select('cell_id').in('cell_id', cellIds).eq('status', 'open'),
+    supabase
+      .from('user_tone_strikes')
+      .select('cell_id')
+      .in('cell_id', cellIds)
+      .gte('created_at', sinceIso),
+  ]);
+
+  const openReportCount = new Map<string, number>();
+  if (!openReportsRes.error) {
+    for (const row of (openReportsRes.data ?? []) as { cell_id: string }[]) {
+      openReportCount.set(row.cell_id, (openReportCount.get(row.cell_id) ?? 0) + 1);
+    }
+  }
+
+  const toneStrikeCount = new Map<string, number>();
+  if (!toneStrikesRes.error) {
+    for (const row of (toneStrikesRes.data ?? []) as { cell_id: string | null }[]) {
+      if (!row.cell_id) continue;
+      toneStrikeCount.set(row.cell_id, (toneStrikeCount.get(row.cell_id) ?? 0) + 1);
+    }
+  }
+
+  const scored = enriched.map((cell) => {
+    const signals = {
+      openReports: openReportCount.get(cell.id) ?? 0,
+      recentToneStrikes: toneStrikeCount.get(cell.id) ?? 0,
+    };
+    const activity = getDiscoverActivityScore(cell);
+    const quality = getDiscoverQualityScore(cell, signals);
+    const score = getDiscoverRankScore(cell, userCategories, signals);
+    const isFeatured =
+      quality >= 78 &&
+      (signals.openReports ?? 0) === 0 &&
+      (activity >= 65 || (cell.member_count ?? 0) >= 10);
+
+    return {
+      ...cell,
+      discover_score: Number(score.toFixed(2)),
+      discover_quality_score: quality,
+      discover_activity_score: activity,
+      is_featured: isFeatured,
+    };
   });
+
+  return scored.sort((a, b) => (b.discover_score ?? 0) - (a.discover_score ?? 0));
+}
+
+export async function reportCell(input: {
+  cellId: string;
+  reason: (typeof REPORT_REASONS)[number];
+  details?: string;
+}): Promise<{ success: true } | { error: string }> {
+  const schema = z.object({
+    cellId: z.string().uuid(),
+    reason: z.enum(REPORT_REASONS),
+    details: z.string().max(400).optional(),
+  });
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) return { error: 'Invalid report details.' };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated.' };
+
+  const { data: exists } = await supabase
+    .from('cells')
+    .select('id')
+    .eq('id', parsed.data.cellId)
+    .eq('is_public', true)
+    .maybeSingle();
+  if (!exists) return { error: 'Community not found.' };
+
+  const { error } = await supabase.from('cell_reports').upsert(
+    {
+      cell_id: parsed.data.cellId,
+      reporter_id: user.id,
+      reason: parsed.data.reason,
+      details: parsed.data.details?.trim() || null,
+      status: 'open',
+      resolved_at: null,
+    },
+    { onConflict: 'cell_id,reporter_id' }
+  );
+  if (error) return { error: 'Failed to submit report.' };
+
+  revalidatePath('/engage');
+  return { success: true };
 }
 
 export async function updateScheduledMessage(

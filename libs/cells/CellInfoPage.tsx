@@ -15,10 +15,11 @@ import {
   Users,
   BookOpen,
   ChevronLeft,
+  Flag,
 } from 'lucide-react';
 import { Avatar } from '../shared-ui/Avatar';
 import { Badge } from '../shared-ui/Badge';
-import { joinCell, createInvite } from '../../lib/cells/actions';
+import { joinCell, createInvite, reportCell } from '../../lib/cells/actions';
 import type { Cell, CellMemberWithProfile } from '../../lib/cells/types';
 import { EditCellSheet } from './EditCellSheet';
 
@@ -51,6 +52,11 @@ export function CellInfoPage({
   const [generatingTemp, setGeneratingTemp] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
   const [showEditSheet, setShowEditSheet] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<'spam' | 'harassment' | 'false_teaching' | 'sexual_content' | 'other'>('spam');
+  const [reportDetails, setReportDetails] = useState('');
+  const [reporting, setReporting] = useState(false);
+  const [reportFeedback, setReportFeedback] = useState<string | null>(null);
 
   useEffect(() => { setHasMounted(true); }, []);
   const showShareButton = hasMounted && !!navigator.share;
@@ -98,6 +104,25 @@ export function CellInfoPage({
     await navigator.clipboard.writeText(getFullLink(tempInviteCode));
     setCopiedTemp(true);
     setTimeout(() => setCopiedTemp(false), 2000);
+  };
+
+  const handleReportSubmit = async () => {
+    setReporting(true);
+    setReportFeedback(null);
+    const result = await reportCell({
+      cellId: cell.id,
+      reason: reportReason,
+      details: reportDetails.trim() || undefined,
+    });
+    setReporting(false);
+    if ('error' in result) {
+      setReportFeedback(result.error);
+      return;
+    }
+    setReportOpen(false);
+    setReportDetails('');
+    setReportReason('spam');
+    setReportFeedback('Report submitted. Thank you for helping protect the community.');
   };
 
   return (
@@ -634,6 +659,85 @@ export function CellInfoPage({
             )}
           </div>
         )}
+
+        <div style={{ marginTop: 'var(--space-4)' }}>
+          <button
+            onClick={() => setReportOpen((v) => !v)}
+            style={{
+              width: '100%',
+              padding: 'var(--space-2) var(--space-3)',
+              background: 'transparent',
+              color: 'var(--color-text-muted)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: 'var(--font-size-xs)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+            }}
+          >
+            <Flag size={13} />
+            Report this community
+          </button>
+
+          {reportOpen && (
+            <div
+              style={{
+                marginTop: 'var(--space-2)',
+                padding: 'var(--space-3)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-surface)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'var(--space-2)',
+              }}
+            >
+              <select
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value as 'spam' | 'harassment' | 'false_teaching' | 'sexual_content' | 'other')}
+                className="field-input"
+              >
+                <option value="spam">Spam</option>
+                <option value="harassment">Harassment</option>
+                <option value="false_teaching">False teaching</option>
+                <option value="sexual_content">Sexual content</option>
+                <option value="other">Other</option>
+              </select>
+              <textarea
+                value={reportDetails}
+                onChange={(e) => setReportDetails(e.target.value)}
+                placeholder="Optional details"
+                className="field-input"
+                rows={3}
+                maxLength={400}
+              />
+              <button
+                onClick={handleReportSubmit}
+                disabled={reporting}
+                style={{
+                  padding: 'var(--space-2) var(--space-3)',
+                  background: 'var(--color-error)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: 'var(--font-size-xs)',
+                  cursor: reporting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {reporting ? 'Submitting...' : 'Submit report'}
+              </button>
+            </div>
+          )}
+
+          {reportFeedback && (
+            <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+              {reportFeedback}
+            </p>
+          )}
+        </div>
 
         {/* Admin  edit cell */}
         {userRole === 'admin' && (

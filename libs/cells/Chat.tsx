@@ -57,6 +57,8 @@ export function Chat({
     show: boolean;
     suggestion?: string;
     pendingContent?: string;
+    hardBlock?: boolean;
+    message?: string;
   }>({ show: false });
   const [sendError, setSendError] = useState<string | null>(null);
   const [memberListOpen, setMemberListOpen] = useState(false);
@@ -353,9 +355,15 @@ export function Chat({
       setSendError(null);
 
       if (!skipToneCheck) {
-        const tone = await checkTone(content);
+        const tone = await checkTone(content, cellId);
         if (!tone.pass) {
-          setToneWarning({ show: true, suggestion: tone.suggestion, pendingContent: content });
+          setToneWarning({
+            show: true,
+            suggestion: tone.suggestion,
+            pendingContent: content,
+            hardBlock: tone.hardBlock,
+            message: tone.message,
+          });
           return;
         }
       }
@@ -847,7 +855,7 @@ export function Chat({
                   lineHeight: 'var(--line-height-normal)',
                 }}
               >
-                Speak with grace.
+                {toneWarning.message ?? 'Speak with grace.'}
                 {toneWarning.suggestion ? ` Try: "${toneWarning.suggestion}"` : ''}
               </span>
               <button
@@ -864,20 +872,22 @@ export function Chat({
               >
                 Edit
               </button>
-              <button
-                onClick={handleSendAnyway}
-                style={{
-                  fontSize: 'var(--font-size-xs)',
-                  color: 'var(--color-accent)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0,
-                  flexShrink: 0,
-                }}
-              >
-                Send anyway
-              </button>
+              {!toneWarning.hardBlock && (
+                <button
+                  onClick={handleSendAnyway}
+                  style={{
+                    fontSize: 'var(--font-size-xs)',
+                    color: 'var(--color-accent)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    flexShrink: 0,
+                  }}
+                >
+                  Send anyway
+                </button>
+              )}
             </div>
           )}
 

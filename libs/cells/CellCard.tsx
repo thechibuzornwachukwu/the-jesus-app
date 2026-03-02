@@ -167,7 +167,10 @@ export function CellCard({ cell, isMember, featured }: CellCardProps) {
               {cell.name}
             </p>
             <div style={{ marginTop: 3 }}>
-              <Badge variant="default">{cell.category}</Badge>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <Badge variant="default">{cell.category}</Badge>
+                {cell.is_featured && <Badge variant="success">Featured</Badge>}
+              </div>
             </div>
             {cell.description && (
               <p

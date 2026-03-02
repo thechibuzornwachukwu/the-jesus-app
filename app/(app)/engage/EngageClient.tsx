@@ -14,7 +14,6 @@ import type { CellWithPreview } from '../../../lib/cells/types';
 import type { CellStoryGroup } from '../../../lib/cells/types';
 import type { DailyVerseType } from '../../../lib/explore/types';
 import { getDiscoverCellsWithActivityMatch } from '../../../lib/cells/actions';
-import { getActivityMatchScore } from '../../../lib/cells/notification-scoring';
 import { vibrate } from '../../../libs/shared-ui/haptics';
 
 const CATEGORIES = ['For You', 'All', 'Prayer', 'Bible Study', 'Youth', 'Worship', 'Discipleship', 'General'];
@@ -216,10 +215,7 @@ export function EngageClient({
       setForYouLoading(true);
       startTransition(() => {
         getDiscoverCellsWithActivityMatch(userCategories, [...joinedIds]).then((cells) => {
-          const sorted = [...cells].sort(
-            (a, b) => getActivityMatchScore(b, userCategories) - getActivityMatchScore(a, userCategories)
-          );
-          setForYouCells(sorted);
+          setForYouCells(cells);
           setForYouLoading(false);
         });
       });
@@ -243,6 +239,10 @@ export function EngageClient({
           }
           return true;
         });
+
+  const featuredDiscover = filteredDiscover.filter((c) => c.is_featured).slice(0, 3);
+  const featuredIds = new Set(featuredDiscover.map((c) => c.id));
+  const regularDiscover = filteredDiscover.filter((c) => !featuredIds.has(c.id));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -446,9 +446,20 @@ export function EngageClient({
             </div>
           ) : (
             <>
+              {featuredDiscover.length > 0 && (
+                <div style={{ marginBottom: 'var(--space-3)' }}>
+                  <SectionHeader>Featured</SectionHeader>
+                  <div className="stagger-list" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+                    {featuredDiscover.map((cell) => (
+                      <CellCard key={`featured-${cell.id}`} cell={cell} isMember={false} featured />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Full-width photo cards */}
               <div className="stagger-list" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                {filteredDiscover.map((cell) => (
+                {regularDiscover.map((cell) => (
                   <CellCard key={cell.id} cell={cell} isMember={false} featured />
                 ))}
               </div>

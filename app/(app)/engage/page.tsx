@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '../../../lib/supabase/server';
 import {
-  getCellsWithMemberPreviews,
+  getDiscoverCellsWithActivityMatch,
   getMyCellsWithPreviews,
   getLastMessages,
   getStoriesForCells,
@@ -29,10 +29,12 @@ export default async function EngagePage() {
   ]);
 
   const joinedIds = myCells.map((c) => c.id);
+  const userCategories =
+    (profileRes.data as { content_categories?: string[] } | null)?.content_categories ?? [];
 
   const [discoverCells, lastMessages, storyGroups, defaultChannelIds, verseEngagement] =
     await Promise.all([
-      getCellsWithMemberPreviews(joinedIds),
+      getDiscoverCellsWithActivityMatch(userCategories, joinedIds),
       getLastMessages(joinedIds),
       joinedIds.length > 0
         ? getStoriesForCells(joinedIds, user.id).catch(() => [])
@@ -40,9 +42,6 @@ export default async function EngagePage() {
       getDefaultChannelIds(joinedIds),
       getVerseEngagement(verse.reference),
     ]);
-
-  const userCategories =
-    (profileRes.data as { content_categories?: string[] } | null)?.content_categories ?? [];
 
   return (
     <EngageClient

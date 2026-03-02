@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import OpenAI from 'openai';
+import { createClient } from '../../../lib/supabase/server';
 
 const bodySchema = z.object({
   content: z.string().min(1).max(2000),
+  cellId: z.string().uuid().optional(),
 });
 
 const SYSTEM_PROMPT = `You are a tone moderation assistant for a Christian community app called The JESUS App.
@@ -29,6 +31,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request.' }, { status: 400 });
   }
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const strikeWindowStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const strictThreshold = 3;
+  let recentStrikeCount = 0;
+  if (user) {
+    const { count } = await supabase
+      .from('user_tone_strikes')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', strikeWindowStart);
+    recentStrikeCount = count ?? 0;
+  }
+  const strictMode = recentStrikeCount >= strictThreshold;
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     // No key configured  pass everything through
@@ -41,14 +61,41 @@ export async function POST(req: NextRequest) {
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
+        strictMode
+          ? {
+              role: 'system',
+              content:
+                'This user has repeated prior tone violations. Apply stricter moderation and fail borderline harsh phrasing.',
+            }
+          : null,
         { role: 'user', content: parsed.data.content },
-      ],
+      ].filter(Boolean) as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
       max_tokens: 120,
       temperature: 0.2,
     });
 
     const raw = completion.choices[0]?.message?.content ?? '{"pass":true}';
     const result = JSON.parse(raw) as { pass: boolean; suggestion?: string };
+
+    if (!result.pass && user) {
+      await supabase.from('user_tone_strikes').insert({
+        user_id: user.id,
+        cell_id: parsed.data.cellId ?? null,
+        content_preview: parsed.data.content.slice(0, 240),
+        severity: strictMode ? 'high' : 'medium',
+      });
+    }
+
+    if (!result.pass && strictMode) {
+      return NextResponse.json({
+        pass: false,
+        suggestion: result.suggestion,
+        hardBlock: true,
+        message:
+          'Your message was blocked due to repeated harsh tone flags. Please rewrite with gentleness before sending.',
+      });
+    }
+
     return NextResponse.json(result);
   } catch {
     // On any OpenAI error, pass the message through rather than blocking the user

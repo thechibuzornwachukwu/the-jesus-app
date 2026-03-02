@@ -57,6 +57,10 @@ export type CellWithPreview = Cell & {
   default_channel_id?: string | null;
   last_message?: { content: string | null; message_type: string; created_at: string } | null;
   unread_count?: number;
+  discover_score?: number;
+  discover_quality_score?: number;
+  discover_activity_score?: number;
+  is_featured?: boolean;
 };
 
 // ─── Phase 12: Stories ──────────────────────────────────────────────────────

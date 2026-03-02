@@ -100,3 +100,47 @@ export function getActivityMatchScore(
 
   return 0;
 }
+
+export type DiscoverSignalBundle = {
+  openReports?: number;
+  recentToneStrikes?: number;
+};
+
+function daysSince(ts: string | null | undefined): number | null {
+  if (!ts) return null;
+  const d = new Date(ts).getTime();
+  if (!Number.isFinite(d)) return null;
+  return Math.max(0, Math.floor((Date.now() - d) / (1000 * 60 * 60 * 24)));
+}
+
+export function getDiscoverActivityScore(cell: CellWithPreview): number {
+  const days = daysSince(cell.last_activity);
+  const recencyScore = days === null ? 20 : Math.max(0, 80 - Math.min(80, days * 4));
+  const memberScore = Math.min(20, Math.round((cell.member_count ?? 0) / 4));
+  return Math.max(0, Math.min(100, recencyScore + memberScore));
+}
+
+export function getDiscoverQualityScore(
+  cell: CellWithPreview,
+  signals: DiscoverSignalBundle = {}
+): number {
+  let score = 55;
+  score += Math.min(20, Math.round((cell.member_count ?? 0) / 5));
+  if (cell.description && cell.description.trim().length >= 40) score += 10;
+  if (cell.banner_url) score += 8;
+  if (cell.avatar_url) score += 7;
+  score -= Math.min(45, (signals.openReports ?? 0) * 15);
+  score -= Math.min(25, (signals.recentToneStrikes ?? 0) * 5);
+  return Math.max(0, Math.min(100, score));
+}
+
+export function getDiscoverRankScore(
+  cell: CellWithPreview,
+  userCategories: string[],
+  signals: DiscoverSignalBundle = {}
+): number {
+  const activity = getDiscoverActivityScore(cell);
+  const relevance = getActivityMatchScore(cell, userCategories);
+  const quality = getDiscoverQualityScore(cell, signals);
+  return activity * 0.4 + relevance * 0.35 + quality * 0.25;
+}
