@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/engagement",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/typing-presence",
+      "schedule": "* * * * *"
     }
   ]
 }

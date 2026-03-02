@@ -81,11 +81,13 @@ export function Chat({
 
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const [typingByUser, setTypingByUser] = useState<Record<string, number>>({});
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profilesCache = useRef<Map<string, Profile>>(new Map([[currentUser.id, currentUser]]));
+  const typingHeartbeatRef = useRef<number>(0);
 
   useEffect(() => {
     initialMessages.forEach((m) => {
@@ -138,7 +140,6 @@ export function Chat({
         },
         async (payload) => {
           const newMsg = payload.new as Omit<Message, 'profiles'>;
-          if (newMsg.user_id === currentUser.id) return;
 
           let profile = profilesCache.current.get(newMsg.user_id);
           if (!profile) {
@@ -161,7 +162,22 @@ export function Chat({
               ? { username: profile.username, avatar_url: profile.avatar_url }
               : undefined,
           };
-          setMessages((prev) => [...prev, fullMsg]);
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === fullMsg.id)) return prev;
+
+            if (fullMsg.client_nonce) {
+              const optimisticIndex = prev.findIndex(
+                (m) => m.id === fullMsg.client_nonce || m.client_nonce === fullMsg.client_nonce
+              );
+              if (optimisticIndex >= 0) {
+                const next = [...prev];
+                next[optimisticIndex] = fullMsg;
+                return next;
+              }
+            }
+
+            return [...prev, fullMsg];
+          });
         }
       )
       .subscribe();
@@ -195,6 +211,87 @@ export function Chat({
     };
   }, [cellId, currentUser.id]);
 
+  useEffect(() => {
+    if (!channelId) return;
+    const supabase = createClient();
+
+    const refreshTypingUsers = async () => {
+      const { data } = await supabase
+        .from('channel_typing_presence')
+        .select('user_id, expires_at')
+        .eq('channel_id', channelId)
+        .gt('expires_at', new Date().toISOString());
+
+      const next: Record<string, number> = {};
+      for (const row of (data ?? []) as { user_id: string; expires_at: string }[]) {
+        if (row.user_id === currentUser.id) continue;
+        next[row.user_id] = new Date(row.expires_at).getTime();
+      }
+      setTypingByUser(next);
+    };
+
+    void refreshTypingUsers();
+
+    const typingChannel = supabase
+      .channel(`typing:${channelId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'channel_typing_presence',
+          filter: `channel_id=eq.${channelId}`,
+        },
+        async (payload) => {
+          const row = ((payload.new ?? payload.old) as { user_id: string; expires_at?: string }) ?? null;
+          if (!row || row.user_id === currentUser.id) return;
+
+          if (!profilesCache.current.has(row.user_id)) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('id, username, avatar_url')
+              .eq('id', row.user_id)
+              .single();
+            if (data) profilesCache.current.set(data.id, data as Profile);
+          }
+
+          setTypingByUser((prev) => {
+            if (payload.eventType === 'DELETE' || !row.expires_at) {
+              const next = { ...prev };
+              delete next[row.user_id];
+              return next;
+            }
+            const expiresMs = new Date(row.expires_at).getTime();
+            if (expiresMs <= Date.now()) {
+              const next = { ...prev };
+              delete next[row.user_id];
+              return next;
+            }
+            return { ...prev, [row.user_id]: expiresMs };
+          });
+        }
+      )
+      .subscribe();
+
+    const pruneInterval = setInterval(() => {
+      setTypingByUser((prev) => {
+        const now = Date.now();
+        let changed = false;
+        const next: Record<string, number> = {};
+        for (const [userId, expiresMs] of Object.entries(prev)) {
+          if (expiresMs > now) next[userId] = expiresMs;
+          else changed = true;
+        }
+        return changed ? next : prev;
+      });
+    }, 2000);
+
+    return () => {
+      clearInterval(pruneInterval);
+      supabase.removeChannel(typingChannel);
+    };
+  }, [channelId, currentUser.id]);
+
   const handleTimestampReply = useCallback(
     (messageId: string, timestampSeconds: number) => {
       const msg = messages.find((m) => m.id === messageId);
@@ -214,6 +311,41 @@ export function Chat({
     setHighlightedId(msgId);
     setTimeout(() => setHighlightedId(null), 1200);
   }, []);
+
+  const stopTyping = useCallback(async () => {
+    if (!channelId) return;
+    const supabase = createClient();
+    await supabase
+      .from('channel_typing_presence')
+      .delete()
+      .eq('channel_id', channelId)
+      .eq('user_id', currentUser.id);
+  }, [channelId, currentUser.id]);
+
+  const pulseTyping = useCallback(async () => {
+    if (!channelId) return;
+    const now = Date.now();
+    if (now - typingHeartbeatRef.current < 3000) return;
+    typingHeartbeatRef.current = now;
+    const supabase = createClient();
+    const expiresAt = new Date(now + 12_000).toISOString();
+    await supabase.from('channel_typing_presence').upsert(
+      {
+        user_id: currentUser.id,
+        cell_id: cellId,
+        channel_id: channelId,
+        started_at: new Date(now).toISOString(),
+        expires_at: expiresAt,
+      },
+      { onConflict: 'user_id,channel_id' }
+    );
+  }, [cellId, channelId, currentUser.id]);
+
+  useEffect(() => {
+    return () => {
+      void stopTyping();
+    };
+  }, [stopTyping]);
 
   const sendMessage = useCallback(
     async (content: string, skipToneCheck = false) => {
@@ -239,6 +371,7 @@ export function Chat({
         audio_url: null,
         image_url: null,
         channel_id: channelId ?? null,
+        client_nonce: tempId,
         created_at: new Date().toISOString(),
         reply_to_message_id: replyState?.messageId ?? null,
         reply_to_timestamp_seconds: replyState?.timestampSeconds ?? null,
@@ -260,6 +393,7 @@ export function Chat({
         content,
         message_type: 'text',
         channel_id: channelId ?? null,
+        client_nonce: tempId,
         ...(replyState && {
           reply_to_message_id: replyState.messageId,
           reply_to_timestamp_seconds: replyState.timestampSeconds,
@@ -290,8 +424,9 @@ export function Chat({
         onMessageSent?.();
       }
       setSending(false);
+      void stopTyping();
     },
-    [cellId, currentUser, sending, onMessageSent]
+    [cellId, channelId, currentUser, sending, onMessageSent, replyState, stopTyping]
   );
 
   const handleSend = () => {
@@ -302,7 +437,7 @@ export function Chat({
   const handleSchedule = async (sendAt: string) => {
     if (!input.trim()) return;
     setScheduling(true);
-    const result = await scheduleMessage(cellId, input.trim(), sendAt);
+    const result = await scheduleMessage(cellId, input.trim(), sendAt, channelId);
     setScheduling(false);
     if (!('error' in result)) {
       setInput('');
@@ -354,6 +489,22 @@ export function Chat({
       return;
     }
 
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: Message = {
+      id: tempId,
+      cell_id: cellId,
+      user_id: currentUser.id,
+      content: null,
+      message_type: 'audio',
+      audio_url: signedData.signedUrl,
+      image_url: null,
+      channel_id: channelId ?? null,
+      client_nonce: tempId,
+      created_at: new Date().toISOString(),
+      profiles: { username: currentUser.username, avatar_url: currentUser.avatar_url },
+    };
+    setMessages((prev) => [...prev, optimistic]);
+
     const { error: insertError } = await supabase.from('chat_messages').insert({
       cell_id: cellId,
       user_id: currentUser.id,
@@ -361,9 +512,13 @@ export function Chat({
       message_type: 'audio',
       audio_url: signedData.signedUrl,
       channel_id: channelId ?? null,
+      client_nonce: tempId,
     });
 
-    if (insertError) setSendError('Failed to send voice message.');
+    if (insertError) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setSendError('Failed to send voice message.');
+    }
   };
 
   const handleImageSelect = useCallback(
@@ -389,6 +544,7 @@ export function Chat({
         audio_url: null,
         image_url: objectUrl,
         channel_id: channelId ?? null,
+        client_nonce: tempId,
         created_at: new Date().toISOString(),
         profiles: { username: currentUser.username, avatar_url: currentUser.avatar_url },
       };
@@ -423,17 +579,13 @@ export function Chat({
         message_type: messageType,
         image_url: signedUrl,
         channel_id: channelId ?? null,
+        client_nonce: tempId,
       });
 
-      // Replace optimistic with signed URL (realtime will also arrive for others)
       URL.revokeObjectURL(objectUrl);
       if (insertError) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         setSendError('Failed to send image.');
-      } else {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? { ...m, image_url: signedUrl } : m))
-        );
       }
       setImageUploading(false);
     },
@@ -441,6 +593,15 @@ export function Chat({
   );
 
   const onlineCount = onlineMemberIds.size;
+  const typingNames = Object.keys(typingByUser)
+    .map((userId) => profilesCache.current.get(userId)?.username)
+    .filter(Boolean) as string[];
+  const typingLabel =
+    typingNames.length === 0
+      ? ''
+      : typingNames.length === 1
+        ? `${typingNames[0]} is typing...`
+        : `${typingNames.slice(0, 2).join(', ')}${typingNames.length > 2 ? ` +${typingNames.length - 2}` : ''} are typing...`;
 
   return (
     <>
@@ -731,6 +892,17 @@ export function Chat({
               {sendError}
             </p>
           )}
+          {typingLabel && (
+            <p
+              style={{
+                marginBottom: 'var(--space-1)',
+                color: 'var(--color-text-muted)',
+                fontSize: 'var(--font-size-xs)',
+              }}
+            >
+              {typingLabel}
+            </p>
+          )}
 
           {/* Discord pill input */}
           <div
@@ -790,7 +962,13 @@ export function Chat({
               ref={textareaRef}
               value={input}
               onChange={(e) => {
-                setInput(e.target.value);
+                const value = e.target.value;
+                setInput(value);
+                if (value.trim().length > 0) {
+                  void pulseTyping();
+                } else {
+                  void stopTyping();
+                }
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px';
               }}

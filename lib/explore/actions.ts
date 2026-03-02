@@ -1,8 +1,8 @@
-'use server';
+﻿'use server';
 
 import { createClient } from '../supabase/server';
 import { z } from 'zod';
-import type { Video, Comment, Post, ImagePost, FeedItem, ReactionType, VerseComment } from './types';
+import type { Video, Comment, Post, ImagePost, Repost, FeedItem, ReactionType, VerseComment } from './types';
 import { logStreakEvent } from '../streaks/actions';
 
 const PAGE_SIZE = 5;
@@ -82,7 +82,12 @@ export async function getVideos(cursor?: string): Promise<{
         })
       : Promise.resolve(new Map<string, number>()),
     user && videoIds.length > 0
-      ? supabase.from('likes').select('video_id').in('video_id', videoIds).then(({ data }) => {
+      ? supabase
+          .from('likes')
+          .select('video_id')
+          .eq('user_id', user.id)
+          .in('video_id', videoIds)
+          .then(({ data }) => {
           const s = new Set<string>();
           (data ?? []).forEach((l) => s.add(l.video_id));
           return s;
@@ -182,6 +187,7 @@ export async function getVideoById(videoId: string): Promise<Video | null> {
     const { data: likeRow } = await supabase
       .from('likes')
       .select('video_id')
+      .eq('user_id', user.id)
       .eq('video_id', videoId)
       .maybeSingle();
     user_liked = !!likeRow;
@@ -236,11 +242,12 @@ export async function toggleLike(
   const { data: existing } = await supabase
     .from('likes')
     .select('video_id')
+    .eq('user_id', user.id)
     .eq('video_id', videoId)
     .maybeSingle();
 
   if (existing) {
-    await supabase.from('likes').delete().eq('video_id', videoId);
+    await supabase.from('likes').delete().eq('user_id', user.id).eq('video_id', videoId);
   } else {
     await supabase.from('likes').insert({ user_id: user.id, video_id: videoId });
   }
@@ -385,7 +392,7 @@ export async function getComments(
 
   return rows.map((c) => ({
     id: c.id,
-    video_id: targetType === 'video' ? c[idField] : c.id,
+    video_id: c[idField],
     user_id: c.user_id,
     content: c.content,
     created_at: c.created_at,
@@ -611,6 +618,28 @@ export async function createRepost(
   return { repostId: data.id };
 }
 
+export async function deleteRepost(
+  repostId: string
+): Promise<{ success: true } | { error: string }> {
+  const parsed = z.string().uuid().safeParse(repostId);
+  if (!parsed.success) return { error: 'Invalid repost ID' };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthenticated' };
+
+  const { error } = await supabase
+    .from('reposts')
+    .delete()
+    .eq('id', parsed.data)
+    .eq('user_id', user.id);
+
+  if (error) return { error: error.message ?? 'Failed to delete repost' };
+  return { success: true };
+}
+
 const threadReplySchema = z.object({
   replyToPostId: z.string().uuid(),
   threadRootId: z.string().uuid(),
@@ -714,11 +743,12 @@ export async function togglePostLike(
   const { data: existing } = await supabase
     .from('post_likes')
     .select('post_id')
+    .eq('user_id', user.id)
     .eq('post_id', postId)
     .maybeSingle();
 
   if (existing) {
-    await supabase.from('post_likes').delete().eq('post_id', postId);
+    await supabase.from('post_likes').delete().eq('user_id', user.id).eq('post_id', postId);
   } else {
     await supabase.from('post_likes').insert({ user_id: user.id, post_id: postId });
   }
@@ -786,6 +816,7 @@ export async function getPostById(postId: string): Promise<Post | null> {
     const { data: likeRow } = await supabase
       .from('post_likes')
       .select('post_id')
+      .eq('user_id', user.id)
       .eq('post_id', postId)
       .maybeSingle();
     user_liked = !!likeRow;
@@ -931,6 +962,17 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
     reply_count: number | null;
   };
 
+  type RawRepost = {
+    id: string;
+    user_id: string;
+    original_post_id: string;
+    original_type: 'video' | 'post';
+    quote_content: string | null;
+    quote_verse_ref: string | null;
+    quote_verse_text: string | null;
+    created_at: string;
+  };
+
   let videoQuery = supabase
     .from('videos')
     .select('id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at, video_verses(verse_reference, verse_text, position_pct)')
@@ -946,19 +988,66 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
     .order('created_at', { ascending: false })
     .limit(FEED_BATCH);
 
+  let repostQuery = supabase
+    .from('reposts')
+    .select(
+      'id, user_id, original_post_id, original_type, quote_content, quote_verse_ref, quote_verse_text, created_at'
+    )
+    .order('created_at', { ascending: false })
+    .limit(FEED_BATCH);
+
   if (cursor) {
     videoQuery = videoQuery.lt('created_at', cursor);
     postQuery = postQuery.lt('created_at', cursor);
+    repostQuery = repostQuery.lt('created_at', cursor);
   }
 
-  const [{ data: videoRows }, { data: postRows }] = await Promise.all([videoQuery, postQuery]);
+  const [{ data: videoRows }, { data: postRows }, { data: repostRows }] = await Promise.all([
+    videoQuery,
+    postQuery,
+    repostQuery,
+  ]);
 
   const videos = (videoRows ?? []) as unknown as RawVideo[];
   const posts = (postRows ?? []) as unknown as RawPost[];
+  const reposts = (repostRows ?? []) as unknown as RawRepost[];
 
-  const videoIds = videos.map((v) => v.id);
-  const postIds = posts.map((p) => p.id);
-  const allUserIds = [...new Set([...videos.map((v) => v.user_id), ...posts.map((p) => p.user_id)])];
+  const repostVideoIds = [...new Set(reposts.filter((r) => r.original_type === 'video').map((r) => r.original_post_id))];
+  const repostPostIds = [...new Set(reposts.filter((r) => r.original_type === 'post').map((r) => r.original_post_id))];
+
+  const [repostOriginalVideos, repostOriginalPosts] = await Promise.all([
+    repostVideoIds.length > 0
+      ? supabase
+          .from('videos')
+          .select(
+            'id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at, video_verses(verse_reference, verse_text, position_pct)'
+          )
+          .in('id', repostVideoIds)
+          .then(({ data }) => (data ?? []) as unknown as RawVideo[])
+      : Promise.resolve([] as RawVideo[]),
+    repostPostIds.length > 0
+      ? supabase
+          .from('posts')
+          .select(
+            'id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at, thread_root_id, reply_to_post_id, reply_count'
+          )
+          .in('id', repostPostIds)
+          .then(({ data }) => (data ?? []) as unknown as RawPost[])
+      : Promise.resolve([] as RawPost[]),
+  ]);
+
+  const allVideos = [...videos, ...repostOriginalVideos];
+  const allPosts = [...posts, ...repostOriginalPosts];
+
+  const videoIds = [...new Set(allVideos.map((v) => v.id))];
+  const postIds = [...new Set(allPosts.map((p) => p.id))];
+  const allUserIds = [
+    ...new Set([
+      ...allVideos.map((v) => v.user_id),
+      ...allPosts.map((p) => p.user_id),
+      ...reposts.map((r) => r.user_id),
+    ]),
+  ];
 
   const REACTION_TYPES_FEED: ReactionType[] = ['heart', 'amen', 'laugh', 'shock'];
 
@@ -978,14 +1067,24 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
         })
       : Promise.resolve(new Map<string, number>()),
     user && videoIds.length > 0
-      ? supabase.from('likes').select('video_id').in('video_id', videoIds).then(({ data }) => {
+      ? supabase
+          .from('likes')
+          .select('video_id')
+          .eq('user_id', user.id)
+          .in('video_id', videoIds)
+          .then(({ data }) => {
           const s = new Set<string>();
           (data ?? []).forEach((l) => s.add(l.video_id));
           return s;
         })
       : Promise.resolve(new Set<string>()),
     user && postIds.length > 0
-      ? supabase.from('post_likes').select('post_id').in('post_id', postIds).then(({ data }) => {
+      ? supabase
+          .from('post_likes')
+          .select('post_id')
+          .eq('user_id', user.id)
+          .in('post_id', postIds)
+          .then(({ data }) => {
           const s = new Set<string>();
           (data ?? []).forEach((l) => s.add(l.post_id));
           return s;
@@ -1017,22 +1116,19 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
     }
   }
 
-  const videoItems: FeedItem[] = videos.map((v) => ({
-    kind: 'video' as const,
-    data: {
-      id: v.id, user_id: v.user_id, url: v.url, thumbnail_url: v.thumbnail_url,
-      caption: v.caption, duration_sec: v.duration_sec, created_at: v.created_at,
-      like_count: v.like_count ?? 0,
-      comment_count: commentMapVideo.get(v.id) ?? 0,
-      user_liked: userLikedVideos.has(v.id),
-      user_reaction: feedUserReactionMap.get(v.id) ?? null,
-      reaction_counts: feedReactionCountMap.get(v.id) ?? { heart: 0, amen: 0, laugh: 0, shock: 0 },
-      verse: v.video_verses?.[0] ?? null,
-      profiles: profileMap.get(v.user_id) ?? null,
-    },
-  }));
+  const toVideo = (v: RawVideo): Video => ({
+    id: v.id, user_id: v.user_id, url: v.url, thumbnail_url: v.thumbnail_url,
+    caption: v.caption, duration_sec: v.duration_sec, created_at: v.created_at,
+    like_count: v.like_count ?? 0,
+    comment_count: commentMapVideo.get(v.id) ?? 0,
+    user_liked: userLikedVideos.has(v.id),
+    user_reaction: feedUserReactionMap.get(v.id) ?? null,
+    reaction_counts: feedReactionCountMap.get(v.id) ?? { heart: 0, amen: 0, laugh: 0, shock: 0 },
+    verse: v.video_verses?.[0] ?? null,
+    profiles: profileMap.get(v.user_id) ?? null,
+  });
 
-  const postItems: FeedItem[] = posts.map((p) => {
+  const toPostLikeItem = (p: RawPost): { kind: 'post' | 'image'; data: Post | ImagePost } => {
     const base = {
       id: p.id, user_id: p.user_id, content: p.content, image_url: p.image_url,
       verse_reference: p.verse_reference, verse_text: p.verse_text,
@@ -1049,10 +1145,41 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
       return { kind: 'image' as const, data: base as ImagePost };
     }
     return { kind: 'post' as const, data: base as Post };
+  };
+
+  const videoItems: FeedItem[] = videos.map((v) => ({ kind: 'video', data: toVideo(v) }));
+  const postItems: FeedItem[] = posts.map((p) => toPostLikeItem(p) as FeedItem);
+
+  const repostOriginalVideoMap = new Map<string, Video>(
+    repostOriginalVideos.map((v) => [v.id, toVideo(v)])
+  );
+  const repostOriginalPostMap = new Map<string, Post | ImagePost>(
+    repostOriginalPosts.map((p) => [p.id, toPostLikeItem(p).data])
+  );
+
+  const repostItems: FeedItem[] = reposts.map((r) => {
+    const original =
+      r.original_type === 'video'
+        ? repostOriginalVideoMap.get(r.original_post_id) ?? null
+        : repostOriginalPostMap.get(r.original_post_id) ?? null;
+
+    const data: Repost = {
+      id: r.id,
+      user_id: r.user_id,
+      original_post_id: r.original_post_id,
+      original_type: r.original_type,
+      quote_content: r.quote_content,
+      quote_verse_ref: r.quote_verse_ref,
+      quote_verse_text: r.quote_verse_text,
+      created_at: r.created_at,
+      profiles: profileMap.get(r.user_id) ?? null,
+      original,
+    };
+    return { kind: 'repost', data };
   });
 
   // Merge and sort by created_at DESC, take first 5
-  const merged = [...videoItems, ...postItems].sort(
+  const merged = [...videoItems, ...postItems, ...repostItems].sort(
     (a, b) => new Date(b.data.created_at).getTime() - new Date(a.data.created_at).getTime()
   );
 
@@ -1229,3 +1356,4 @@ export async function getVerseComments(verseReference: string): Promise<VerseCom
     profiles: profileMap.get(r.user_id) ?? null,
   }));
 }
+

@@ -121,6 +121,7 @@ export type Message = {
   audio_url: string | null;
   image_url: string | null;
   channel_id: string | null;
+  client_nonce?: string | null;
   created_at: string;
   reply_to_message_id?: string | null;
   reply_to_timestamp_seconds?: number | null;

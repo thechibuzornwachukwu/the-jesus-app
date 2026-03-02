@@ -40,6 +40,23 @@ export async function GET(req: NextRequest) {
   const errors: string[] = [];
 
   for (const msg of due) {
+    let channelId: string | null = msg.channel_id ?? null;
+    if (!channelId) {
+      const { data: fallback } = await supabase
+        .from('channels')
+        .select('id')
+        .eq('cell_id', msg.cell_id)
+        .order('position', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      channelId = fallback?.id ?? null;
+    }
+
+    if (!channelId) {
+      errors.push(`${msg.id}: no channel found`);
+      continue;
+    }
+
     // Insert into chat_messages
     const { error: insertError } = await supabase.from('chat_messages').insert({
       cell_id: msg.cell_id,
@@ -47,6 +64,7 @@ export async function GET(req: NextRequest) {
       content: msg.content,
       message_type: msg.message_type,
       audio_url: msg.audio_url ?? null,
+      channel_id: channelId,
     });
 
     if (insertError) {

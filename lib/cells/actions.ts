@@ -533,6 +533,7 @@ export interface ScheduledMessage {
   id: string;
   cell_id: string;
   user_id: string;
+  channel_id: string | null;
   content: string | null;
   message_type: string;
   audio_url: string | null;
@@ -544,7 +545,8 @@ export interface ScheduledMessage {
 export async function scheduleMessage(
   cellId: string,
   content: string,
-  sendAt: string
+  sendAt: string,
+  channelId?: string
 ): Promise<{ id: string } | { error: string }> {
   const supabase = await createClient();
   const {
@@ -571,6 +573,7 @@ export async function scheduleMessage(
     .insert({
       cell_id: cellId,
       user_id: user.id,
+      channel_id: channelId ?? null,
       content,
       message_type: 'text',
       send_at: sendAt,
