@@ -2,7 +2,7 @@
 
 import { createClient } from '../supabase/server';
 import { z } from 'zod';
-import type { Video, Comment, Post, ImagePost, FeedItem, ReactionType, VerseComment, Repost } from './types';
+import type { Video, Comment, Post, ImagePost, FeedItem, ReactionType, VerseComment } from './types';
 import { logStreakEvent } from '../streaks/actions';
 
 const PAGE_SIZE = 5;
@@ -562,6 +562,140 @@ export async function createPost(
   return { postId: data.id };
 }
 
+const repostSchema = z.object({
+  originalId: z.string().uuid(),
+  originalType: z.enum(['video', 'post']),
+  quoteContent: z.string().max(500).trim().optional(),
+  quoteVerseRef: z.string().max(100).trim().optional(),
+  quoteVerseText: z.string().max(2000).trim().optional(),
+});
+
+export async function createRepost(
+  originalId: string,
+  originalType: 'video' | 'post',
+  quoteContent?: string,
+  quoteVerseRef?: string,
+  quoteVerseText?: string
+): Promise<{ repostId: string } | { error: string }> {
+  const parsed = repostSchema.safeParse({
+    originalId,
+    originalType,
+    quoteContent,
+    quoteVerseRef,
+    quoteVerseText,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthenticated' };
+
+  const { data, error } = await supabase
+    .from('reposts')
+    .insert({
+      user_id: user.id,
+      original_post_id: parsed.data.originalId,
+      original_type: parsed.data.originalType,
+      quote_content: parsed.data.quoteContent || null,
+      quote_verse_ref: parsed.data.quoteVerseRef || null,
+      quote_verse_text: parsed.data.quoteVerseText || null,
+    })
+    .select('id')
+    .single();
+
+  if (error || !data) return { error: error?.message ?? 'Failed to repost' };
+
+  void logStreakEvent('post_content');
+  return { repostId: data.id };
+}
+
+const threadReplySchema = z.object({
+  replyToPostId: z.string().uuid(),
+  threadRootId: z.string().uuid(),
+  content: z.string().min(1).max(1000).trim(),
+  verseReference: z.string().max(100).trim().optional(),
+  verseText: z.string().max(2000).trim().optional(),
+});
+
+export async function addThreadReply(
+  replyToPostId: string,
+  threadRootId: string,
+  content: string,
+  verseReference?: string,
+  verseText?: string
+): Promise<{ reply?: Post; error?: string }> {
+  const parsed = threadReplySchema.safeParse({
+    replyToPostId,
+    threadRootId,
+    content,
+    verseReference,
+    verseText,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthenticated' };
+
+  type RawPost = {
+    id: string;
+    user_id: string;
+    content: string;
+    image_url: string | null;
+    verse_reference: string | null;
+    verse_text: string | null;
+    like_count: number;
+    created_at: string;
+    thread_root_id: string | null;
+    reply_to_post_id: string | null;
+    reply_count: number | null;
+  };
+
+  const { data, error } = await supabase
+    .from('posts')
+    .insert({
+      user_id: user.id,
+      content: parsed.data.content,
+      verse_reference: parsed.data.verseReference ?? null,
+      verse_text: parsed.data.verseText ?? null,
+      reply_to_post_id: parsed.data.replyToPostId,
+      thread_root_id: parsed.data.threadRootId,
+    })
+    .select(
+      'id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at, thread_root_id, reply_to_post_id, reply_count'
+    )
+    .single();
+
+  if (error || !data) return { error: error?.message ?? 'Failed to post reply' };
+
+  void logStreakEvent('post_content');
+
+  const row = data as RawPost;
+  const profileMap = await fetchProfiles(supabase, [row.user_id]);
+  return {
+    reply: {
+      id: row.id,
+      user_id: row.user_id,
+      content: row.content,
+      image_url: row.image_url,
+      verse_reference: row.verse_reference,
+      verse_text: row.verse_text,
+      like_count: row.like_count ?? 0,
+      comment_count: 0,
+      user_liked: false,
+      created_at: row.created_at,
+      thread_root_id: row.thread_root_id,
+      reply_to_post_id: row.reply_to_post_id,
+      reply_count: row.reply_count ?? 0,
+      profiles: profileMap.get(row.user_id) ?? null,
+    },
+  };
+}
+
 // ---------------------------------------------------------------------------
 // togglePostLike  like/unlike a post; like_count maintained by DB trigger
 // ---------------------------------------------------------------------------
@@ -610,15 +744,31 @@ export async function getPostById(postId: string): Promise<Post | null> {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // type RawPost = {
+  //   id: string; user_id: string; content: string; image_url: string | null;
+  //   verse_reference: string | null; verse_text: string | null;
+  //   like_count: number; created_at: string;
+  // };
+
   type RawPost = {
-    id: string; user_id: string; content: string; image_url: string | null;
-    verse_reference: string | null; verse_text: string | null;
-    like_count: number; created_at: string;
+    id: string;
+    user_id: string;
+    content: string;
+    image_url: string | null;
+    verse_reference: string | null;
+    verse_text: string | null;
+    like_count: number;
+    created_at: string;
+    thread_root_id: string | null;
+    reply_to_post_id: string | null;
+    reply_count: number | null;
   };
 
   const { data: row, error } = await supabase
     .from('posts')
-    .select('id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at')
+    .select(
+      'id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at, thread_root_id, reply_to_post_id, reply_count'
+    )
     .eq('id', postId)
     .single();
 
@@ -642,11 +792,112 @@ export async function getPostById(postId: string): Promise<Post | null> {
   }
 
   return {
-    id: r.id, user_id: r.user_id, content: r.content,
-    image_url: r.image_url, verse_reference: r.verse_reference,
-    verse_text: r.verse_text, like_count: r.like_count ?? 0,
-    comment_count, user_liked, created_at: r.created_at,
+    id: r.id,
+    user_id: r.user_id,
+    content: r.content,
+    image_url: r.image_url,
+    verse_reference: r.verse_reference,
+    verse_text: r.verse_text,
+    like_count: r.like_count ?? 0,
+    comment_count,
+    user_liked,
+    created_at: r.created_at,
+    thread_root_id: r.thread_root_id,
+    reply_to_post_id: r.reply_to_post_id,
+    reply_count: r.reply_count ?? 0,
     profiles: profileMap.get(r.user_id) ?? null,
+  };
+}
+
+export async function getThread(rootPostId: string): Promise<{ root: Post; replies: Post[] } | null> {
+  const parsed = z.string().uuid().safeParse(rootPostId);
+  if (!parsed.success) return null;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  type RawPost = {
+    id: string;
+    user_id: string;
+    content: string;
+    image_url: string | null;
+    verse_reference: string | null;
+    verse_text: string | null;
+    like_count: number;
+    created_at: string;
+    thread_root_id: string | null;
+    reply_to_post_id: string | null;
+    reply_count: number | null;
+  };
+
+  const [rootRes, repliesRes] = await Promise.all([
+    supabase
+      .from('posts')
+      .select(
+        'id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at, thread_root_id, reply_to_post_id, reply_count'
+      )
+      .eq('id', rootPostId)
+      .single(),
+    supabase
+      .from('posts')
+      .select(
+        'id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at, thread_root_id, reply_to_post_id, reply_count'
+      )
+      .eq('thread_root_id', rootPostId)
+      .order('created_at', { ascending: true }),
+  ]);
+
+  if (rootRes.error || !rootRes.data) return null;
+
+  const rootRow = rootRes.data as RawPost;
+  const replyRows = (repliesRes.data ?? []) as RawPost[];
+  const allRows = [rootRow, ...replyRows];
+  const userIds = [...new Set(allRows.map((p) => p.user_id))];
+  const postIds = allRows.map((p) => p.id);
+
+  const [profileMap, commentRows, likedRows] = await Promise.all([
+    fetchProfiles(supabase, userIds),
+    postIds.length > 0
+      ? supabase.from('post_comments').select('post_id').in('post_id', postIds).then(({ data }) => data ?? [])
+      : Promise.resolve([] as { post_id: string }[]),
+    user && postIds.length > 0
+      ? supabase
+          .from('post_likes')
+          .select('post_id')
+          .eq('user_id', user.id)
+          .in('post_id', postIds)
+          .then(({ data }) => data ?? [])
+      : Promise.resolve([] as { post_id: string }[]),
+  ]);
+
+  const commentMap = new Map<string, number>();
+  (commentRows as { post_id: string }[]).forEach((c) => {
+    commentMap.set(c.post_id, (commentMap.get(c.post_id) ?? 0) + 1);
+  });
+  const likedSet = new Set((likedRows as { post_id: string }[]).map((l) => l.post_id));
+
+  const toPost = (row: RawPost): Post => ({
+    id: row.id,
+    user_id: row.user_id,
+    content: row.content,
+    image_url: row.image_url,
+    verse_reference: row.verse_reference,
+    verse_text: row.verse_text,
+    like_count: row.like_count ?? 0,
+    comment_count: commentMap.get(row.id) ?? 0,
+    user_liked: likedSet.has(row.id),
+    created_at: row.created_at,
+    thread_root_id: row.thread_root_id,
+    reply_to_post_id: row.reply_to_post_id,
+    reply_count: row.reply_count ?? 0,
+    profiles: profileMap.get(row.user_id) ?? null,
+  });
+
+  return {
+    root: toPost(rootRow),
+    replies: replyRows.map(toPost),
   };
 }
 
@@ -675,6 +926,9 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
     id: string; user_id: string; content: string; image_url: string | null;
     verse_reference: string | null; verse_text: string | null;
     like_count: number; created_at: string;
+    thread_root_id: string | null;
+    reply_to_post_id: string | null;
+    reply_count: number | null;
   };
 
   let videoQuery = supabase
@@ -685,37 +939,26 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
 
   let postQuery = supabase
     .from('posts')
-    .select('id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at')
-    .order('created_at', { ascending: false })
-    .limit(FEED_BATCH);
-
-  let repostQuery = supabase
-    .from('reposts')
-    .select('id, user_id, original_post_id, original_type, quote_content, quote_verse_ref, quote_verse_text, created_at')
+    .select(
+      'id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at, thread_root_id, reply_to_post_id, reply_count'
+    )
+    .is('reply_to_post_id', null)
     .order('created_at', { ascending: false })
     .limit(FEED_BATCH);
 
   if (cursor) {
     videoQuery = videoQuery.lt('created_at', cursor);
     postQuery = postQuery.lt('created_at', cursor);
-    repostQuery = repostQuery.lt('created_at', cursor);
   }
 
-  const [{ data: videoRows }, { data: postRows }, { data: repostRows }] = await Promise.all([videoQuery, postQuery, repostQuery]);
-
-  type RawRepost = {
-    id: string; user_id: string; original_post_id: string; original_type: 'video' | 'post';
-    quote_content: string | null; quote_verse_ref: string | null; quote_verse_text: string | null;
-    created_at: string;
-  };
+  const [{ data: videoRows }, { data: postRows }] = await Promise.all([videoQuery, postQuery]);
 
   const videos = (videoRows ?? []) as unknown as RawVideo[];
   const posts = (postRows ?? []) as unknown as RawPost[];
-  const reposts = (repostRows ?? []) as unknown as RawRepost[];
 
   const videoIds = videos.map((v) => v.id);
   const postIds = posts.map((p) => p.id);
-  const allUserIds = [...new Set([...videos.map((v) => v.user_id), ...posts.map((p) => p.user_id), ...reposts.map((r) => r.user_id)])];
+  const allUserIds = [...new Set([...videos.map((v) => v.user_id), ...posts.map((p) => p.user_id)])];
 
   const REACTION_TYPES_FEED: ReactionType[] = ['heart', 'amen', 'laugh', 'shock'];
 
@@ -796,7 +1039,11 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
       like_count: p.like_count ?? 0,
       comment_count: commentMapPost.get(p.id) ?? 0,
       user_liked: userLikedPosts.has(p.id),
-      created_at: p.created_at, profiles: profileMap.get(p.user_id) ?? null,
+      created_at: p.created_at,
+      thread_root_id: p.thread_root_id,
+      reply_to_post_id: p.reply_to_post_id,
+      reply_count: p.reply_count ?? 0,
+      profiles: profileMap.get(p.user_id) ?? null,
     };
     if (p.image_url) {
       return { kind: 'image' as const, data: base as ImagePost };
@@ -804,38 +1051,8 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
     return { kind: 'post' as const, data: base as Post };
   });
 
-  // Resolve repost originals
-  const repostVideoIds = reposts.filter((r) => r.original_type === 'video').map((r) => r.original_post_id);
-  const repostPostIds = reposts.filter((r) => r.original_type === 'post').map((r) => r.original_post_id);
-  const [{ data: origVideos }, { data: origPosts }] = await Promise.all([
-    repostVideoIds.length > 0
-      ? supabase.from('videos').select('id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at').in('id', repostVideoIds)
-      : Promise.resolve({ data: [] as unknown[] }),
-    repostPostIds.length > 0
-      ? supabase.from('posts').select('id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at').in('id', repostPostIds)
-      : Promise.resolve({ data: [] as unknown[] }),
-  ]);
-  const origVideoMap = new Map((origVideos ?? []).map((v) => [(v as { id: string }).id, v as unknown as Video]));
-  const origPostMap = new Map((origPosts ?? []).map((p) => [(p as { id: string }).id, p as unknown as Post]));
-
-  const repostItems: FeedItem[] = reposts.map((r) => ({
-    kind: 'repost' as const,
-    data: {
-      id: r.id,
-      user_id: r.user_id,
-      original_post_id: r.original_post_id,
-      original_type: r.original_type,
-      quote_content: r.quote_content,
-      quote_verse_ref: r.quote_verse_ref,
-      quote_verse_text: r.quote_verse_text,
-      created_at: r.created_at,
-      profiles: profileMap.get(r.user_id) ?? null,
-      original: r.original_type === 'video' ? origVideoMap.get(r.original_post_id) ?? null : origPostMap.get(r.original_post_id) ?? null,
-    } as Repost,
-  }));
-
   // Merge and sort by created_at DESC, take first 5
-  const merged = [...videoItems, ...postItems, ...repostItems].sort(
+  const merged = [...videoItems, ...postItems].sort(
     (a, b) => new Date(b.data.created_at).getTime() - new Date(a.data.created_at).getTime()
   );
 
@@ -979,74 +1196,7 @@ export async function addVerseComment(
       profiles: profileMap.get(user.id) ?? null,
     },
   };
-}
-
-// ---------------------------------------------------------------------------
-// createRepost  repost or quote-repost a video or post
-// ---------------------------------------------------------------------------
-const repostSchema = z.object({
-  originalPostId: z.string().uuid(),
-  originalType: z.enum(['video', 'post']),
-  quoteContent: z.string().max(500).trim().optional(),
-  quoteVerseRef: z.string().max(100).trim().optional(),
-  quoteVerseText: z.string().max(2000).trim().optional(),
-});
-
-export async function createRepost(
-  originalPostId: string,
-  originalType: 'video' | 'post',
-  quoteContent?: string,
-  quoteVerseRef?: string,
-  quoteVerseText?: string
-): Promise<{ repostId: string } | { error: string }> {
-  const parsed = repostSchema.safeParse({ originalPostId, originalType, quoteContent, quoteVerseRef, quoteVerseText });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
-
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
-
-  const { data, error } = await supabase
-    .from('reposts')
-    .insert({
-      user_id: user.id,
-      original_post_id: parsed.data.originalPostId,
-      original_type: parsed.data.originalType,
-      quote_content: parsed.data.quoteContent || null,
-      quote_verse_ref: parsed.data.quoteVerseRef || null,
-      quote_verse_text: parsed.data.quoteVerseText || null,
-    })
-    .select('id')
-    .single();
-
-  if (error) {
-    // Unique constraint: already reposted
-    if (error.code === '23505') return { error: 'Already reposted' };
-    return { error: error.message };
-  }
-
-  void logStreakEvent('post_content');
-  return { repostId: data.id };
-}
-
-// ---------------------------------------------------------------------------
-// deleteRepost  delete own repost
-// ---------------------------------------------------------------------------
-export async function deleteRepost(repostId: string): Promise<{ error?: string }> {
-  if (!z.string().uuid().safeParse(repostId).success) return { error: 'Invalid ID' };
-
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
-
-  const { error } = await supabase
-    .from('reposts')
-    .delete()
-    .eq('id', repostId)
-    .eq('user_id', user.id);
-
-  return error ? { error: error.message } : {};
-}
+};
 
 // ---------------------------------------------------------------------------
 // getVerseComments  fetch today's comments for a verse (latest 30)

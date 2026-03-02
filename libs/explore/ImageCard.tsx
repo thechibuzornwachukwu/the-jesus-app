@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { MessageSquare, Share2, Heart } from 'lucide-react';
+import { MessageSquare, Share2, Heart, Repeat2 } from 'lucide-react';
 import type { ImagePost } from '../../lib/explore/types';
 import { togglePostLike } from '../../lib/explore/actions';
 import { vibrate } from '../shared-ui/haptics';
@@ -11,9 +11,10 @@ interface ImageCardProps {
   height: string;
   onComment: () => void;
   onLikeChanged: (id: string, liked: boolean, likeCount: number) => void;
+  onRepost?: (id: string, type: 'video' | 'post') => void;
 }
 
-export function ImageCard({ post, height, onComment, onLikeChanged }: ImageCardProps) {
+export function ImageCard({ post, height, onComment, onLikeChanged, onRepost }: ImageCardProps) {
   const [liked, setLiked] = useState(post.user_liked);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [liking, setLiking] = useState(false);
@@ -207,6 +208,12 @@ export function ImageCard({ post, height, onComment, onLikeChanged }: ImageCardP
           label="Comment"
           count={post.comment_count}
           onClick={onComment}
+        />
+        <ActionButton
+          icon={<Repeat2 size={26} color="var(--color-text)" />}
+          label="Repost"
+          count={null}
+          onClick={() => onRepost?.(post.id, 'post')}
         />
         <ActionButton
           icon={<Share2 size={26} color="var(--color-text)" />}

@@ -6,6 +6,8 @@ import type { FeedItem, ReactionType } from '../../lib/explore/types';
 import { VideoCard } from './VideoCard';
 import { TextPostCard } from './TextPostCard';
 import { ImageCard } from './ImageCard';
+import { RepostCard } from './RepostCard';
+import { RepostSheet } from './RepostSheet';
 import { getUnifiedFeed } from '../../lib/explore/actions';
 import { EmptyState } from '../shared-ui';
 
@@ -32,6 +34,7 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [repostTarget, setRepostTarget] = useState<{ id: string; type: 'video' | 'post' } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const loadingRef = useRef(false);
@@ -130,6 +133,10 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
     []
   );
 
+  const handleRepost = useCallback((id: string, type: 'video' | 'post') => {
+    setRepostTarget({ id, type });
+  }, []);
+
   const q = searchFilter?.trim().toLowerCase() ?? '';
   const visibleItems = q
     ? items.filter((item) => {
@@ -148,6 +155,7 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
   }
 
   return (
+    <>
     <div
       ref={containerRef}
       style={{
@@ -172,6 +180,7 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
                 isActive={activeIndex === idx}
                 onComment={() => onComment(item.data.id)}
                 onReactionChanged={handleVideoReactionChanged}
+                onRepost={handleRepost}
                 height={feedHeight}
               />
             </div>
@@ -190,7 +199,21 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
                 height={feedHeight}
                 onComment={() => onComment(item.data.id)}
                 onLikeChanged={handleImageLikeChanged}
+                onRepost={handleRepost}
               />
+            </div>
+          );
+        }
+
+        // Repost card  natural height
+        if (item.kind === 'repost') {
+          return (
+            <div
+              key={item.data.id}
+              ref={(el) => { cardRefs.current[idx] = el; }}
+              style={{ scrollSnapAlign: 'start', padding: 'var(--space-3) var(--space-4)' }}
+            >
+              <RepostCard repost={item.data} />
             </div>
           );
         }
@@ -209,6 +232,7 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
             <TextPostCard
               post={item.data}
               onLikeChanged={handlePostLikeChanged}
+              onRepost={handleRepost}
             />
           </div>
         );
@@ -229,5 +253,16 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
         </div>
       )}
     </div>
+
+    {repostTarget && (
+      <RepostSheet
+        open={!!repostTarget}
+        onClose={() => setRepostTarget(null)}
+        originalId={repostTarget.id}
+        originalType={repostTarget.type}
+        onReposted={refreshFeed}
+      />
+    )}
+    </>
   );
 });

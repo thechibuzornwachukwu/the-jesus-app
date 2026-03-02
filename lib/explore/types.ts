@@ -49,6 +49,9 @@ export type Post = {
   comment_count: number;
   user_liked: boolean;
   created_at: string;
+  thread_root_id: string | null;
+  reply_to_post_id: string | null;
+  reply_count: number;
   profiles: { username: string; avatar_url: string | null } | null;
 };
 

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Heart, MessageCircle, Share2, Repeat2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Heart, MessageCircle, MessageSquare, Share2, Repeat2 } from 'lucide-react';
 import type { Post } from '../../lib/explore/types';
 import { Avatar } from '../shared-ui/Avatar';
 import { togglePostLike } from '../../lib/explore/actions';
@@ -10,6 +12,8 @@ interface TextPostCardProps {
   post: Post;
   onLikeChanged?: (postId: string, liked: boolean, likeCount: number) => void;
   onRepost?: (id: string, type: 'video' | 'post') => void;
+  readOnly?: boolean;
+  replyingToUsername?: string | null;
 }
 
 function relativeTime(iso: string): string {
@@ -22,12 +26,22 @@ function relativeTime(iso: string): string {
   return `${Math.floor(hrs / 24)}d`;
 }
 
-export function TextPostCard({ post, onLikeChanged, onRepost }: TextPostCardProps) {
+export function TextPostCard({
+  post,
+  onLikeChanged,
+  onRepost,
+  readOnly = false,
+  replyingToUsername,
+}: TextPostCardProps) {
+  const router = useRouter();
   const [liked, setLiked] = useState(post.user_liked);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [isPressing, setIsPressing] = useState(false);
+  const threadHref = `/explore/thread/${post.thread_root_id ?? post.id}`;
 
   const handleLike = useCallback(async () => {
+    if (readOnly) return;
+
     // Optimistic update
     const newLiked = !liked;
     const newCount = likeCount + (newLiked ? 1 : -1);
@@ -46,7 +60,7 @@ export function TextPostCard({ post, onLikeChanged, onRepost }: TextPostCardProp
       setLikeCount(result.likeCount);
       onLikeChanged?.(post.id, result.liked, result.likeCount);
     }
-  }, [liked, likeCount, post.id, onLikeChanged]);
+  }, [liked, likeCount, post.id, onLikeChanged, readOnly]);
 
   const handleShare = useCallback(() => {
     if (navigator.share) {
@@ -66,12 +80,12 @@ export function TextPostCard({ post, onLikeChanged, onRepost }: TextPostCardProp
         display: 'flex',
         flexDirection: 'column',
         gap: 'var(--space-3)',
-        transform: isPressing ? 'scale(0.97)' : 'scale(1)',
+        transform: !readOnly && isPressing ? 'scale(0.97)' : 'scale(1)',
         transition: 'transform 0.15s ease',
       }}
-      onPointerDown={() => setIsPressing(true)}
-      onPointerUp={() => setIsPressing(false)}
-      onPointerLeave={() => setIsPressing(false)}
+      onPointerDown={() => !readOnly && setIsPressing(true)}
+      onPointerUp={() => !readOnly && setIsPressing(false)}
+      onPointerLeave={() => !readOnly && setIsPressing(false)}
     >
       {/* Author row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
@@ -100,6 +114,12 @@ export function TextPostCard({ post, onLikeChanged, onRepost }: TextPostCardProp
       </div>
 
       {/* Post body */}
+      {post.reply_to_post_id && (
+        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+          Replying to @{replyingToUsername ?? 'unknown'}
+        </div>
+      )}
+
       <p
         style={{
           fontSize: 'var(--font-size-base)',
@@ -150,36 +170,56 @@ export function TextPostCard({ post, onLikeChanged, onRepost }: TextPostCardProp
         </blockquote>
       )}
 
-      {/* Action row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-        <ActionButton
-          icon={
-            <Heart
-              size={18}
-              fill={liked ? 'var(--color-accent)' : 'none'}
-              color={liked ? 'var(--color-accent)' : 'var(--color-text-muted)'}
-            />
-          }
-          label={likeCount > 0 ? String(likeCount) : 'Amen'}
-          active={liked}
-          onClick={handleLike}
-        />
-        <ActionButton
-          icon={<MessageCircle size={18} color="var(--color-text-muted)" />}
-          label={post.comment_count > 0 ? String(post.comment_count) : ''}
-          onClick={() => {/* future comment sheet */}}
-        />
-        <ActionButton
-          icon={<Repeat2 size={18} color="var(--color-text-muted)" />}
-          label=""
-          onClick={() => onRepost?.(post.id, 'post')}
-        />
-        <ActionButton
-          icon={<Share2 size={18} color="var(--color-text-muted)" />}
-          label=""
-          onClick={handleShare}
-        />
-      </div>
+      {!readOnly && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+          <ActionButton
+            icon={
+              <Heart
+                size={18}
+                fill={liked ? 'var(--color-accent)' : 'none'}
+                color={liked ? 'var(--color-accent)' : 'var(--color-text-muted)'}
+              />
+            }
+            label={likeCount > 0 ? String(likeCount) : 'Amen'}
+            active={liked}
+            onClick={handleLike}
+          />
+          <ActionButton
+            icon={<MessageCircle size={18} color="var(--color-text-muted)" />}
+            label={post.comment_count > 0 ? String(post.comment_count) : ''}
+            onClick={() => {/* future comment sheet */}}
+          />
+          <ActionButton
+            icon={<MessageSquare size={18} color="var(--color-text-muted)" />}
+            label=""
+            onClick={() => router.push(threadHref)}
+          />
+          <ActionButton
+            icon={<Repeat2 size={18} color="var(--color-text-muted)" />}
+            label=""
+            onClick={() => onRepost?.(post.id, 'post')}
+          />
+          <ActionButton
+            icon={<Share2 size={18} color="var(--color-text-muted)" />}
+            label=""
+            onClick={handleShare}
+          />
+        </div>
+      )}
+
+      {post.reply_count > 0 && (
+        <Link
+          href={threadHref}
+          style={{
+            fontSize: 'var(--font-size-sm)',
+            color: 'var(--color-accent)',
+            fontWeight: 'var(--font-weight-semibold)',
+            textDecoration: 'none',
+          }}
+        >
+          {post.reply_count} {post.reply_count === 1 ? 'reply' : 'replies'} →
+        </Link>
+      )}
     </div>
   );
 }
