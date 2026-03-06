@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Bookmark, Search, Sparkles, Loader2, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bookmark, Search, Sparkles, Loader2, MessageCircle, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import type { DailyVerseType } from '../../../lib/explore/types';
 import type { BiblePassage, BibleVerse } from '../../../lib/bible';
 import { saveVerse } from '../../../lib/explore/actions';
@@ -20,6 +20,8 @@ const QUICK_REFERENCES = [
   'Romans 8:28',
   'Philippians 4:6',
   'Matthew 11:28',
+  'Isaiah 41:10',
+  'Proverbs 3:5',
 ];
 
 const navBtnStyle: React.CSSProperties = {
@@ -35,6 +37,10 @@ const navBtnStyle: React.CSSProperties = {
   cursor: 'pointer',
   padding: '8px 0',
 };
+
+function isReferenceQuery(q: string) {
+  return /^(\d\s+)?[a-z]+\.?\s+\d+(\s*:\s*\d+(-\d+)?)?$/i.test(q.trim());
+}
 
 function PassageReader({
   passage,
@@ -185,21 +191,25 @@ function SearchVerseRow({ verse }: { verse: BibleVerse }) {
 
 export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
   const router = useRouter();
-  const [query, setQuery] = useState('John 1:1');
+  const [query, setQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passage, setPassage] = useState<BiblePassage | null>(initialPassage);
   const [searchMode, setSearchMode] = useState<'read' | 'search'>('read');
   const [searchResults, setSearchResults] = useState<BibleVerse[]>(initialPassage?.verses || []);
-  const [searchSource, setSearchSource] = useState<'api' | 'fallback' | null>(
-    initialPassage?.source || null
-  );
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const helperText = useMemo(() => {
-    if (searchSource === 'fallback') return 'Showing fallback results (API unavailable).';
-    if (searchSource === 'api') return 'Showing live API results.';
-    return '';
-  }, [searchSource]);
+  useEffect(() => {
+    if (searchOpen) {
+      setTimeout(() => inputRef.current?.focus(), 120);
+    }
+  }, [searchOpen]);
+
+  function toggleSearch() {
+    setSearchOpen((v) => !v);
+    if (searchOpen) setQuery('');
+  }
 
   async function readPassage(reference: string) {
     const trimmed = reference.trim();
@@ -212,8 +222,9 @@ export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
       if (!res.ok) throw new Error(payload.error || 'Failed to read passage');
       setPassage(payload.passage as BiblePassage);
       setSearchResults((payload.passage as BiblePassage).verses || []);
-      setSearchSource((payload.passage as BiblePassage).source);
       setSearchMode('read');
+      setSearchOpen(false);
+      setQuery('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load passage');
     } finally {
@@ -231,9 +242,10 @@ export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
       const payload = await res.json();
       if (!res.ok) throw new Error(payload.error || 'Search failed');
       setSearchResults((payload.verses as BibleVerse[]) || []);
-      setSearchSource(payload.source as 'api' | 'fallback');
       setSearchMode('search');
       if (payload.passage) setPassage(payload.passage as BiblePassage);
+      setSearchOpen(false);
+      setQuery('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to run search');
     } finally {
@@ -241,265 +253,280 @@ export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
     }
   }
 
-  return (
-    <div
-      style={{
-        height: '100%',
-        overflowY: 'auto',
-        padding: 'var(--space-6) var(--space-5)',
-        paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom) + var(--space-10))',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-5)',
-      }}
-    >
-      <header>
-        <h1
-          style={{
-            margin: 0,
-            fontFamily: "'Archivo Condensed', var(--font-display)",
-            fontSize: 'var(--font-size-4xl)',
-            lineHeight: 1,
-            letterSpacing: 'var(--letter-spacing-tight)',
-          }}
-        >
-          Bible
-        </h1>
-        <p style={{ marginTop: 'var(--space-2)', color: 'var(--color-text-muted)', fontSize: 14 }}>
-          Read, search, save, and open Berean in one flow.
-        </p>
-      </header>
+  function handleSubmit() {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    if (isReferenceQuery(trimmed)) {
+      void readPassage(trimmed);
+    } else {
+      void searchKeyword(trimmed);
+    }
+  }
 
-      <section
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+      {/* Sticky top bar */}
+      <header
         style={{
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-xl)',
-          padding: 'var(--space-5)',
-          background:
-            'radial-gradient(140% 120% at 10% 0%, rgba(232,192,128,0.18) 0%, rgba(22,16,9,0.85) 55%, var(--color-surface) 100%)',
-          boxShadow: 'var(--shadow-md)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          background: 'var(--color-bg)',
+          borderBottom: searchOpen ? '1px solid var(--color-border)' : '1px solid transparent',
+          transition: 'border-color 0.2s',
+          flexShrink: 0,
         }}
       >
-        <p
+        {/* Title row */}
+        <div
           style={{
-            margin: 0,
-            display: 'inline-flex',
+            height: 56,
+            display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            color: 'var(--color-accent)',
-            fontSize: 'var(--font-size-xs)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            fontWeight: 700,
+            justifyContent: 'space-between',
+            padding: '0 var(--space-5)',
           }}
         >
-          <Sparkles size={12} />
-          Verse of the Day
-        </p>
-        <p
-          style={{
-            margin: 'var(--space-2) 0 0',
-            fontFamily: 'var(--font-serif)',
-            fontStyle: 'italic',
-            lineHeight: 'var(--line-height-relaxed)',
-            fontSize: 'var(--font-size-lg)',
-          }}
-        >
-          {verseOfDay.text}
-        </p>
-        <p style={{ margin: 'var(--space-3) 0 0', color: 'var(--color-accent)', fontWeight: 700 }}>
-          {verseOfDay.reference}
-        </p>
-        <div style={{ marginTop: 'var(--space-4)', display: 'flex', gap: 'var(--space-2)' }}>
-          <button
-            onClick={async () => {
-              const { error: saveError } = await saveVerse(verseOfDay.reference, verseOfDay.text);
-              if (saveError) showToast(saveError, 'error');
-              else showToast('Verse saved', 'success');
-            }}
+          <h1
             style={{
-              border: '1px solid var(--color-accent)',
-              borderRadius: 'var(--radius-full)',
-              padding: '8px 12px',
-              background: 'transparent',
-              color: 'var(--color-accent)',
-              fontWeight: 700,
-              fontSize: 12,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              cursor: 'pointer',
+              margin: 0,
+              fontFamily: "'Archivo Condensed', var(--font-display)",
+              fontSize: 'var(--font-size-4xl)',
+              lineHeight: 1,
+              letterSpacing: 'var(--letter-spacing-tight)',
             }}
           >
-            <Bookmark size={14} />
-            Save
-          </button>
+            Bible
+          </h1>
           <button
-            onClick={() => router.push('/learn?berean=1')}
+            onClick={toggleSearch}
+            aria-label={searchOpen ? 'Close search' : 'Open search'}
             style={{
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-full)',
-              padding: '8px 12px',
-              background: 'var(--color-surface)',
-              color: 'var(--color-text-primary)',
-              fontWeight: 700,
-              fontSize: 12,
+              width: 40,
+              height: 40,
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 6,
+              justifyContent: 'center',
+              background: searchOpen ? 'var(--color-accent-soft)' : 'none',
+              border: 'none',
+              borderRadius: 'var(--radius-full)',
+              color: searchOpen ? 'var(--color-accent)' : 'var(--color-text-muted)',
               cursor: 'pointer',
+              transition: 'background 0.15s, color 0.15s',
             }}
           >
-            <MessageCircle size={14} />
-            Open Berean
+            {searchOpen ? <X size={20} /> : <Search size={20} />}
           </button>
         </div>
-      </section>
 
-      <section
-        style={{
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-xl)',
-          padding: 'var(--space-4)',
-          background: 'var(--color-surface)',
-        }}
-      >
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+        {/* Sliding search panel */}
+        <div
+          style={{
+            overflow: 'hidden',
+            maxHeight: searchOpen ? 120 : 0,
+            opacity: searchOpen ? 1 : 0,
+            transition: 'max-height 0.25s ease, opacity 0.2s ease',
+            padding: searchOpen ? '0 var(--space-5) var(--space-4)' : '0 var(--space-5)',
+          }}
+        >
           <input
+            ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Reference or keyword (e.g. John 3:16, peace)"
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+            placeholder="John 3:16, peace, faith…"
             className="field-input"
-            style={{ flex: 1 }}
+            style={{ width: '100%', boxSizing: 'border-box' }}
           />
-          <button
-            onClick={() => readPassage(query)}
-            disabled={loading}
+
+          {/* Quick reference chips — horizontal scroll */}
+          <div
             style={{
-              border: 'none',
-              borderRadius: 'var(--radius-md)',
-              padding: '0 12px',
-              background: 'var(--color-accent)',
-              color: 'var(--color-accent-text)',
-              fontWeight: 700,
-              cursor: loading ? 'default' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
+              marginTop: 'var(--space-3)',
+              display: 'flex',
+              gap: 8,
+              overflowX: 'auto',
+              scrollbarWidth: 'none' as const,
             }}
           >
-            <BookOpen size={16} />
-            Read
-          </button>
-          <button
-            onClick={() => searchKeyword(query)}
-            disabled={loading}
-            style={{
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-md)',
-              padding: '0 12px',
-              background: 'var(--color-surface-high)',
-              color: 'var(--color-text-primary)',
-              fontWeight: 700,
-              cursor: loading ? 'default' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <Search size={16} />
-            Search
-          </button>
+            {QUICK_REFERENCES.map((ref) => (
+              <button
+                key={ref}
+                onClick={() => void readPassage(ref)}
+                style={{
+                  flexShrink: 0,
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'var(--color-surface)',
+                  color: 'var(--color-text-muted)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  padding: '5px 12px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {ref}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div style={{ marginTop: 'var(--space-3)', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {QUICK_REFERENCES.map((ref) => (
+        {/* Loading / error bar */}
+        {loading && (
+          <div style={{ padding: '0 var(--space-5) var(--space-2)', display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text-muted)', fontSize: 13 }}>
+            <Loader2 size={13} className="spin-icon" />
+            Loading scripture…
+          </div>
+        )}
+        {error && !loading && (
+          <div style={{ padding: '0 var(--space-5) var(--space-2)', color: 'var(--color-error)', fontSize: 13 }}>
+            {error}
+          </div>
+        )}
+      </header>
+
+      {/* Scrollable content */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: 'var(--space-5)',
+          paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom) + var(--space-10))',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--space-5)',
+        }}
+      >
+        {/* Verse of the Day */}
+        <section
+          style={{
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-xl)',
+            padding: 'var(--space-5)',
+            background:
+              'radial-gradient(140% 120% at 10% 0%, rgba(232,192,128,0.18) 0%, rgba(22,16,9,0.85) 55%, var(--color-surface) 100%)',
+            boxShadow: 'var(--shadow-md)',
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              color: 'var(--color-accent)',
+              fontSize: 'var(--font-size-xs)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              fontWeight: 700,
+            }}
+          >
+            <Sparkles size={12} />
+            Verse of the Day
+          </p>
+          <p
+            style={{
+              margin: 'var(--space-2) 0 0',
+              fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
+              lineHeight: 'var(--line-height-relaxed)',
+              fontSize: 'var(--font-size-lg)',
+            }}
+          >
+            {verseOfDay.text}
+          </p>
+          <p style={{ margin: 'var(--space-3) 0 0', color: 'var(--color-accent)', fontWeight: 700 }}>
+            {verseOfDay.reference}
+          </p>
+          <div style={{ marginTop: 'var(--space-4)', display: 'flex', gap: 'var(--space-2)' }}>
             <button
-              key={ref}
-              onClick={() => {
-                setQuery(ref);
-                void readPassage(ref);
+              onClick={async () => {
+                const { error: saveError } = await saveVerse(verseOfDay.reference, verseOfDay.text);
+                if (saveError) showToast(saveError, 'error');
+                else showToast('Verse saved', 'success');
               }}
               style={{
-                border: '1px solid var(--color-border)',
+                border: '1px solid var(--color-accent)',
                 borderRadius: 'var(--radius-full)',
-                background: 'var(--color-surface-high)',
-                color: 'var(--color-text-muted)',
+                padding: '8px 12px',
+                background: 'transparent',
+                color: 'var(--color-accent)',
+                fontWeight: 700,
                 fontSize: 12,
-                padding: '6px 10px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
                 cursor: 'pointer',
               }}
             >
-              {ref}
+              <Bookmark size={14} />
+              Save
             </button>
-          ))}
-        </div>
-
-        {loading && (
-          <p style={{ marginTop: 'var(--space-3)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Loader2 size={14} className="spin-icon" />
-            Loading scripture...
-          </p>
-        )}
-        {error && (
-          <p style={{ marginTop: 'var(--space-3)', color: 'var(--color-error)' }}>
-            {error}
-          </p>
-        )}
-        {!loading && helperText && (
-          <p style={{ marginTop: 'var(--space-3)', color: 'var(--color-text-faint)', fontSize: 12 }}>
-            {helperText}
-          </p>
-        )}
-      </section>
-
-      {searchMode === 'read' && passage && (
-        <PassageReader
-          passage={passage}
-          onNavigate={(ref) => {
-            setQuery(ref);
-            void readPassage(ref);
-          }}
-        />
-      )}
-
-      {searchMode === 'search' && (
-        <section>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--space-2)' }}>
-            <h2 style={{ margin: 0, fontSize: 18, fontFamily: 'var(--font-serif)', fontVariant: 'small-caps', fontWeight: 700 }}>
-              Search Results
-            </h2>
-            <span style={{ color: 'var(--color-text-faint)', fontSize: 12 }}>
-              {searchResults.length} match{searchResults.length === 1 ? '' : 'es'}
-            </span>
+            <button
+              onClick={() => router.push('/learn?berean=1')}
+              style={{
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-full)',
+                padding: '8px 12px',
+                background: 'var(--color-surface)',
+                color: 'var(--color-text-primary)',
+                fontWeight: 700,
+                fontSize: 12,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                cursor: 'pointer',
+              }}
+            >
+              <MessageCircle size={14} />
+              Open Berean
+            </button>
           </div>
-          {searchResults.length === 0 && (
-            <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>No verses found.</p>
-          )}
-          {searchResults.map((verse, i) => (
-            <SearchVerseRow key={`${verse.reference}-${i}`} verse={verse} />
-          ))}
         </section>
-      )}
 
-      <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-faint)' }}>
-        Need deeper guidance?{' '}
-        <Link href="/learn?berean=1" style={{ color: 'var(--color-accent)' }}>
-          Open Berean
-        </Link>{' '}
-        to ask questions about what you are reading.
-      </p>
+        {/* Passage reader */}
+        {searchMode === 'read' && passage && (
+          <PassageReader
+            passage={passage}
+            onNavigate={(ref) => void readPassage(ref)}
+          />
+        )}
+
+        {/* Search results */}
+        {searchMode === 'search' && (
+          <section>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--space-2)' }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontFamily: 'var(--font-serif)', fontVariant: 'small-caps', fontWeight: 700 }}>
+                Search Results
+              </h2>
+              <span style={{ color: 'var(--color-text-faint)', fontSize: 12 }}>
+                {searchResults.length} match{searchResults.length === 1 ? '' : 'es'}
+              </span>
+            </div>
+            {searchResults.length === 0 && (
+              <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>No verses found.</p>
+            )}
+            {searchResults.map((verse, i) => (
+              <SearchVerseRow key={`${verse.reference}-${i}`} verse={verse} />
+            ))}
+          </section>
+        )}
+
+        <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-faint)' }}>
+          Need deeper guidance?{' '}
+          <Link href="/learn?berean=1" style={{ color: 'var(--color-accent)' }}>
+            Open Berean
+          </Link>{' '}
+          to ask questions about what you are reading.
+        </p>
+      </div>
 
       <style>{`
-        .spin-icon {
-          animation: bible-spin 1s linear infinite;
-        }
-        @keyframes bible-spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
+        .spin-icon { animation: bible-spin 1s linear infinite; }
+        @keyframes bible-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        div[style*="overflowX"]::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );
