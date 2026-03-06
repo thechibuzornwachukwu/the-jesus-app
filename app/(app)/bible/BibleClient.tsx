@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Bookmark, Search, Sparkles, Loader2, MessageCircle } from 'lucide-react';
+import { BookOpen, Bookmark, Search, Sparkles, Loader2, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { DailyVerseType } from '../../../lib/explore/types';
 import type { BiblePassage, BibleVerse } from '../../../lib/bible';
 import { saveVerse } from '../../../lib/explore/actions';
@@ -22,76 +22,162 @@ const QUICK_REFERENCES = [
   'Matthew 11:28',
 ];
 
-function VerseRow({ verse }: { verse: BibleVerse }) {
-  const [saving, setSaving] = useState(false);
+const navBtnStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  background: 'none',
+  border: 'none',
+  color: 'var(--color-accent)',
+  fontFamily: 'var(--font-sans)',
+  fontWeight: 700,
+  fontSize: 14,
+  cursor: 'pointer',
+  padding: '8px 0',
+};
+
+function PassageReader({
+  passage,
+  onNavigate,
+}: {
+  passage: BiblePassage;
+  onNavigate: (ref: string) => void;
+}) {
+  const [savedVerses, setSavedVerses] = useState<Set<string>>(new Set());
+
+  const firstVerse = passage.verses[0];
+  const bookName = firstVerse?.bookName || '';
+  const chapter = firstVerse?.chapter || 0;
+  const prevRef = chapter > 1 ? `${bookName} ${chapter - 1}` : null;
+  const nextRef = chapter > 0 ? `${bookName} ${chapter + 1}` : null;
+
+  async function handleSaveVerse(verse: BibleVerse) {
+    if (savedVerses.has(verse.reference)) return;
+    const { error } = await saveVerse(verse.reference, verse.text);
+    if (error) { showToast(error, 'error'); return; }
+    setSavedVerses((prev) => new Set([...prev, verse.reference]));
+    showToast('Verse saved', 'success');
+  }
+
+  const verses = passage.verses.length > 0
+    ? passage.verses
+    : [{ reference: passage.reference, bookName: '', chapter: 0, verse: 0, text: passage.text }];
+
+  return (
+    <section>
+      <div style={{ marginBottom: 'var(--space-5)' }}>
+        <h2
+          style={{
+            margin: 0,
+            fontFamily: 'var(--font-serif)',
+            fontVariant: 'small-caps',
+            fontWeight: 700,
+            fontSize: 'var(--font-size-2xl)',
+            letterSpacing: '0.04em',
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          {bookName && chapter ? `${bookName} · ${chapter}` : passage.reference}
+        </h2>
+        <p style={{ margin: 'var(--space-1) 0 0', color: 'var(--color-text-muted)', fontSize: 12 }}>
+          {passage.translation}
+        </p>
+      </div>
+
+      <p
+        style={{
+          fontFamily: 'var(--font-serif)',
+          fontStyle: 'italic',
+          fontSize: 'var(--font-size-xl)',
+          lineHeight: 2,
+          margin: 0,
+          color: 'var(--color-text-primary)',
+        }}
+      >
+        {verses.map((verse) => (
+          <span key={verse.reference}>
+            <sup
+              title={`Save ${verse.reference}`}
+              onClick={() => handleSaveVerse(verse)}
+              style={{
+                color: savedVerses.has(verse.reference)
+                  ? 'var(--color-accent)'
+                  : 'var(--color-text-faint)',
+                fontSize: '0.6em',
+                fontStyle: 'normal',
+                fontFamily: 'var(--font-sans)',
+                marginRight: '0.2em',
+                cursor: 'pointer',
+                userSelect: 'none',
+                transition: 'color 0.15s',
+              }}
+            >
+              {verse.verse || ''}
+            </sup>
+            {verse.text}{' '}
+          </span>
+        ))}
+      </p>
+
+      {(prevRef || nextRef) && (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginTop: 'var(--space-8)',
+            paddingTop: 'var(--space-5)',
+            borderTop: '1px solid var(--color-border)',
+          }}
+        >
+          {prevRef ? (
+            <button onClick={() => onNavigate(prevRef)} style={navBtnStyle}>
+              <ChevronLeft size={16} />
+              {prevRef}
+            </button>
+          ) : (
+            <span />
+          )}
+          {nextRef && (
+            <button onClick={() => onNavigate(nextRef)} style={navBtnStyle}>
+              {nextRef}
+              <ChevronRight size={16} />
+            </button>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function SearchVerseRow({ verse }: { verse: BibleVerse }) {
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   async function handleSave() {
     if (saving || saved) return;
     setSaving(true);
     const { error } = await saveVerse(verse.reference, verse.text);
     setSaving(false);
-    if (error) {
-      showToast(error, 'error');
-      return;
-    }
+    if (error) { showToast(error, 'error'); return; }
     setSaved(true);
     showToast('Verse saved', 'success');
   }
 
   return (
-    <div
-      style={{
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-4)',
-        background: 'linear-gradient(145deg, var(--color-surface) 0%, rgba(212,146,42,0.05) 100%)',
-      }}
-    >
-      <p
-        style={{
-          margin: 0,
-          color: 'var(--color-accent)',
-          fontSize: 'var(--font-size-xs)',
-          fontWeight: 700,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-        }}
-      >
+    <div style={{ padding: 'var(--space-3) 0', borderBottom: '1px solid var(--color-border)' }}>
+      <p style={{ margin: 0, color: 'var(--color-accent)', fontSize: 12, fontWeight: 700, letterSpacing: '0.05em' }}>
         {verse.reference}
       </p>
-      <p
-        style={{
-          margin: 'var(--space-2) 0 var(--space-3)',
-          color: 'var(--color-text-primary)',
-          lineHeight: 'var(--line-height-relaxed)',
-          fontFamily: 'var(--font-serif)',
-          fontStyle: 'italic',
-          fontSize: 'var(--font-size-lg)',
-        }}
-      >
+      <p style={{ margin: 'var(--space-2) 0 var(--space-2)', fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 'var(--font-size-lg)', lineHeight: 1.7 }}>
         {verse.text}
       </p>
       <button
         onClick={handleSave}
         disabled={saving || saved}
-        style={{
-          border: '1px solid var(--color-accent)',
-          borderRadius: 'var(--radius-full)',
-          background: saved ? 'var(--color-accent)' : 'transparent',
-          color: saved ? 'var(--color-accent-text)' : 'var(--color-accent)',
-          fontSize: 'var(--font-size-xs)',
-          fontWeight: 700,
-          padding: '6px 12px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 6,
-          cursor: saving || saved ? 'default' : 'pointer',
-          opacity: saving ? 0.7 : 1,
-        }}
+        style={{ background: 'none', border: 'none', color: saved ? 'var(--color-accent)' : 'var(--color-text-faint)', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, cursor: saved ? 'default' : 'pointer', padding: 0 }}
       >
-        <Bookmark size={14} fill={saved ? 'currentColor' : 'none'} />
-        {saved ? 'Saved' : saving ? 'Saving...' : 'Save Verse'}
+        <Bookmark size={12} fill={saved ? 'currentColor' : 'none'} />
+        {saved ? 'Saved' : saving ? 'Saving…' : 'Save'}
       </button>
     </div>
   );
@@ -160,8 +246,8 @@ export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
       style={{
         height: '100%',
         overflowY: 'auto',
-        padding: 'var(--space-6)',
-        paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom) + var(--space-8))',
+        padding: 'var(--space-6) var(--space-5)',
+        paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom) + var(--space-10))',
         display: 'flex',
         flexDirection: 'column',
         gap: 'var(--space-5)',
@@ -370,21 +456,19 @@ export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
       </section>
 
       {searchMode === 'read' && passage && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <h2 style={{ margin: 0, fontSize: 20 }}>{passage.reference}</h2>
-            <span style={{ color: 'var(--color-text-faint)', fontSize: 12 }}>{passage.translation}</span>
-          </div>
-          {(passage.verses.length > 0 ? passage.verses : [{ reference: passage.reference, text: passage.text, bookName: '', chapter: 0, verse: 0 }]).map((verse, i) => (
-            <VerseRow key={`${verse.reference}-${i}`} verse={verse} />
-          ))}
-        </section>
+        <PassageReader
+          passage={passage}
+          onNavigate={(ref) => {
+            setQuery(ref);
+            void readPassage(ref);
+          }}
+        />
       )}
 
       {searchMode === 'search' && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <h2 style={{ margin: 0, fontSize: 20 }}>
+        <section>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--space-2)' }}>
+            <h2 style={{ margin: 0, fontSize: 18, fontFamily: 'var(--font-serif)', fontVariant: 'small-caps', fontWeight: 700 }}>
               Search Results
             </h2>
             <span style={{ color: 'var(--color-text-faint)', fontSize: 12 }}>
@@ -392,12 +476,10 @@ export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
             </span>
           </div>
           {searchResults.length === 0 && (
-            <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>
-              No verses found for this query.
-            </p>
+            <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>No verses found.</p>
           )}
           {searchResults.map((verse, i) => (
-            <VerseRow key={`${verse.reference}-${i}`} verse={verse} />
+            <SearchVerseRow key={`${verse.reference}-${i}`} verse={verse} />
           ))}
         </section>
       )}
