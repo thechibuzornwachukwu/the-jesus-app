@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { ChevronDown, Check, ChevronLeft, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, Check, ChevronLeft, CheckCircle2, Bookmark, Copy, MessageCircle } from 'lucide-react';
 import { COURSE_TRACKS } from '../../lib/learn/course-content';
 import type { CourseTrack, CourseLesson, CourseProgress } from './types';
 import { upsertCourseProgress } from '../../lib/learn/actions';
+import { saveVerse } from '../../lib/explore/actions';
+import { showToast } from '../shared-ui';
 
 
 // ─── Lesson Card ─────────────────────────────────────────────────────────────
@@ -15,13 +17,32 @@ function LessonCard({
   index,
   isComplete,
   onToggleComplete,
+  isVerseActive,
+  onVerseActivate,
+  onVerseDeactivate,
+  isSaved,
+  onSaveVerse,
+  onCopyVerse,
+  onAskBerean,
 }: {
   lesson: CourseLesson;
   index: number;
   isComplete: boolean;
   onToggleComplete: () => void;
+  isVerseActive: boolean;
+  onVerseActivate: () => void;
+  onVerseDeactivate: () => void;
+  isSaved: boolean;
+  onSaveVerse: () => void;
+  onCopyVerse: () => void;
+  onAskBerean: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+
+  // Collapse action strip when lesson collapses
+  useEffect(() => {
+    if (!expanded && isVerseActive) onVerseDeactivate();
+  }, [expanded, isVerseActive, onVerseDeactivate]);
 
   return (
     <div
@@ -61,9 +82,25 @@ function LessonCard({
             color: isComplete ? 'var(--color-text-inverse)' : 'var(--color-text-muted)',
             fontSize: 'var(--font-size-xs)',
             fontWeight: 'var(--font-weight-bold)',
+            position: 'relative',
           }}
         >
           {isComplete ? <Check size={14} /> : index + 1}
+          {/* Saved indicator dot on lesson number */}
+          {isSaved && (
+            <span
+              style={{
+                position: 'absolute',
+                top: -2,
+                right: -2,
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: 'var(--color-accent)',
+                border: '1.5px solid var(--color-bg-surface)',
+              }}
+            />
+          )}
         </span>
         <div style={{ flex: 1 }}>
           <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
@@ -80,23 +117,95 @@ function LessonCard({
 
       {/* Expanded content */}
       {expanded && (
-        <div style={{ padding: '0 var(--space-4) var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          {/* Verse */}
-          <blockquote
-            style={{
-              margin: 0,
-              padding: 'var(--space-3) var(--space-4)',
-              background: 'var(--color-accent-tint)',
-              borderRadius: 'var(--radius-md)',
-            }}
-          >
-            <p style={{ margin: '0 0 var(--space-1)', fontFamily: 'var(--font-serif)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', lineHeight: 'var(--line-height-relaxed)', fontStyle: 'italic' }}>
-              "{lesson.verse}"
-            </p>
-            <cite style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-accent)', fontStyle: 'normal', fontWeight: 'var(--font-weight-semibold)' }}>
-               {lesson.scripture}
-            </cite>
-          </blockquote>
+        <div
+          onClick={() => { if (isVerseActive) onVerseDeactivate(); }}
+          style={{ padding: '0 var(--space-4) var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
+        >
+          {/* Tappable verse block */}
+          <div onClick={(e) => { e.stopPropagation(); isVerseActive ? onVerseDeactivate() : onVerseActivate(); }} style={{ cursor: 'pointer' }}>
+            <blockquote
+              style={{
+                margin: 0,
+                padding: 'var(--space-3) var(--space-4) var(--space-3) calc(var(--space-3) + 22px)',
+                background: isVerseActive ? 'rgba(245,197,61,0.13)' : 'var(--color-accent-tint)',
+                borderRadius: 'var(--radius-md)',
+                border: isVerseActive ? '1px solid rgba(245,197,61,0.38)' : '1px solid transparent',
+                position: 'relative',
+                transition: 'background 0.18s, border-color 0.18s',
+              }}
+            >
+              {/* Gutter bookmark */}
+              <span
+                style={{
+                  position: 'absolute',
+                  top: 'var(--space-3)',
+                  left: 'var(--space-2)',
+                  lineHeight: 0,
+                  transition: 'color 0.18s',
+                }}
+              >
+                <Bookmark
+                  size={13}
+                  fill={isSaved ? 'var(--color-accent)' : 'none'}
+                  color={isSaved ? 'var(--color-accent)' : 'rgba(245,247,247,0.22)'}
+                />
+              </span>
+
+              <p style={{
+                margin: '0 0 var(--space-1)',
+                fontFamily: 'var(--font-serif)',
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-text-primary)',
+                lineHeight: 'var(--line-height-relaxed)',
+                fontStyle: 'italic',
+              }}>
+                &ldquo;{lesson.verse}&rdquo;
+              </p>
+              <cite style={{
+                fontSize: 'var(--font-size-xs)',
+                color: 'var(--color-accent)',
+                fontStyle: 'normal',
+                fontWeight: 'var(--font-weight-semibold)',
+              }}>
+                {lesson.scripture}
+              </cite>
+            </blockquote>
+
+            {/* Action strip */}
+            {isVerseActive && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  display: 'flex',
+                  gap: 'var(--space-2)',
+                  marginTop: 'var(--space-2)',
+                  animation: 'verseActionsIn 0.15s ease both',
+                }}
+              >
+                <button
+                  onClick={(e) => { e.stopPropagation(); onSaveVerse(); }}
+                  style={actionBtnStyle}
+                >
+                  <Bookmark size={13} fill={isSaved ? 'var(--color-accent)' : 'none'} color="currentColor" />
+                  <span>{isSaved ? 'Saved' : 'Save'}</span>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onCopyVerse(); }}
+                  style={actionBtnStyle}
+                >
+                  <Copy size={13} />
+                  <span>Copy</span>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onAskBerean(); }}
+                  style={{ ...actionBtnStyle, flex: 1, justifyContent: 'center' }}
+                >
+                  <MessageCircle size={13} />
+                  <span>Ask Berean</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Teaching */}
           <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', lineHeight: 'var(--line-height-relaxed)' }}>
@@ -139,6 +248,21 @@ function LessonCard({
   );
 }
 
+const actionBtnStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  padding: '6px 12px',
+  borderRadius: 'var(--radius-full)',
+  background: 'var(--color-bg-primary)',
+  border: '1px solid var(--color-border)',
+  color: 'var(--color-text-muted)',
+  fontSize: 'var(--font-size-xs)',
+  fontWeight: 'var(--font-weight-semibold)',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+};
+
 // ─── Track Detail ─────────────────────────────────────────────────────────────
 
 function TrackDetail({
@@ -146,15 +270,19 @@ function TrackDetail({
   completedLessons,
   onBack,
   onToggleLesson,
+  onAskBerean,
 }: {
   track: CourseTrack;
   progress: CourseProgress | undefined;
   completedLessons: Set<string>;
   onBack: () => void;
   onToggleLesson: (lessonId: string, idx: number) => void;
+  onAskBerean?: (verse: string, reference: string) => void;
 }) {
   const [summary, setSummary] = useState('');
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [activeVerseId, setActiveVerseId] = useState<string | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setSummaryLoading(true);
@@ -168,6 +296,26 @@ function TrackDetail({
       .catch(() => {})
       .finally(() => setSummaryLoading(false));
   }, [track.id]);
+
+  const handleSaveVerse = useCallback(async (lesson: CourseLesson) => {
+    if (savedIds.has(lesson.id)) return;
+    const result = await saveVerse(lesson.scripture, lesson.verse);
+    if (result.error) {
+      showToast(result.error, 'error');
+    } else {
+      setSavedIds((prev) => new Set([...prev, lesson.id]));
+      showToast('Verse saved', 'success');
+    }
+  }, [savedIds]);
+
+  const handleCopyVerse = useCallback(async (lesson: CourseLesson) => {
+    try {
+      await navigator.clipboard.writeText(`"${lesson.verse}" — ${lesson.scripture}`);
+      showToast('Copied to clipboard', 'success');
+    } catch {
+      showToast('Could not copy', 'error');
+    }
+  }, []);
 
   const doneCount = track.lessons.filter((l) => completedLessons.has(l.id)).length;
   const pct = Math.round((doneCount / track.lessons.length) * 100);
@@ -193,7 +341,6 @@ function TrackDetail({
             style={{ objectFit: 'cover', objectPosition: 'center' }}
             sizes="100vw"
           />
-          {/* gradient overlay */}
           <div
             style={{
               position: 'absolute',
@@ -201,7 +348,6 @@ function TrackDetail({
               background: 'var(--gradient-card-overlay)',
             }}
           />
-          {/* back button */}
           <button
             onClick={onBack}
             style={{
@@ -223,7 +369,6 @@ function TrackDetail({
           >
             <ChevronLeft size={20} />
           </button>
-          {/* title + progress overlay */}
           <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
             <p
               style={{
@@ -296,11 +441,27 @@ function TrackDetail({
             index={i}
             isComplete={completedLessons.has(lesson.id)}
             onToggleComplete={() => onToggleLesson(lesson.id, i)}
+            isVerseActive={activeVerseId === lesson.id}
+            onVerseActivate={() => setActiveVerseId(lesson.id)}
+            onVerseDeactivate={() => setActiveVerseId(null)}
+            isSaved={savedIds.has(lesson.id)}
+            onSaveVerse={() => handleSaveVerse(lesson)}
+            onCopyVerse={() => handleCopyVerse(lesson)}
+            onAskBerean={() => {
+              setActiveVerseId(null);
+              onAskBerean?.(lesson.verse, lesson.scripture);
+            }}
           />
         ))}
       </div>
 
-      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
+      <style>{`
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        @keyframes verseActionsIn {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -336,7 +497,6 @@ function TrackCard({
         transition: 'transform 0.15s, box-shadow 0.15s',
       }}
     >
-      {/* Background image */}
       {track.image && (
         <>
           <Image
@@ -346,7 +506,6 @@ function TrackCard({
             style={{ objectFit: 'cover', objectPosition: 'center' }}
             sizes="50vw"
           />
-          {/* gradient overlay  bottom-heavy so text is readable */}
           <div
             style={{
               position: 'absolute',
@@ -357,7 +516,6 @@ function TrackCard({
         </>
       )}
 
-      {/* Card content */}
       <div
         style={{
           position: 'relative',
@@ -392,7 +550,6 @@ function TrackCard({
           </p>
         </div>
 
-        {/* Mini progress */}
         <div style={{ height: 3, background: track.image ? 'rgba(245,247,247,0.25)' : 'var(--color-border)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
           <div
             style={{
@@ -422,10 +579,17 @@ function TrackCard({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function FaithCourses({ initialProgress, onCourseSelected }: { initialProgress: CourseProgress[]; onCourseSelected?: (open: boolean) => void }) {
+export function FaithCourses({
+  initialProgress,
+  onCourseSelected,
+  onAskBerean,
+}: {
+  initialProgress: CourseProgress[];
+  onCourseSelected?: (open: boolean) => void;
+  onAskBerean?: (verse: string, reference: string) => void;
+}) {
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
 
-  // Map: trackId → Set<lessonId> of completed lesson IDs
   const [completedMap, setCompletedMap] = useState<Map<string, Set<string>>>(() => {
     const map = new Map<string, Set<string>>();
     for (const prog of initialProgress) {
@@ -481,6 +645,7 @@ export function FaithCourses({ initialProgress, onCourseSelected }: { initialPro
         completedLessons={completedLessons}
         onBack={() => { setSelectedTrackId(null); onCourseSelected?.(false); }}
         onToggleLesson={(lessonId, idx) => handleToggleLesson(selectedTrack.id, lessonId, idx)}
+        onAskBerean={onAskBerean}
       />
     );
   }

@@ -267,10 +267,19 @@ function BereanSection({ onOpen }: { onOpen: () => void }) {
 export function LearnClient({ initialProgress, initialBereanOpen = false }: LearnClientProps) {
   const [courseOpen, setCourseOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(initialBereanOpen);
+  const [bereanSeed, setBereanSeed] = useState<{ text: string; key: number }>({ text: '', key: 0 });
 
   useEffect(() => {
     if (initialBereanOpen) setChatOpen(true);
   }, [initialBereanOpen]);
+
+  function handleAskBerean(verse: string, reference: string) {
+    setBereanSeed((prev) => ({
+      text: `Explain this verse: "${verse}" — ${reference}`,
+      key: prev.key + 1,
+    }));
+    setChatOpen(true);
+  }
 
   return (
     <div
@@ -324,6 +333,7 @@ export function LearnClient({ initialProgress, initialBereanOpen = false }: Lear
         <FaithCourses
           initialProgress={initialProgress}
           onCourseSelected={setCourseOpen}
+          onAskBerean={handleAskBerean}
         />
 
         {/* Below-courses sections  hidden while a track is open */}
@@ -352,6 +362,8 @@ export function LearnClient({ initialProgress, initialBereanOpen = false }: Lear
       <SpiritualGuide
         externalOpen={chatOpen}
         onExternalClose={() => setChatOpen(false)}
+        seedMessage={bereanSeed.text}
+        seedKey={bereanSeed.key}
       />
     </div>
   );

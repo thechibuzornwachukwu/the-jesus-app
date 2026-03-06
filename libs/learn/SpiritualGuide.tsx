@@ -27,9 +27,13 @@ const WELCOME: ChatMessage = {
 interface SpiritualGuideProps {
   externalOpen?: boolean;
   onExternalClose?: () => void;
+  /** Pre-seeded message to auto-send when the sheet opens */
+  seedMessage?: string;
+  /** Increment to re-trigger the same seedMessage text */
+  seedKey?: number;
 }
 
-export function SpiritualGuide({ externalOpen, onExternalClose }: SpiritualGuideProps = {}) {
+export function SpiritualGuide({ externalOpen, onExternalClose, seedMessage, seedKey }: SpiritualGuideProps = {}) {
   const isOpen = externalOpen ?? false;
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [input, setInput] = useState('');
@@ -37,6 +41,7 @@ export function SpiritualGuide({ externalOpen, onExternalClose }: SpiritualGuide
   const [sessionId] = useState(() => newUUID());
   const messagesPaneRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const sentSeedKeyRef = useRef(-1);
 
   const scrollToBottom = useCallback(() => {
     const pane = messagesPaneRef.current;
@@ -51,13 +56,14 @@ export function SpiritualGuide({ externalOpen, onExternalClose }: SpiritualGuide
     return () => window.clearTimeout(id);
   }, [isOpen, messages, loading, scrollToBottom]);
 
-  async function handleSend() {
-    const text = input.trim();
+  // Core send logic — called by button, Enter key, and seed auto-send
+  const handleSend = useCallback(async (textOverride?: string) => {
+    const text = textOverride ?? input.trim();
     if (!text || loading) return;
+    if (!textOverride) setInput('');
 
     const userMsg: ChatMessage = { role: 'user', content: text };
     setMessages((prev) => [...prev, userMsg]);
-    setInput('');
     setLoading(true);
 
     try {
@@ -82,7 +88,21 @@ export function SpiritualGuide({ externalOpen, onExternalClose }: SpiritualGuide
     } finally {
       setLoading(false);
     }
-  }
+  }, [input, loading, messages, sessionId]);
+
+  // Keep a stable ref so the setTimeout below never closes over a stale handleSend
+  const handleSendRef = useRef(handleSend);
+  useEffect(() => { handleSendRef.current = handleSend; });
+
+  // Auto-send seed message when sheet opens with a verse context
+  useEffect(() => {
+    if (!isOpen || !seedMessage || seedKey === undefined) return;
+    if (sentSeedKeyRef.current === seedKey) return;
+    sentSeedKeyRef.current = seedKey;
+
+    const id = window.setTimeout(() => handleSendRef.current(seedMessage), 420);
+    return () => window.clearTimeout(id);
+  }, [isOpen, seedKey, seedMessage]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -279,7 +299,7 @@ export function SpiritualGuide({ externalOpen, onExternalClose }: SpiritualGuide
             }}
           />
           <button
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={!input.trim() || loading}
             aria-label="Send"
             style={{
