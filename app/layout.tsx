@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'The JESUS App',
-  description: 'Christian community, discipleship and spiritual growth',
+  description: 'The WORD, your world, His people.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

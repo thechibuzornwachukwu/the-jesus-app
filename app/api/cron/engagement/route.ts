@@ -65,7 +65,7 @@ async function notifyUser(
 
     if (channelIds.length) {
       const { data: readStates } = await supabase
-        .from('channel_read_states')
+        .from('channel_read_state')
         .select('channel_id, last_read_at')
         .eq('user_id', userId)
         .in('channel_id', channelIds);

@@ -1069,14 +1069,46 @@ export async function getStoriesForCells(
   const [cellsRes, storiesRes] = await Promise.all([
     supabase.from('cells').select('id, name, avatar_url, slug').in('id', cellIds),
     supabase
-      .from('cell_stories')
-      .select('id, cell_id, created_by, media_url, media_type, caption, expires_at, created_at, profiles(username, avatar_url)')
+      .from('stories')
+      .select('id, cell_id, author_id, media_url, media_type, caption, expires_at, created_at')
       .in('cell_id', cellIds)
       .gt('expires_at', now)
       .order('created_at', { ascending: true }),
   ]);
 
-  const stories = (storiesRes.data ?? []) as unknown as Story[];
+  type StoryRow = {
+    id: string;
+    cell_id: string;
+    author_id: string;
+    media_url: string;
+    media_type: 'image' | 'video';
+    caption: string | null;
+    expires_at: string;
+    created_at: string;
+  };
+  const storyRows = (storiesRes.data ?? []) as unknown as StoryRow[];
+  const authorIds = [...new Set(storyRows.map((s) => s.author_id))];
+  const authorMap = new Map<string, { username: string; avatar_url: string | null }>();
+  if (authorIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .in('id', authorIds);
+    (profiles ?? []).forEach((p: { id: string; username: string; avatar_url: string | null }) => {
+      authorMap.set(p.id, { username: p.username, avatar_url: p.avatar_url });
+    });
+  }
+  const stories: Story[] = storyRows.map((s) => ({
+    id: s.id,
+    cell_id: s.cell_id,
+    created_by: s.author_id,
+    media_url: s.media_url,
+    media_type: s.media_type,
+    caption: s.caption,
+    expires_at: s.expires_at,
+    created_at: s.created_at,
+    profiles: authorMap.get(s.author_id),
+  }));
 
   // Fetch viewed story IDs
   const storyIds = stories.map((s) => s.id);
@@ -1140,8 +1172,8 @@ export async function createStory(
 
   const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
-    .from('cell_stories')
-    .insert({ cell_id: cellId, created_by: user.id, media_url: mediaUrl, media_type: mediaType, caption, expires_at })
+    .from('stories')
+    .insert({ cell_id: cellId, author_id: user.id, media_url: mediaUrl, media_type: mediaType, caption, expires_at })
     .select('id')
     .single();
 
