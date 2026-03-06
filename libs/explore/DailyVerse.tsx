@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import type { DailyVerseType, VerseComment } from '../../lib/explore/types';
 import { BottomSheet } from '../shared-ui/BottomSheet';
 import { Avatar } from '../shared-ui/Avatar';
-import { ChevronRight, Bookmark, Heart, MessageCircle, Share2, Send } from 'lucide-react';
+import { ExternalLink, Bookmark, Heart, MessageCircle, Share2, Send } from 'lucide-react';
 import {
   saveVerse,
   toggleVerseLike,
@@ -100,95 +100,182 @@ export function DailyVerse({
 
   return (
     <>
-      {/* ── Collapsed banner ── */}
-      <button
-        onClick={() => setOpen(true)}
+      {/* ── Collapsed devotional card ── */}
+      <div
         style={{
           width: '100%',
           background: 'var(--gradient-verse-banner)',
-          borderTop: 'none',
-          borderLeft: 'none',
-          borderRight: 'none',
           borderBottom: '1px solid var(--color-border)',
-          padding: 'var(--space-3) var(--space-4)',
+          padding: 'var(--space-6) var(--space-5) var(--space-4)',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
-          gap: 'var(--space-3)',
-          textAlign: 'left',
+          textAlign: 'center',
           cursor: 'pointer',
         }}
+        role="button"
+        tabIndex={0}
         aria-label={`Daily verse: ${verse.reference}. Tap to meditate.`}
+        onClick={() => setOpen(true)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpen(true); }}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, color: 'var(--color-accent)', opacity: 0.85 }}>
-          <path d="M12 3v18M3 9h18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-        </svg>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{
-            fontSize: 'var(--font-size-xs)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--color-accent)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            marginBottom: 'var(--space-1)',
-          }}>
-            Today · {verse.reference}
-          </p>
-          <p style={{
+        {/* Label */}
+        <p style={{
+          fontSize: 'var(--font-size-xs)',
+          fontWeight: 'var(--font-weight-semibold)',
+          color: 'var(--color-accent)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          marginBottom: 'var(--space-3)',
+        }}>
+          Verse of the Day
+        </p>
+
+        {/* Decorative opening quote */}
+        <span
+          aria-hidden="true"
+          style={{
             fontFamily: 'var(--font-serif)',
-            fontStyle: 'italic',
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--color-text)',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>
-            {verse.text}
-          </p>
+            fontSize: 'var(--font-size-5xl)',
+            lineHeight: '0.55',
+            color: 'var(--color-accent)',
+            display: 'block',
+            marginBottom: 'var(--space-4)',
+            userSelect: 'none',
+          }}
+        >
+          &#8220;
+        </span>
+
+        {/* Scripture text */}
+        <p style={{
+          fontFamily: 'var(--font-serif)',
+          fontStyle: 'italic',
+          fontSize: 'var(--font-size-2xl)',
+          lineHeight: 'var(--line-height-relaxed)',
+          color: 'var(--color-text)',
+          textShadow: '0 0 32px var(--color-verse-glow)',
+          maxWidth: '30ch',
+          marginBottom: 'var(--space-4)',
+        }}>
+          {verse.text}
+        </p>
+
+        {/* Reference — all-caps small-caps */}
+        <p style={{
+          fontSize: 'var(--font-size-xs)',
+          fontVariant: 'small-caps',
+          textTransform: 'uppercase',
+          letterSpacing: '0.14em',
+          color: 'var(--color-accent)',
+          fontWeight: 'var(--font-weight-semibold)',
+          marginBottom: 'var(--space-5)',
+        }}>
+          {verse.reference}
+        </p>
+
+        {/* Action pills row */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 'var(--space-2)',
+            justifyContent: 'flex-end',
+            width: '100%',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); handleSave(); }}
+            disabled={saved || saving}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '5px 14px',
+              borderRadius: 'var(--radius-full)',
+              border: '1px solid var(--color-accent)',
+              background: saved ? 'var(--color-accent)' : 'transparent',
+              color: saved ? 'var(--color-accent-text)' : 'var(--color-accent)',
+              fontSize: 'var(--font-size-xs)',
+              fontWeight: 'var(--font-weight-semibold)',
+              cursor: saved || saving ? 'default' : 'pointer',
+              opacity: saving ? 0.6 : 1,
+              transition: 'background 0.15s, color 0.15s',
+              flexShrink: 0,
+            }}
+          >
+            <Bookmark size={12} fill={saved ? 'currentColor' : 'none'} />
+            {saved ? 'Saved' : saving ? '…' : 'Save'}
+          </button>
+
+          <a
+            href={`https://bereanbible.com/bsb.php?passage=${encodeURIComponent(verse.reference)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '5px 14px',
+              borderRadius: 'var(--radius-full)',
+              border: '1px solid var(--color-border)',
+              background: 'transparent',
+              color: 'var(--color-text-muted)',
+              fontSize: 'var(--font-size-xs)',
+              fontWeight: 'var(--font-weight-semibold)',
+              textDecoration: 'none',
+              flexShrink: 0,
+            }}
+          >
+            <ExternalLink size={11} />
+            Open Berean
+          </a>
         </div>
-        {/* Right: like count + meditate CTA */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
-          {likeCount > 0 && (
-            <span style={{
-              display: 'flex', alignItems: 'center', gap: 2,
-              fontSize: 11,
-              color: liked ? 'var(--color-accent)' : 'var(--color-text-muted)',
-            }}>
-              <Heart size={10} fill={liked ? 'currentColor' : 'none'} />
-              {likeCount}
-            </span>
-          )}
-          <span style={{ display: 'flex', alignItems: 'center', gap: 2, color: 'var(--color-accent)', fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)' }}>
-            Meditate <ChevronRight size={14} />
-          </span>
-        </div>
-      </button>
+      </div>
 
       {/* ── Expanded sheet ── */}
       <BottomSheet open={open} onClose={() => setOpen(false)} title={verse.reference}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
           {/* Verse quote */}
-          <blockquote style={{ borderLeft: '3px solid var(--color-accent)', paddingLeft: 'var(--space-4)', margin: 0 }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-2) 0' }}>
+            <span
+              aria-hidden="true"
+              style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 'var(--font-size-4xl)',
+                lineHeight: '0.5',
+                color: 'var(--color-accent)',
+                display: 'block',
+                marginBottom: 'var(--space-3)',
+                userSelect: 'none',
+              }}
+            >
+              &#8220;
+            </span>
             <p style={{
               fontFamily: 'var(--font-serif)',
               fontSize: 'var(--font-size-xl)',
               lineHeight: 'var(--line-height-relaxed)',
               color: 'var(--color-text-primary)',
               fontStyle: 'italic',
+              textShadow: '0 0 24px var(--color-verse-glow)',
+              marginBottom: 'var(--space-3)',
             }}>
-              "{verse.text}"
+              {verse.text}
             </p>
-            <cite style={{
-              display: 'block',
-              marginTop: 'var(--space-2)',
-              fontSize: 'var(--font-size-sm)',
+            <p style={{
+              fontSize: 'var(--font-size-xs)',
+              fontVariant: 'small-caps',
+              textTransform: 'uppercase',
+              letterSpacing: '0.14em',
               color: 'var(--color-accent)',
-              fontStyle: 'normal',
               fontWeight: 'var(--font-weight-semibold)',
             }}>
               {verse.reference}
-            </cite>
-          </blockquote>
+            </p>
+          </div>
 
           {/* Reflection */}
           <div style={{ background: 'var(--color-accent-tint)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
