@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Download, ExternalLink, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Download, ExternalLink, Search } from 'lucide-react';
 import { LIBRARY_BOOKS } from '../../../lib/learn/library-content';
 
 const ALL_FILTER = 'All';
 
 export function LibraryClient() {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState(ALL_FILTER);
 
@@ -31,17 +33,53 @@ export function LibraryClient() {
   }, [filter, normalizedQuery]);
 
   return (
-    <div
-      style={{
-        height: '100%',
-        overflowY: 'auto',
-        padding: 'var(--space-6)',
-        paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom) + var(--space-8))',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-5)',
-      }}
-    >
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Sticky back-nav header */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          height: 56,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 var(--space-4)',
+          background: 'var(--color-bg)',
+          borderBottom: '1px solid var(--color-border)',
+          flexShrink: 0,
+        }}
+      >
+        <button
+          onClick={() => router.push('/learn')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'none',
+            border: 'none',
+            color: 'var(--color-text)',
+            fontSize: 'var(--font-size-sm)',
+            fontWeight: 'var(--font-weight-semibold)',
+            cursor: 'pointer',
+            padding: '8px 0',
+          }}
+        >
+          <ArrowLeft size={18} />
+          Equip
+        </button>
+      </div>
+
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: 'var(--space-6)',
+          paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom) + var(--space-8))',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--space-5)',
+        }}
+      >
       <header>
         <h1
           style={{
@@ -245,6 +283,7 @@ export function LibraryClient() {
       <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-faint)' }}>
         Prefer quick access? <Link href="/learn" style={{ color: 'var(--color-accent)' }}>Back to Equip</Link>.
       </p>
+      </div>
     </div>
   );
 }

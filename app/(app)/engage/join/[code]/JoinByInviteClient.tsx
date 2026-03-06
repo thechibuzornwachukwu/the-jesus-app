@@ -281,6 +281,23 @@ export function JoinByInviteClient({
                   {!joining && <ArrowRight size={16} />}
                 </button>
               )}
+              <button
+                onClick={() => router.push('/engage')}
+                style={{
+                  width: '100%',
+                  marginTop: 'var(--space-2)',
+                  padding: 'var(--space-3)',
+                  background: 'transparent',
+                  color: 'var(--color-text-muted)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  fontWeight: 'var(--font-weight-semibold)',
+                  fontSize: 'var(--font-size-sm)',
+                  cursor: 'pointer',
+                }}
+              >
+                ← Back to Communities
+              </button>
             </div>
           ) : null}
         </div>

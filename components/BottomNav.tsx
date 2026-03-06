@@ -43,7 +43,8 @@ export function BottomNav() {
       }}
     >
       {navItems.map(({ href, label, Icon, emphasize }) => {
-        const active = pathname.startsWith(href);
+        const active = pathname.startsWith(href) ||
+          (href === '/learn' && pathname.startsWith('/library'));
         return (
           <button
             key={href}
