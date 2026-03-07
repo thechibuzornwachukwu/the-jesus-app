@@ -37,6 +37,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
     .eq('slug', slug)
     .single();
 
+  if (!user) redirect('/sign-in');
   if (!cell) redirect('/engage');
 
   // Verify membership
