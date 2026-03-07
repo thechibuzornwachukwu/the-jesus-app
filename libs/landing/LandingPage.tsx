@@ -1,8 +1,9 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { Heart, MessageCircle, Bookmark } from 'lucide-react';
+import { AuthModal } from '../shared-ui/AuthModal';
 
 const VERSE_FRAGMENTS = [
   { text: 'In the beginning was the Word',      top: '8%',  left: '5%',  delay: '0s',   duration: '9s' },
@@ -28,8 +29,24 @@ const VERSE_FRAGMENTS = [
 // }
 
 export default function LandingPage() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'sign-in' | 'sign-up'>('sign-in');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const modal = params.get('modal');
+    if (modal === 'signup') { setModalMode('sign-up'); setModalOpen(true); }
+    else if (modal === 'signin') { setModalMode('sign-in'); setModalOpen(true); }
+  }, []);
+
+  function openSignUp() { setModalMode('sign-up'); setModalOpen(true); }
+  function openSignIn() { setModalMode('sign-in'); setModalOpen(true); }
+
   return (
     <>
+      {modalOpen && (
+        <AuthModal defaultMode={modalMode} onClose={() => setModalOpen(false)} />
+      )}
       <style>{`
         @keyframes floatVerse {
           0%   { transform: translateY(0px);   opacity: 0.07; }
@@ -220,7 +237,7 @@ export default function LandingPage() {
             display: 'flex', gap: '0.875rem', flexWrap: 'wrap',
             justifyContent: 'center', position: 'relative', zIndex: 2,
           }}>
-            <Link href="/sign-up" className="lp-primary" style={{
+            <button onClick={openSignUp} className="lp-primary" style={{
               fontFamily: 'var(--font-sans)',
               fontSize: '1rem',
               fontWeight: 700,
@@ -228,12 +245,12 @@ export default function LandingPage() {
               background: 'var(--color-accent)',
               borderRadius: 'var(--radius-full)',
               padding: '0.875rem 2rem',
-              textDecoration: 'none',
-              display: 'inline-block',
+              border: 'none',
+              cursor: 'pointer',
             }}>
               Get Started
-            </Link>
-            <Link href="/sign-in" className="lp-ghost" style={{
+            </button>
+            <button onClick={openSignIn} className="lp-ghost" style={{
               fontFamily: 'var(--font-sans)',
               fontSize: '1rem',
               fontWeight: 600,
@@ -242,11 +259,10 @@ export default function LandingPage() {
               border: '1px solid rgba(240,230,200,0.25)',
               borderRadius: 'var(--radius-full)',
               padding: '0.875rem 2rem',
-              textDecoration: 'none',
-              display: 'inline-block',
+              cursor: 'pointer',
             }}>
               Sign In
-            </Link>
+            </button>
           </div>
         </section>
 
@@ -565,7 +581,7 @@ export default function LandingPage() {
             }}>
               &ldquo;Where two or three are gathered in my name&rdquo; Matthew 18:20
             </p> */}
-            <Link href="/sign-up" className="lp-primary" style={{
+            <button onClick={openSignUp} className="lp-primary" style={{
               fontFamily: 'var(--font-sans)',
               fontSize: '1.05rem',
               fontWeight: 700,
@@ -573,11 +589,11 @@ export default function LandingPage() {
               background: 'var(--color-accent)',
               borderRadius: 'var(--radius-full)',
               padding: '1rem 2.5rem',
-              textDecoration: 'none',
-              display: 'inline-block',
+              border: 'none',
+              cursor: 'pointer',
             }}>
               Get Started
-            </Link>
+            </button>
           </div>
         </section>
 

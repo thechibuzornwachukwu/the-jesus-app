@@ -27,16 +27,6 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isAppRoute = pathname.startsWith('/engage') ||
-    pathname.startsWith('/learn') ||
-    pathname.startsWith('/explore') ||
-    pathname.startsWith('/profile');
-
-  if (isAppRoute && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/sign-in';
-    return NextResponse.redirect(url);
-  }
 
   // Already signed in  redirect away from auth pages
   if (user && (pathname === '/sign-in' || pathname === '/sign-up')) {
