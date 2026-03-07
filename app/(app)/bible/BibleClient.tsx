@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Bookmark, Search, Sparkles, Loader2, MessageCircle, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Bookmark, Search, Sparkles, Loader2, MessageCircle, ChevronLeft, ChevronRight, X, List, Type } from 'lucide-react';
 import type { DailyVerseType } from '../../../lib/explore/types';
 import type { BiblePassage, BibleVerse } from '../../../lib/bible';
 import { saveVerse } from '../../../lib/explore/actions';
 import { showToast } from '../../../libs/shared-ui';
+import { BIBLE_BOOKS, MAX_VERSE } from '../../../lib/bible/books';
+import { useBerean } from '../../../lib/berean/context';
 
 interface BibleClientProps {
   initialPassage: BiblePassage | null;
@@ -45,9 +45,11 @@ function isReferenceQuery(q: string) {
 function PassageReader({
   passage,
   onNavigate,
+  onAskBerean,
 }: {
   passage: BiblePassage;
   onNavigate: (ref: string) => void;
+  onAskBerean?: (reference: string) => void;
 }) {
   const [savedVerses, setSavedVerses] = useState<Set<string>>(new Set());
 
@@ -151,6 +153,30 @@ function PassageReader({
           )}
         </div>
       )}
+
+      {onAskBerean && (
+        <div style={{ marginTop: 'var(--space-5)' }}>
+          <button
+            onClick={() => onAskBerean(passage.reference)}
+            style={{
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-full)',
+              padding: '8px 14px',
+              background: 'var(--color-surface)',
+              color: 'var(--color-text-primary)',
+              fontWeight: 700,
+              fontSize: 12,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              cursor: 'pointer',
+            }}
+          >
+            <MessageCircle size={14} />
+            Ask Berean about {passage.reference}
+          </button>
+        </div>
+      )}
     </section>
   );
 }
@@ -189,10 +215,110 @@ function SearchVerseRow({ verse }: { verse: BibleVerse }) {
   );
 }
 
+const selectStyle: React.CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+  height: 38,
+  background: 'var(--color-surface)',
+  border: '1px solid var(--color-border)',
+  borderRadius: 'var(--radius-lg)',
+  color: 'var(--color-text)',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 13,
+  fontWeight: 600,
+  padding: '0 8px',
+  cursor: 'pointer',
+  outline: 'none',
+  appearance: 'none' as const,
+  WebkitAppearance: 'none' as const,
+};
+
+function BookChapterSelector({ onGo }: { onGo: (ref: string) => void }) {
+  const [book, setBook] = useState(BIBLE_BOOKS[0].name);
+  const [chapter, setChapter] = useState(1);
+  const [verse, setVerse] = useState(0);
+
+  const currentBook = BIBLE_BOOKS.find((b) => b.name === book) ?? BIBLE_BOOKS[0];
+  const chapterCount = currentBook.chapters;
+
+  function handleBookChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const newBook = BIBLE_BOOKS.find((b) => b.name === e.target.value) ?? BIBLE_BOOKS[0];
+    setBook(newBook.name);
+    setChapter(1);
+    setVerse(0);
+  }
+
+  function handleChapterChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    setChapter(Number(e.target.value));
+    setVerse(0);
+  }
+
+  function handleGo() {
+    const ref = verse > 0 ? `${book} ${chapter}:${verse}` : `${book} ${chapter}`;
+    onGo(ref);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 6 }}>
+        {/* Book */}
+        <div style={{ position: 'relative', flex: 2, minWidth: 0 }}>
+          <select value={book} onChange={handleBookChange} style={selectStyle}>
+            {BIBLE_BOOKS.map((b) => (
+              <option key={b.abbr} value={b.name}>{b.name}</option>
+            ))}
+          </select>
+          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)', fontSize: 10 }}>▾</span>
+        </div>
+
+        {/* Chapter */}
+        <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+          <select value={chapter} onChange={handleChapterChange} style={selectStyle}>
+            {Array.from({ length: chapterCount }, (_, i) => i + 1).map((ch) => (
+              <option key={ch} value={ch}>{ch}</option>
+            ))}
+          </select>
+          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)', fontSize: 10 }}>▾</span>
+        </div>
+
+        {/* Verse */}
+        <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+          <select value={verse} onChange={(e) => setVerse(Number(e.target.value))} style={selectStyle}>
+            <option value={0}>All</option>
+            {Array.from({ length: MAX_VERSE }, (_, i) => i + 1).map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+          </select>
+          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)', fontSize: 10 }}>▾</span>
+        </div>
+      </div>
+
+      <button
+        onClick={handleGo}
+        style={{
+          height: 38,
+          background: 'var(--color-accent)',
+          border: 'none',
+          borderRadius: 'var(--radius-lg)',
+          color: 'var(--color-accent-text)',
+          fontFamily: 'var(--font-sans)',
+          fontWeight: 700,
+          fontSize: 14,
+          cursor: 'pointer',
+          letterSpacing: '0.03em',
+        }}
+      >
+        Go
+      </button>
+    </div>
+  );
+}
+
 export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
-  const router = useRouter();
+  const { openBerean } = useBerean();
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [selectorMode, setSelectorMode] = useState<'text' | 'structured'>('text');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passage, setPassage] = useState<BiblePassage | null>(initialPassage);
@@ -201,10 +327,10 @@ export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (searchOpen) {
+    if (searchOpen && selectorMode === 'text') {
       setTimeout(() => inputRef.current?.focus(), 120);
     }
-  }, [searchOpen]);
+  }, [searchOpen, selectorMode]);
 
   function toggleSearch() {
     setSearchOpen((v) => !v);
@@ -324,53 +450,85 @@ export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
         <div
           style={{
             overflow: 'hidden',
-            maxHeight: searchOpen ? 120 : 0,
+            maxHeight: searchOpen ? (selectorMode === 'structured' ? 200 : 160) : 0,
             opacity: searchOpen ? 1 : 0,
-            transition: 'max-height 0.25s ease, opacity 0.2s ease',
+            transition: 'max-height 0.3s ease, opacity 0.2s ease',
             padding: searchOpen ? '0 var(--space-5) var(--space-4)' : '0 var(--space-5)',
           }}
         >
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
-            placeholder="John 3:16, peace, faith…"
-            className="field-input"
-            style={{ width: '100%', boxSizing: 'border-box' }}
-          />
-
-          {/* Quick reference chips — horizontal scroll */}
-          <div
-            style={{
-              marginTop: 'var(--space-3)',
-              display: 'flex',
-              gap: 8,
-              overflowX: 'auto',
-              scrollbarWidth: 'none' as const,
-            }}
-          >
-            {QUICK_REFERENCES.map((ref) => (
+          {/* Mode toggle: Text | Browse */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 'var(--space-3)' }}>
+            {(['text', 'structured'] as const).map((mode) => (
               <button
-                key={ref}
-                onClick={() => void readPassage(ref)}
+                key={mode}
+                onClick={() => setSelectorMode(mode)}
                 style={{
-                  flexShrink: 0,
-                  border: '1px solid var(--color-border)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '4px 12px',
                   borderRadius: 'var(--radius-full)',
-                  background: 'var(--color-surface)',
-                  color: 'var(--color-text-muted)',
+                  border: selectorMode === mode ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
+                  background: selectorMode === mode ? 'var(--color-accent-soft)' : 'var(--color-surface)',
+                  color: selectorMode === mode ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                  fontFamily: 'var(--font-sans)',
                   fontSize: 12,
-                  fontWeight: 600,
-                  padding: '5px 12px',
+                  fontWeight: 700,
                   cursor: 'pointer',
-                  whiteSpace: 'nowrap',
+                  transition: 'background 0.15s, border-color 0.15s, color 0.15s',
                 }}
               >
-                {ref}
+                {mode === 'text' ? <><Type size={12} /> Text</> : <><List size={12} /> Browse</>}
               </button>
             ))}
           </div>
+
+          {selectorMode === 'text' ? (
+            <>
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+                placeholder="John 3:16, peace, faith…"
+                className="field-input"
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+              {/* Quick reference chips — horizontal scroll */}
+              <div
+                style={{
+                  marginTop: 'var(--space-3)',
+                  display: 'flex',
+                  gap: 8,
+                  overflowX: 'auto',
+                  scrollbarWidth: 'none' as const,
+                }}
+              >
+                {QUICK_REFERENCES.map((ref) => (
+                  <button
+                    key={ref}
+                    onClick={() => void readPassage(ref)}
+                    style={{
+                      flexShrink: 0,
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-full)',
+                      background: 'var(--color-surface)',
+                      color: 'var(--color-text-muted)',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      padding: '5px 12px',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {ref}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <BookChapterSelector onGo={(ref) => { void readPassage(ref); }} />
+          )}
         </div>
 
         {/* Loading / error bar */}
@@ -465,7 +623,7 @@ export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
               Save
             </button>
             <button
-              onClick={() => router.push('/learn?berean=1')}
+              onClick={() => openBerean(`Tell me about ${verseOfDay.reference}: ${verseOfDay.text}`)}
               style={{
                 border: '1px solid var(--color-border)',
                 borderRadius: 'var(--radius-full)',
@@ -481,7 +639,7 @@ export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
               }}
             >
               <MessageCircle size={14} />
-              Open Berean
+              Ask Berean
             </button>
           </div>
         </section>
@@ -491,6 +649,7 @@ export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
           <PassageReader
             passage={passage}
             onNavigate={(ref) => void readPassage(ref)}
+            onAskBerean={(ref) => openBerean(`Explain the passage ${ref} and its meaning for my faith.`)}
           />
         )}
 
@@ -516,9 +675,12 @@ export function BibleClient({ initialPassage, verseOfDay }: BibleClientProps) {
 
         <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-faint)' }}>
           Need deeper guidance?{' '}
-          <Link href="/learn?berean=1" style={{ color: 'var(--color-accent)' }}>
+          <button
+            onClick={() => openBerean()}
+            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--color-accent)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+          >
             Open Berean
-          </Link>{' '}
+          </button>{' '}
           to ask questions about what you are reading.
         </p>
       </div>

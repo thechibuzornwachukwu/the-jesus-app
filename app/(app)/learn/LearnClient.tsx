@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { FaithCourses } from '../../../libs/learn/FaithCourses';
 import { SermonExtractor } from '../../../libs/learn/SermonExtractor';
-import { SpiritualGuide } from '../../../libs/learn/SpiritualGuide';
 import type { CourseProgress } from '../../../libs/learn/types';
 import { LIBRARY_BOOKS } from '../../../lib/learn/library-content';
+import { useBerean } from '../../../lib/berean/context';
 
 interface LearnClientProps {
   initialProgress: CourseProgress[];
@@ -265,20 +265,16 @@ function BereanSection({ onOpen }: { onOpen: () => void }) {
 // ─── Main: LearnClient ────────────────────────────────────────────────────────
 
 export function LearnClient({ initialProgress, initialBereanOpen = false }: LearnClientProps) {
-  const [courseOpen, setCourseOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(initialBereanOpen);
-  const [bereanSeed, setBereanSeed] = useState<{ text: string; key: number }>({ text: '', key: 0 });
+  const [courseOpen, setCourseOpen] = React.useState(false);
+  const { openBerean } = useBerean();
 
   useEffect(() => {
-    if (initialBereanOpen) setChatOpen(true);
+    if (initialBereanOpen) openBerean();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialBereanOpen]);
 
   function handleAskBerean(verse: string, reference: string) {
-    setBereanSeed((prev) => ({
-      text: `Explain this verse: "${verse}" — ${reference}`,
-      key: prev.key + 1,
-    }));
-    setChatOpen(true);
+    openBerean(`Explain this verse: "${verse}" — ${reference}`);
   }
 
   return (
@@ -352,19 +348,11 @@ export function LearnClient({ initialProgress, initialBereanOpen = false }: Lear
 
             {/* Berean AI Chat */}
             <div style={{ marginTop: 'var(--space-8)' }}>
-              <BereanSection onOpen={() => setChatOpen(true)} />
+              <BereanSection onOpen={() => openBerean()} />
             </div>
           </>
         )}
       </div>
-
-      {/* Berean chat sheet, controlled by the Berean section card */}
-      <SpiritualGuide
-        externalOpen={chatOpen}
-        onExternalClose={() => setChatOpen(false)}
-        seedMessage={bereanSeed.text}
-        seedKey={bereanSeed.key}
-      />
     </div>
   );
 }
