@@ -21,6 +21,7 @@ export default async function CellPage({ params }: CellPageProps) {
     .eq('slug', slug)
     .single();
 
+  if (!user) redirect('/sign-in');
   if (!cell) redirect('/engage');
 
   // Verify membership

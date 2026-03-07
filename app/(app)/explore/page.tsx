@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { createClient } from '../../../lib/supabase/server';
 import { getUnifiedFeed } from '../../../lib/explore/actions';
 import { getDailyVerse } from '../../../lib/explore/daily-verses';
@@ -11,6 +12,8 @@ export default async function ExplorePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) redirect('/sign-in');
 
   const [{ items, nextCursor }, dailyVerse] = await Promise.all([
     getUnifiedFeed(),

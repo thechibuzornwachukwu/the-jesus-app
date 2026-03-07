@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { createClient } from '../../../lib/supabase/server';
 import {
   getDiscoverCellsWithActivityMatch,
@@ -18,6 +19,8 @@ export default async function EngagePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) redirect('/sign-in');
 
   const verse = getDailyVerse();
 

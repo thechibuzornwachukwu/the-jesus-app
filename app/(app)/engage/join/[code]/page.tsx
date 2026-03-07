@@ -18,6 +18,8 @@ export default async function JoinByInvitePage({ params }: JoinPageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) redirect('/sign-in');
+
   // Validate invite
   const { data: invite } = await supabase
     .from('cell_invites')

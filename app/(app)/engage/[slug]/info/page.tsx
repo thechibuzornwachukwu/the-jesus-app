@@ -32,6 +32,7 @@ export default async function CellInfoRoute({ params }: InfoPageProps) {
     .eq('slug', slug)
     .single();
 
+  if (!user) redirect('/sign-in');
   if (!cell) redirect('/engage');
 
   const [{ count: memberCount }, membersResult, membershipResult] = await Promise.all([
