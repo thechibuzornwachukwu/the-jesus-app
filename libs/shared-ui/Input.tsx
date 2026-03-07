@@ -18,6 +18,7 @@ export function Input({
   icon,
   className = '',
   type: typeProp = 'text',
+  placeholder,
   ...props
 }: InputProps) {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,6 +32,11 @@ export function Input({
     ? 'border border-l-2 border-[var(--color-error)] focus:border-[var(--color-error)]'
     : 'border border-[var(--color-border)] focus:border-[var(--color-border-focus)] focus:shadow-[var(--input-focus-ring)]';
 
+  // If a real placeholder is provided, use it — styled invisible at rest, subtle on focus.
+  // If none, fall back to a single space which enables the :placeholder-shown CSS trick
+  // without showing any hint text.
+  const resolvedPlaceholder = placeholder ?? ' ';
+
   return (
     <div className="flex flex-col gap-[var(--space-1)] w-full">
       <div className="relative">
@@ -41,17 +47,19 @@ export function Input({
           </span>
         )}
 
-        {/* Input  placeholder=" " enables the CSS :placeholder-shown trick */}
+        {/* Placeholder opacity: hidden at rest, subtle on focus so it doesn't compete with the floating label */}
         <input
           id={id}
           type={inputType}
           {...props}
-          placeholder=" "
+          placeholder={resolvedPlaceholder}
           className={[
             'peer w-full h-[var(--input-height)] bg-[var(--input-bg)]',
             'rounded-[var(--radius-lg)] outline-none',
             'pt-5 pb-2 text-[length:var(--font-size-base)] text-[var(--color-text)]',
             'transition-all duration-[180ms] ease-[ease]',
+            '[&::placeholder]:opacity-0 [&::placeholder]:transition-opacity [&::placeholder]:duration-[180ms]',
+            'focus:[&::placeholder]:opacity-40',
             paddingLeft,
             paddingRight,
             borderClasses,
@@ -59,7 +67,7 @@ export function Input({
           ].join(' ')}
         />
 
-        {/* Floating label */}
+        {/* Floating label — active color also applied when field has a value (pre-filled) */}
         <label
           htmlFor={id}
           className={[
@@ -69,8 +77,8 @@ export function Input({
             icon ? 'left-[2.75rem]' : 'left-[var(--space-4)]',
             // Floated on focus
             'peer-focus:top-2 peer-focus:translate-y-0 peer-focus:scale-[0.80] peer-focus:text-[var(--input-label-active)]',
-            // Floated when field has a value
-            'peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:scale-[0.80]',
+            // Floated when field has a value — also active color so pre-filled looks the same as interacted
+            'peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:scale-[0.80] peer-[:not(:placeholder-shown)]:text-[var(--input-label-active)]',
           ].join(' ')}
         >
           {label}
@@ -115,32 +123,36 @@ export function TextareaInput({
   id,
   rows = 3,
   className = '',
+  placeholder,
   ...props
 }: TextareaInputProps) {
   const borderClasses = error
     ? 'border border-l-2 border-[var(--color-error)] focus:border-[var(--color-error)]'
     : 'border border-[var(--color-border)] focus:border-[var(--color-border-focus)] focus:shadow-[var(--input-focus-ring)]';
 
+  const resolvedPlaceholder = placeholder ?? ' ';
+
   return (
     <div className="flex flex-col gap-[var(--space-1)] w-full">
       <div className="relative">
-        {/* Textarea  placeholder=" " enables :placeholder-shown trick */}
         <textarea
           id={id}
           rows={rows}
           {...props}
-          placeholder=" "
+          placeholder={resolvedPlaceholder}
           className={[
             'peer w-full bg-[var(--input-bg)] rounded-[var(--radius-lg)]',
             'px-[var(--space-4)] pt-7 pb-[var(--space-3)]',
             'text-[length:var(--font-size-base)] text-[var(--color-text)]',
             'resize-none outline-none transition-all duration-[180ms] ease-[ease]',
+            '[&::placeholder]:opacity-0 [&::placeholder]:transition-opacity [&::placeholder]:duration-[180ms]',
+            'focus:[&::placeholder]:opacity-40',
             borderClasses,
             className,
           ].join(' ')}
         />
 
-        {/* Floating label */}
+        {/* Floating label — active color also applied when pre-filled */}
         <label
           htmlFor={id}
           className={[
@@ -149,8 +161,8 @@ export function TextareaInput({
             'transition-all duration-[180ms] ease-[ease]',
             // Floated on focus
             'peer-focus:top-2 peer-focus:scale-[0.80] peer-focus:text-[var(--input-label-active)]',
-            // Floated when field has a value
-            'peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:scale-[0.80]',
+            // Floated when field has a value — also active color
+            'peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:scale-[0.80] peer-[:not(:placeholder-shown)]:text-[var(--input-label-active)]',
           ].join(' ')}
         >
           {label}
