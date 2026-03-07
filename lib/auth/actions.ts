@@ -58,6 +58,13 @@ export async function signUp(_: unknown, formData: FormData) {
   return { success: 'Check your email to confirm your account.' };
 }
 
+export async function requireAuth() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthorized' as const, user: null };
+  return { error: null, user };
+}
+
 export async function signInWithMagicLink(_: unknown, formData: FormData) {
   const email = formData.get('email');
   const parsed = z.string().email().safeParse(email);

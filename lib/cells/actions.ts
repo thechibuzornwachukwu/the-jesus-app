@@ -60,24 +60,26 @@ export async function createCell(
   const parsed = cellSchema.safeParse(raw);
   if (!parsed.success) return { error: 'Invalid cell details.' };
 
+  // Generate slug atomically with the insert to avoid race conditions
+  const newId = crypto.randomUUID();
+  const slug = generateCellSlug(parsed.data.name, newId);
+
   const { data: cell, error: cellError } = await supabase
     .from('cells')
     .insert({
+      id: newId,
       name: parsed.data.name,
       description: parsed.data.description ?? null,
       category: parsed.data.category,
       avatar_url: parsed.data.avatar_url ?? null,
       creator_id: user.id,
       is_public: parsed.data.is_public,
+      slug,
     })
     .select('id')
     .single();
 
   if (cellError || !cell) return { error: 'Failed to create cell.' };
-
-  // Generate and store the slug
-  const slug = generateCellSlug(parsed.data.name, cell.id);
-  await supabase.from('cells').update({ slug }).eq('id', cell.id);
 
   await supabase.from('cell_members').insert({
     cell_id: cell.id,
@@ -921,6 +923,8 @@ export async function getDiscoverCellsWithActivityMatch(
     .from('cells')
     .select('*')
     .eq('is_public', true)
+    // Cells with recent activity first; new cells (null last_activity) fall back to created_at
+    .order('last_activity', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
     .limit(30);
 

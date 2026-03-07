@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '../supabase/server';
-import type { Channel, ChannelCategory, ChannelType } from './types';
+import type { Channel, ChannelCategory, ChannelType, Message } from './types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -20,6 +20,23 @@ async function requireAdmin(
 }
 
 // ─── Read ──────────────────────────────────────────────────────────────────────
+
+export async function fetchChannelMessages(channelId: string): Promise<Message[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from('chat_messages')
+    .select('*, profiles(username, avatar_url)')
+    .eq('channel_id', channelId)
+    .order('created_at', { ascending: true })
+    .limit(50);
+
+  return (data as Message[]) ?? [];
+}
 
 export async function getChannelsForCell(cellId: string): Promise<ChannelCategory[]> {
   const supabase = await createClient();

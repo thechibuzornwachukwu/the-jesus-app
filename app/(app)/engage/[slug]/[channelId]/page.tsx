@@ -29,7 +29,6 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in');
 
   // Resolve cell by slug
   const { data: cell } = await supabase

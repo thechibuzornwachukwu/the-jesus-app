@@ -22,7 +22,6 @@ export default async function CellInfoRoute({ params }: InfoPageProps) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in');
 
   // Resolve cell by slug
   const { data: cell } = await supabase

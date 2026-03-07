@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '../../../lib/supabase/server';
 import { getCourseProgress } from '../../../lib/learn/actions';
 import { LearnClient } from './LearnClient';
 
@@ -10,12 +8,6 @@ type LearnPageProps = {
 };
 
 export default async function LearnPage({ searchParams }: LearnPageProps) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in');
-
   const progress = await getCourseProgress();
   const params = searchParams ? await searchParams : undefined;
   const initialBereanOpen = params?.berean === '1';

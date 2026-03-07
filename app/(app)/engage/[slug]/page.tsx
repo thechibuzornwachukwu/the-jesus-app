@@ -13,7 +13,6 @@ export default async function CellPage({ params }: CellPageProps) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in');
 
   // Resolve cell by slug
   const { data: cell } = await supabase
@@ -47,38 +46,69 @@ export default async function CellPage({ params }: CellPageProps) {
     redirect(`/engage/${slug}/${defaultChannel.id}`);
   }
 
-  // No channels yet  auto-create General channel using service role (bypasses RLS for all members)
-  const adminClient = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  // No channels yet — auto-create General channel using service role (bypasses RLS for all members)
+  let createdChannelId: string | null = null;
+  try {
+    const adminClient = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
-  const { data: newCategory } = await adminClient
-    .from('channel_categories')
-    .insert({ cell_id: cell.id, name: 'General', position: 0 })
-    .select('id')
-    .single();
-
-  if (newCategory) {
-    const { data: newChannel } = await adminClient
-      .from('channels')
-      .insert({
-        cell_id: cell.id,
-        category_id: (newCategory as { id: string }).id,
-        name: 'general',
-        emoji: '💬',
-        channel_type: 'text',
-        position: 0,
-        created_by: user.id,
-      })
+    const { data: newCategory } = await adminClient
+      .from('channel_categories')
+      .insert({ cell_id: cell.id, name: 'General', position: 0 })
       .select('id')
       .single();
 
-    if (newChannel) {
-      redirect(`/engage/${slug}/${(newChannel as { id: string }).id}`);
+    if (newCategory) {
+      const { data: newChannel } = await adminClient
+        .from('channels')
+        .insert({
+          cell_id: cell.id,
+          category_id: (newCategory as { id: string }).id,
+          name: 'general',
+          emoji: '💬',
+          channel_type: 'text',
+          position: 0,
+          created_by: user.id,
+        })
+        .select('id')
+        .single();
+
+      if (newChannel) createdChannelId = (newChannel as { id: string }).id;
     }
+  } catch {
+    // creation failed — fall through to error UI
   }
 
-  // All else fails
-  redirect(`/engage/${slug}/info`);
+  if (createdChannelId) {
+    redirect(`/engage/${slug}/${createdChannelId}`);
+  }
+
+  // Channel creation failed — show inline error instead of redirect loop
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100dvh',
+        gap: 12,
+        padding: 24,
+        textAlign: 'center',
+        background: 'var(--color-bg)',
+      }}
+    >
+      <p style={{ color: 'var(--color-text)', fontSize: '1rem', fontWeight: 600 }}>
+        Something went wrong
+      </p>
+      <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+        Could not set up channels for this community. Please try again later.
+      </p>
+      <a href="/engage" style={{ color: 'var(--color-accent)', fontSize: '0.875rem' }}>
+        Back to communities
+      </a>
+    </div>
+  );
 }

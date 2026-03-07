@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '../../../lib/supabase/server';
 import {
   getFullProfile,
   getSavedVerses,
@@ -16,12 +15,6 @@ import { ProfileClient } from './ProfileClient';
 export const metadata = { title: 'Profile  The JESUS App' };
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in');
-
   const [
     profile,
     savedVerses,
@@ -44,7 +37,7 @@ export default async function ProfilePage() {
     getStreakData(),
   ]);
 
-  if (!profile) redirect('/sign-in');
+  if (!profile) redirect('/engage');
 
   return (
     <ProfileClient

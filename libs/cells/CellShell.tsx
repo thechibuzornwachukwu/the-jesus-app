@@ -25,6 +25,7 @@ import {
   updateReadState,
   reorderChannels,
 } from '../../lib/cells/actions';
+import { fetchChannelMessages } from '../../lib/cells/channel-actions';
 import {
   getUpcomingMeetings,
   getMeetingWithRsvps,
@@ -71,6 +72,9 @@ export function CellShell({
 
   const [activeChannelId, setActiveChannelId] = useState(initialChannelId);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>(initialUnreadCounts);
+  const [channelMessages, setChannelMessages] = useState<Record<string, Message[]>>({
+    [initialChannelId]: initialMessages,
+  });
   const [localCategories, setLocalCategories] = useState<ChannelCategory[]>(categories);
   const [memberListOpen, setMemberListOpen] = useState(false);
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
@@ -119,7 +123,9 @@ export function CellShell({
   }, [cell.id]);
 
   const handleChannelSelect = useCallback(
-    (channelId: string) => {
+    async (channelId: string) => {
+      if (channelId === activeChannelId) return;
+
       const prevId = activeChannelId;
       const notifKey = `notif_channel_${prevId}`;
       const wasFromNotif =
@@ -134,9 +140,17 @@ export function CellShell({
       setActiveChannelId(channelId);
       setUnreadCounts((prev) => ({ ...prev, [channelId]: 0 }));
       startTransition(() => { updateReadState(channelId); });
-      router.push(`/engage/${cell.slug}/${channelId}`);
+
+      // Update URL silently — no SSR triggered, back-button works
+      window.history.replaceState(null, '', `/engage/${cell.slug}/${channelId}`);
+
+      // Fetch messages for the new channel if not already cached
+      if (!channelMessages[channelId]) {
+        const msgs = await fetchChannelMessages(channelId);
+        setChannelMessages((prev) => ({ ...prev, [channelId]: msgs }));
+      }
     },
-    [cell.slug, router, activeChannelId]
+    [cell.slug, activeChannelId, channelMessages]
   );
 
   const handleMessageSent = useCallback(() => {
@@ -463,11 +477,12 @@ export function CellShell({
           )}
 
           <Chat
+            key={activeChannelId}
             cellId={cell.id}
             cellName={cell.name}
             cellAvatar={cell.avatar_url}
             currentUser={currentUser}
-            initialMessages={initialMessages}
+            initialMessages={channelMessages[activeChannelId] ?? initialMessages}
             blockedUserIds={blockedUserIds}
             userRole={userRole}
             channelId={activeChannelId}
