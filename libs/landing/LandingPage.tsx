@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Heart, MessageCircle, Bookmark } from 'lucide-react';
 import { AuthModal } from '../shared-ui/AuthModal';
 
