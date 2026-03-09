@@ -35,5 +35,28 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Profile-guard: authenticated users without a profile row → /setup-profile
+  // Skip the check for public/auth routes and setup-profile itself to avoid redirect loops.
+  const isPublicPath =
+    pathname === '/sign-in' ||
+    pathname === '/sign-up' ||
+    pathname === '/setup-profile' ||
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/engage/join');
+
+  if (user && !isPublicPath) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!profile) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/setup-profile';
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }
