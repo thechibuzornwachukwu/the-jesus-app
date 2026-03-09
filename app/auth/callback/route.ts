@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       const user = sessionData?.user;
       if (user) {
         const { id, email, user_metadata } = user;
-        await supabase.from('profiles').upsert(
+        const { error: upsertError } = await supabase.from('profiles').upsert(
           {
             id,
             email: email ?? '',
@@ -24,6 +24,10 @@ export async function GET(request: Request) {
           },
           { onConflict: 'id', ignoreDuplicates: true },
         );
+        if (upsertError) {
+          console.error('[auth/callback] profile upsert failed:', upsertError.message);
+          return NextResponse.redirect(`${origin}/sign-in?error=setup_failed`);
+        }
       }
       return NextResponse.redirect(`${origin}${next}`);
     }

@@ -29,7 +29,7 @@ export async function signIn(_: unknown, formData: FormData) {
   // Upsert profile at sign-in so it always exists before the app loads
   if (signInData.user) {
     const { id, email, user_metadata } = signInData.user;
-    await supabase.from('profiles').upsert(
+    const { error: upsertError } = await supabase.from('profiles').upsert(
       {
         id,
         email: email ?? '',
@@ -39,6 +39,10 @@ export async function signIn(_: unknown, formData: FormData) {
       },
       { onConflict: 'id', ignoreDuplicates: true },
     );
+    if (upsertError) {
+      console.error('[auth/signIn] profile upsert failed:', upsertError.message);
+      return { error: 'Account setup failed. Please try signing in again.' };
+    }
   }
 
   redirect('/engage');

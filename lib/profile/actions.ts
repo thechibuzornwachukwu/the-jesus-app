@@ -112,8 +112,10 @@ export async function updateProfile(
 
   const { data, error } = await supabase
     .from('profiles')
-    .update(parsed.data)
-    .eq('id', user.id)
+    .upsert(
+      { id: user.id, ...parsed.data },
+      { onConflict: 'id' }
+    )
     .select(
       'id, username, avatar_url, bio, church_name, city, is_public, content_categories, deleted_at'
     )

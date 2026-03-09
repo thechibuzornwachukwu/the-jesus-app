@@ -12,6 +12,7 @@ type AuthAction = (state: unknown, formData: FormData) => Promise<{ error?: stri
 interface AuthFormProps {
   mode: 'sign-in' | 'sign-up';
   action: AuthAction;
+  magicLinkAction?: AuthAction;
 }
 
 const initialState = { error: undefined, success: undefined };
@@ -172,8 +173,12 @@ function PolicyPreviewModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function AuthForm({ mode, action }: AuthFormProps) {
+export function AuthForm({ mode, action, magicLinkAction }: AuthFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [mlState, mlFormAction, mlPending] = useActionState(
+    magicLinkAction ?? (async () => ({ error: undefined, success: undefined })),
+    initialState,
+  );
   const [modalOpen, setModalOpen] = useState(false);
   const [policyPreviewOpen, setPolicyPreviewOpen] = useState(false);
   const [hasReviewedPolicies, setHasReviewedPolicies] = useState(false);

@@ -19,11 +19,15 @@ export function SetupProfileClient({ defaultUsername }: Props) {
     const formData = new FormData(e.currentTarget);
 
     startTransition(async () => {
-      const result = await updateProfile(formData);
-      if (result.error) {
-        setError(result.error);
-      } else {
-        router.replace('/engage');
+      try {
+        const result = await updateProfile(formData);
+        if (result.error) {
+          setError(result.error);
+        } else {
+          router.replace('/engage');
+        }
+      } catch {
+        setError('Something went wrong saving your profile. Please try again.');
       }
     });
   }
