@@ -79,7 +79,7 @@ export async function createCell(
     .select('id')
     .single();
 
-  if (cellError || !cell) return { error: 'Failed to create cell.' };
+  if (cellError || !cell) return { error: cellError?.message ?? 'Failed to create cell.' };
 
   await supabase.from('cell_members').insert({
     cell_id: cell.id,
