@@ -195,76 +195,74 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
           : <Volume2 size={20} color="#fff" />}
       </button>
 
-      {/* Top: author info */}
+      {/* Bottom: author info + caption stacked */}
       <div
         style={{
           position: 'absolute',
-          top: 'var(--space-4)',
+          bottom: 'var(--space-4)',
           left: 'var(--space-3)',
-          right: 'var(--space-3)',
+          right: 'calc(56px + var(--space-4) + var(--space-4))',
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: 'column',
           gap: 'var(--space-2)',
           zIndex: 3,
         }}
       >
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 'var(--radius-full)',
-            border: '2px solid var(--color-accent)',
-            background: 'var(--color-surface)',
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--color-accent)',
-            fontWeight: 'var(--font-weight-bold)',
-            flexShrink: 0,
-          }}
-        >
-          {video.profiles?.avatar_url ? (
-            <img src={video.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            (video.profiles?.username?.[0] ?? '?').toUpperCase()
-          )}
+        {/* Author row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 'var(--radius-full)',
+              border: '2px solid var(--color-accent)',
+              background: 'var(--color-surface)',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-accent)',
+              fontWeight: 'var(--font-weight-bold)',
+              flexShrink: 0,
+            }}
+          >
+            {video.profiles?.avatar_url ? (
+              <img src={video.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              (video.profiles?.username?.[0] ?? '?').toUpperCase()
+            )}
+          </div>
+          <p
+            style={{
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--color-bright)',
+              textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+            }}
+          >
+            @{video.profiles?.username ?? 'believer'}
+          </p>
         </div>
-        <p
-          style={{
-            fontSize: 'var(--font-size-sm)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--color-bright)',
-            textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-          }}
-        >
-          @{video.profiles?.username ?? 'believer'}
-        </p>
-      </div>
 
-      {/* Caption at bottom-left */}
-      {video.caption && (
-        <p
-          style={{
-            position: 'absolute',
-            bottom: 'var(--space-4)',
-            left: 'var(--space-3)',
-            right: 'calc(56px + var(--space-4) + var(--space-4))',
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--color-bright)',
-            textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-            lineHeight: 'var(--line-height-normal)',
-            zIndex: 2,
-            overflow: 'hidden',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-          }}
-        >
-          {video.caption}
-        </p>
-      )}
+        {/* Caption */}
+        {video.caption && (
+          <p
+            style={{
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-bright)',
+              textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+              lineHeight: 'var(--line-height-normal)',
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
+            {video.caption}
+          </p>
+        )}
+      </div>
 
       {/* Scripture overlay */}
       {video.verse && (
