@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import type { FeedItem, DailyVerseType } from '../../../lib/explore/types';
-import { DailyVerse } from '../../../libs/explore/DailyVerse';
+import type { FeedItem } from '../../../lib/explore/types';
 import { PerspectiveFeed, type PerspectiveFeedHandle } from '../../../libs/explore/PerspectiveFeed';
 import { CommentSheet } from '../../../libs/explore/CommentSheet';
 import { ComposeSheet } from '../../../libs/explore/ComposeSheet';
@@ -10,14 +9,12 @@ import { showToast } from '../../../libs/shared-ui/Toast';
 import { Plus, Search, BookOpenText } from 'lucide-react';
 import { useBible } from '../../../lib/bible/context';
 
-const VERSE_BANNER_H = '56px';
 const HEADER_H = '56px';
-const FEED_HEIGHT = `calc(100dvh - var(--safe-top) - var(--nav-height) - var(--safe-bottom) - ${VERSE_BANNER_H} - ${HEADER_H})`;
+const FEED_HEIGHT = `calc(100dvh - var(--safe-top) - var(--nav-height) - var(--safe-bottom) - ${HEADER_H})`;
 
 interface ExploreClientProps {
   initialItems: FeedItem[];
   initialCursor: string | null;
-  dailyVerse: DailyVerseType;
   userId: string;
 }
 
@@ -33,7 +30,7 @@ const BTN: React.CSSProperties = {
   flexShrink: 0,
 };
 
-export function ExploreClient({ initialItems, initialCursor, dailyVerse, userId }: ExploreClientProps) {
+export function ExploreClient({ initialItems, initialCursor, userId }: ExploreClientProps) {
   const [commentVideoId, setCommentVideoId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -119,11 +116,6 @@ export function ExploreClient({ initialItems, initialCursor, dailyVerse, userId 
           />
         </div>
       )}
-
-      {/* Daily verse banner */}
-      <div style={{ flexShrink: 0, height: VERSE_BANNER_H, overflow: 'hidden' }}>
-        <DailyVerse verse={dailyVerse} initialLikeCount={0} initialUserLiked={false} initialCommentCount={0} />
-      </div>
 
       {/* Unified feed */}
       <PerspectiveFeed
