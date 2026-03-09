@@ -93,6 +93,7 @@ export function BottomSheet({
         aria-modal="true"
         style={{
           position: 'relative',
+          width: '100%',
           background: 'var(--color-bg-surface)',
           borderTopLeftRadius: 'var(--radius-xl)',
           borderTopRightRadius: 'var(--radius-xl)',

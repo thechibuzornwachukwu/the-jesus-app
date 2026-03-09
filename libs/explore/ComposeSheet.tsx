@@ -83,19 +83,9 @@ export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
       open={open}
       onClose={handleClose}
       title="Upload Video"
-      contentScrollable={false}
-      contentStyle={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
     >
-      {/* Scrollable body — grows, shrinks, scrolls if keyboard pushes space */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        overscrollBehavior: 'contain',
-        padding: 'var(--space-4) var(--space-6)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-3)',
-      }}>
+      {/* Single flex column; toolbar is sticky so it stays visible even when scrolled */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
 
         {/* Video preview / picker */}
         {videoFile ? (
@@ -173,16 +163,21 @@ export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
         )}
       </div>
 
-      {/* Sticky toolbar — always visible above keyboard */}
+      {/* Toolbar — sticky to the bottom of the scroll container */}
       <div style={{
-        flexShrink: 0,
+        position: 'sticky',
+        bottom: 0,
         display: 'flex',
         alignItems: 'center',
         gap: 'var(--space-2)',
         borderTop: '1px solid var(--color-border)',
-        padding: 'var(--space-3) var(--space-6)',
-        paddingBottom: 'calc(var(--safe-bottom, 0px) + var(--space-3))',
+        paddingTop: 'var(--space-3)',
+        paddingBottom: 'calc(var(--safe-bottom, 0px) + var(--space-1))',
         background: 'var(--color-bg-surface)',
+        marginLeft: 'calc(-1 * var(--space-6))',
+        marginRight: 'calc(-1 * var(--space-6))',
+        paddingLeft: 'var(--space-6)',
+        paddingRight: 'var(--space-6)',
       }}>
         <ToolBtn label="Tag scripture" active={scriptureOpen} onClick={() => setScriptureOpen((v) => !v)}>
           <BookOpen size={18} />
