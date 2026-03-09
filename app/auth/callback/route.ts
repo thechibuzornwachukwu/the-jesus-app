@@ -8,8 +8,23 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Upsert profile immediately so it exists before the app renders
+      const user = sessionData?.user;
+      if (user) {
+        const { id, email, user_metadata } = user;
+        await supabase.from('profiles').upsert(
+          {
+            id,
+            email: email ?? '',
+            username: user_metadata?.username ?? email?.split('@')[0] ?? id.slice(0, 8),
+            full_name: user_metadata?.full_name ?? '',
+            avatar_url: user_metadata?.avatar_url ?? '',
+          },
+          { onConflict: 'id', ignoreDuplicates: true },
+        );
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

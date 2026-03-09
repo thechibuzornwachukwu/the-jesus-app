@@ -37,7 +37,7 @@ export default async function ProfilePage() {
     getStreakData(),
   ]);
 
-  if (!profile) redirect('/engage');
+  if (!profile) redirect('/setup-profile');
 
   return (
     <ProfileClient

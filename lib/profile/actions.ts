@@ -50,6 +50,21 @@ export async function getFullProfile(userId?: string): Promise<FullProfile | nul
     .is('deleted_at', null)
     .single();
 
+  // Stage 1A: auto-upsert a minimal profile row for the authenticated user
+  if (!data && isSelf) {
+    const username = (me.email ?? me.id).split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 30);
+    const { data: upserted } = await supabase
+      .from('profiles')
+      .upsert(
+        { id: me.id, username },
+        { onConflict: 'id', ignoreDuplicates: false }
+      )
+      .select('id, username, avatar_url, bio, church_name, city, is_public, content_categories, deleted_at')
+      .single();
+    if (!upserted) return null;
+    return upserted as FullProfile;
+  }
+
   if (!data) return null;
   if (!isSelf && !data.is_public) return null;
 

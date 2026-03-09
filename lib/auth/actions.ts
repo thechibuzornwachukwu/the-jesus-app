@@ -19,11 +19,26 @@ export async function signIn(_: unknown, formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data: signInData, error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
     // Generic message  no info leakage
     return { error: 'Sign in failed. Check your credentials and try again.' };
+  }
+
+  // Upsert profile at sign-in so it always exists before the app loads
+  if (signInData.user) {
+    const { id, email, user_metadata } = signInData.user;
+    await supabase.from('profiles').upsert(
+      {
+        id,
+        email: email ?? '',
+        username: user_metadata?.username ?? email?.split('@')[0] ?? id.slice(0, 8),
+        full_name: user_metadata?.full_name ?? '',
+        avatar_url: user_metadata?.avatar_url ?? '',
+      },
+      { onConflict: 'id', ignoreDuplicates: true },
+    );
   }
 
   redirect('/engage');
