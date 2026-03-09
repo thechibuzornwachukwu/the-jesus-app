@@ -323,6 +323,70 @@ export function AuthForm({ mode, action, magicLinkAction }: AuthFormProps) {
             {isSignIn ? 'Sign up' : 'Sign in'}
           </Link>
         </p>
+
+        {isSignIn && magicLinkAction && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', margin: 'var(--space-2) 0' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
+              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-faint)', whiteSpace: 'nowrap' }}>
+                or use a magic link
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
+            </div>
+
+            <form action={mlFormAction} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              <Input
+                id="ml-email"
+                name="email"
+                type="email"
+                label="Email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                required
+                icon={<Mail size={16} />}
+              />
+
+              {mlState?.error && (
+                <p
+                  role="alert"
+                  style={{
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--color-error)',
+                    borderLeft: '2px solid var(--color-error)',
+                    paddingLeft: 'var(--space-2)',
+                    margin: 0,
+                  }}
+                >
+                  {mlState.error}
+                </p>
+              )}
+
+              {mlState?.success ? (
+                <div
+                  style={{
+                    background: 'rgba(74,222,128,0.08)',
+                    border: '1px solid rgba(74,222,128,0.25)',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: 'var(--space-4)',
+                    display: 'grid',
+                    gap: 'var(--space-2)',
+                  }}
+                >
+                  <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-success)', fontWeight: 'var(--font-weight-medium)' }}>
+                    {mlState.success}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                    If you&apos;re new to this version of the app, a new account will be created automatically when you click the link.
+                  </p>
+                </div>
+              ) : (
+                <Button type="submit" loading={mlPending} style={{ width: '100%' }}>
+                  Send magic link
+                </Button>
+              )}
+            </form>
+          </>
+        )}
       </div>
     </>
   );
