@@ -181,7 +181,7 @@ export function BottomSheet({
               flexShrink: 0,
               borderTop: '1px solid var(--color-border)',
               padding: 'var(--space-3) var(--space-6)',
-              paddingBottom: 'calc(var(--safe-bottom, 0px) + var(--space-3))',
+              paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom, 0px) + var(--space-3))',
               background: 'var(--color-bg-surface)',
             }}
           >
