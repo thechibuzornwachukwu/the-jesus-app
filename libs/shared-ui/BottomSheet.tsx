@@ -8,6 +8,8 @@ interface BottomSheetProps {
   title?: string;
   contentScrollable?: boolean;
   contentStyle?: React.CSSProperties;
+  /** Rendered outside the scroll area, always visible above the keyboard */
+  footer?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -19,6 +21,7 @@ export function BottomSheet({
   title,
   contentScrollable = true,
   contentStyle,
+  footer,
   children,
 }: BottomSheetProps) {
   const [dragStartY, setDragStartY] = useState<number | null>(null);
@@ -69,7 +72,7 @@ export function BottomSheet({
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 20,
+        zIndex: 'var(--z-modal-full)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-end',
@@ -170,6 +173,21 @@ export function BottomSheet({
         >
           {children}
         </div>
+
+        {/* Footer — outside scroll area, always visible */}
+        {footer && (
+          <div
+            style={{
+              flexShrink: 0,
+              borderTop: '1px solid var(--color-border)',
+              padding: 'var(--space-3) var(--space-6)',
+              paddingBottom: 'calc(var(--safe-bottom, 0px) + var(--space-3))',
+              background: 'var(--color-bg-surface)',
+            }}
+          >
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -78,13 +78,46 @@ export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
     });
   };
 
+  const toolbar = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+      <ToolBtn label="Tag scripture" active={scriptureOpen} onClick={() => setScriptureOpen((v) => !v)}>
+        <BookOpen size={18} />
+      </ToolBtn>
+      <span style={{ flex: 1 }} />
+      <span style={{
+        fontSize: 'var(--font-size-xs)',
+        color: charsLeft < 50 ? 'var(--color-error)' : 'var(--color-text-muted)',
+        fontVariantNumeric: 'tabular-nums',
+      }}>
+        {charsLeft}
+      </span>
+      <button
+        onClick={handlePublish}
+        disabled={uploading}
+        style={{
+          padding: 'var(--space-2) var(--space-5)',
+          borderRadius: 'var(--radius-full)',
+          background: uploading ? 'var(--color-border)' : 'var(--color-accent)',
+          border: 'none',
+          color: uploading ? 'var(--color-text-muted)' : 'var(--color-accent-text)',
+          fontWeight: 'var(--font-weight-semibold)',
+          fontSize: 'var(--font-size-sm)',
+          cursor: uploading ? 'default' : 'pointer',
+          transition: 'background 0.15s',
+        }}
+      >
+        {uploading ? 'Uploading…' : 'Post'}
+      </button>
+    </div>
+  );
+
   return (
     <BottomSheet
       open={open}
       onClose={handleClose}
       title="Upload Video"
+      footer={toolbar}
     >
-      {/* Single flex column; toolbar is sticky so it stays visible even when scrolled */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
 
         {/* Video preview / picker */}
@@ -161,54 +194,6 @@ export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
             {error}
           </p>
         )}
-      </div>
-
-      {/* Toolbar — sticky to the bottom of the scroll container */}
-      <div style={{
-        position: 'sticky',
-        bottom: 0,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--space-2)',
-        borderTop: '1px solid var(--color-border)',
-        paddingTop: 'var(--space-3)',
-        paddingBottom: 'calc(var(--safe-bottom, 0px) + var(--space-1))',
-        background: 'var(--color-bg-surface)',
-        marginLeft: 'calc(-1 * var(--space-6))',
-        marginRight: 'calc(-1 * var(--space-6))',
-        paddingLeft: 'var(--space-6)',
-        paddingRight: 'var(--space-6)',
-      }}>
-        <ToolBtn label="Tag scripture" active={scriptureOpen} onClick={() => setScriptureOpen((v) => !v)}>
-          <BookOpen size={18} />
-        </ToolBtn>
-
-        <span style={{ flex: 1 }} />
-        <span style={{
-          fontSize: 'var(--font-size-xs)',
-          color: charsLeft < 50 ? 'var(--color-error)' : 'var(--color-text-muted)',
-          fontVariantNumeric: 'tabular-nums',
-        }}>
-          {charsLeft}
-        </span>
-
-        <button
-          onClick={handlePublish}
-          disabled={uploading}
-          style={{
-            padding: 'var(--space-2) var(--space-5)',
-            borderRadius: 'var(--radius-full)',
-            background: uploading ? 'var(--color-border)' : 'var(--color-accent)',
-            border: 'none',
-            color: uploading ? 'var(--color-text-muted)' : 'var(--color-accent-text)',
-            fontWeight: 'var(--font-weight-semibold)',
-            fontSize: 'var(--font-size-sm)',
-            cursor: uploading ? 'default' : 'pointer',
-            transition: 'background 0.15s',
-          }}
-        >
-          {uploading ? 'Uploading…' : 'Post'}
-        </button>
       </div>
 
       <input
