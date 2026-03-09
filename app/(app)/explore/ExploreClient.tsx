@@ -40,7 +40,7 @@ export function ExploreClient({ initialItems, initialCursor, dailyVerse, userId 
   const feedRef = useRef<PerspectiveFeedHandle>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUploaded = async (_id: string, _kind: 'video' | 'post' | 'image'): Promise<void> => {
+  const handleUploaded = async (_id: string, _kind: 'video'): Promise<void> => {
     showToast('Perspective published!', 'success');
     setUploadOpen(false);
     feedRef.current?.refreshFeed();
@@ -73,7 +73,7 @@ export function ExploreClient({ initialItems, initialCursor, dailyVerse, userId 
           color: 'var(--color-text-primary)',
           lineHeight: 'var(--line-height-tight)',
         }}>
-          Witness
+          Experience
         </h1>
 
         {/* Search button */}

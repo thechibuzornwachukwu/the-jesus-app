@@ -1,27 +1,22 @@
 'use client';
 
 import React, { useState, useRef, useTransition } from 'react';
-import { ImageIcon, Video, BookOpen, X } from 'lucide-react';
+import { Video, BookOpen, X } from 'lucide-react';
 import { BottomSheet } from '../shared-ui/BottomSheet';
-import { createPost } from '../../lib/explore/actions';
 
-type AttachFile = { file: File; previewUrl: string; kind: 'image' | 'video' };
+const MAX_CAPTION = 1000;
+const MAX_VIDEO_MB = 100;
+const ALLOWED_VIDEO = ['video/mp4', 'video/webm', 'video/quicktime'];
 
 interface ComposeSheetProps {
   open: boolean;
   onClose: () => void;
-  onUploaded?: (id: string, kind: 'video' | 'post' | 'image') => void | Promise<void>;
+  onUploaded?: (id: string, kind: 'video') => void | Promise<void>;
 }
 
-const MAX_TEXT = 1000;
-const MAX_VIDEO_MB = 100;
-const MAX_IMAGE_MB = 10;
-const ALLOWED_VIDEO = ['video/mp4', 'video/webm', 'video/quicktime'];
-const ALLOWED_IMAGE = ['image/jpeg', 'image/png', 'image/webp'];
-
 export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
-  const [text, setText] = useState('');
-  const [attachment, setAttachment] = useState<AttachFile | null>(null);
+  const [caption, setCaption] = useState('');
+  const [videoFile, setVideoFile] = useState<{ file: File; previewUrl: string } | null>(null);
   const [scriptureOpen, setScriptureOpen] = useState(false);
   const [verseRef, setVerseRef] = useState('');
   const [verseText, setVerseText] = useState('');
@@ -29,37 +24,26 @@ export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
   const [error, setError] = useState('');
   const [, startTransition] = useTransition();
 
-  const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const charsLeft = MAX_CAPTION - caption.length;
 
-  const charsLeft = MAX_TEXT - text.length;
-
-  // ── File picking ─────────────────────────────────────────────────────────
-
-  const pickFile = (f: File, kind: 'image' | 'video') => {
+  const pickVideo = (f: File) => {
     setError('');
-    if (kind === 'video') {
-      if (!ALLOWED_VIDEO.includes(f.type)) { setError('Only MP4, WebM, or MOV videos allowed.'); return; }
-      if (f.size > MAX_VIDEO_MB * 1024 * 1024) { setError(`Video must be under ${MAX_VIDEO_MB} MB.`); return; }
-    } else {
-      if (!ALLOWED_IMAGE.includes(f.type)) { setError('Only JPEG, PNG, or WebP images allowed.'); return; }
-      if (f.size > MAX_IMAGE_MB * 1024 * 1024) { setError(`Image must be under ${MAX_IMAGE_MB} MB.`); return; }
-    }
-    if (attachment) URL.revokeObjectURL(attachment.previewUrl);
-    setAttachment({ file: f, previewUrl: URL.createObjectURL(f), kind });
+    if (!ALLOWED_VIDEO.includes(f.type)) { setError('Only MP4, WebM, or MOV videos allowed.'); return; }
+    if (f.size > MAX_VIDEO_MB * 1024 * 1024) { setError(`Video must be under ${MAX_VIDEO_MB} MB.`); return; }
+    if (videoFile) URL.revokeObjectURL(videoFile.previewUrl);
+    setVideoFile({ file: f, previewUrl: URL.createObjectURL(f) });
   };
 
-  const removeAttachment = () => {
-    if (attachment) URL.revokeObjectURL(attachment.previewUrl);
-    setAttachment(null);
+  const removeVideo = () => {
+    if (videoFile) URL.revokeObjectURL(videoFile.previewUrl);
+    setVideoFile(null);
   };
-
-  // ── Reset / close ────────────────────────────────────────────────────────
 
   const reset = () => {
-    if (attachment) URL.revokeObjectURL(attachment.previewUrl);
-    setAttachment(null);
-    setText('');
+    if (videoFile) URL.revokeObjectURL(videoFile.previewUrl);
+    setVideoFile(null);
+    setCaption('');
     setVerseRef('');
     setVerseText('');
     setScriptureOpen(false);
@@ -69,87 +53,46 @@ export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
 
   const handleClose = () => { reset(); onClose(); };
 
-  // ── Publish ──────────────────────────────────────────────────────────────
-
   const handlePublish = () => {
-    if (!text.trim() && !attachment) { setError('Add text or an attachment.'); return; }
+    if (!videoFile) { setError('Please attach a video.'); return; }
     setError('');
     setUploading(true);
 
-    if (attachment) {
-      startTransition(async () => {
-        const form = new FormData();
-        form.append('file', attachment.file);
-        form.append('type', attachment.kind);
-        form.append('caption', text.trim());
-        form.append('verse_reference', verseRef.trim());
-        form.append('verse_text', verseText.trim());
-
-        const res = await fetch('/api/explore/upload', { method: 'POST', body: form });
-        const json = await res.json();
-        setUploading(false);
-
-        if (!res.ok || json.error) { setError(json.error ?? 'Upload failed. Please try again.'); return; }
-        const id: string = attachment.kind === 'video' ? json.videoId : json.postId;
-        const kind = attachment.kind;
-        reset();
-        onClose();
-        onUploaded?.(id, kind);
-      });
-      return;
-    }
-
-    // text-only post
     startTransition(async () => {
-      const result = await createPost(
-        text,
-        verseRef.trim() || undefined,
-        verseText.trim() || undefined,
-      );
+      const form = new FormData();
+      form.append('file', videoFile.file);
+      form.append('type', 'video');
+      form.append('caption', caption.trim());
+      form.append('verse_reference', verseRef.trim());
+      form.append('verse_text', verseText.trim());
+
+      const res = await fetch('/api/explore/upload', { method: 'POST', body: form });
+      const json = await res.json();
       setUploading(false);
-      if ('error' in result) { setError(result.error); return; }
+
+      if (!res.ok || json.error) { setError(json.error ?? 'Upload failed. Please try again.'); return; }
+      const id: string = json.videoId;
       reset();
       onClose();
-      onUploaded?.(result.postId, 'post');
+      onUploaded?.(id, 'video');
     });
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────
-
   return (
-    <BottomSheet open={open} onClose={handleClose} title="New Witness Post">
+    <BottomSheet open={open} onClose={handleClose} title="Upload Video">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
 
-        {/* Text area */}
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value.slice(0, MAX_TEXT))}
-          placeholder="What's on your heart?"
-          rows={4}
-          className="field-textarea"
-          style={{ resize: 'none' }}
-        />
-
-        {/* Attachment preview */}
-        {attachment && (
+        {/* Video preview / picker */}
+        {videoFile ? (
           <div style={{ position: 'relative', borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: 'var(--color-surface)' }}>
-            {attachment.kind === 'image' ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={attachment.previewUrl}
-                alt="Preview"
-                style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }}
-              />
-            ) : (
-              <video
-                src={attachment.previewUrl}
-                style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }}
-                muted playsInline controls={false}
-              />
-            )}
+            <video
+              src={videoFile.previewUrl}
+              style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }}
+              muted playsInline controls={false}
+            />
             <button
-              onClick={removeAttachment}
-              aria-label="Remove attachment"
+              onClick={removeVideo}
+              aria-label="Remove video"
               style={{
                 position: 'absolute', top: 'var(--space-2)', right: 'var(--space-2)',
                 width: 28, height: 28, borderRadius: 'var(--radius-full)',
@@ -160,7 +103,31 @@ export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
               <X size={14} />
             </button>
           </div>
+        ) : (
+          <button
+            onClick={() => videoInputRef.current?.click()}
+            style={{
+              width: '100%', height: 120, borderRadius: 'var(--radius-lg)',
+              border: '2px dashed var(--color-border)', background: 'var(--color-surface)',
+              color: 'var(--color-text-muted)', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 'var(--space-2)', fontSize: 'var(--font-size-sm)',
+            }}
+          >
+            <Video size={28} />
+            Tap to select a video
+          </button>
         )}
+
+        {/* Caption */}
+        <textarea
+          value={caption}
+          onChange={(e) => setCaption(e.target.value.slice(0, MAX_CAPTION))}
+          placeholder="Add a caption…"
+          rows={3}
+          className="field-textarea"
+          style={{ resize: 'none' }}
+        />
 
         {/* Scripture fields */}
         {scriptureOpen && (
@@ -192,33 +159,10 @@ export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
 
         {/* Toolbar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-3)' }}>
-          {/* Image picker — hidden if video attached */}
-          {attachment?.kind !== 'video' && (
-            <ToolBtn
-              label="Attach image"
-              active={attachment?.kind === 'image'}
-              onClick={() => imageInputRef.current?.click()}
-            >
-              <ImageIcon size={18} />
-            </ToolBtn>
-          )}
-
-          {/* Video picker — hidden if image attached */}
-          {attachment?.kind !== 'image' && (
-            <ToolBtn
-              label="Attach video"
-              active={attachment?.kind === 'video'}
-              onClick={() => videoInputRef.current?.click()}
-            >
-              <Video size={18} />
-            </ToolBtn>
-          )}
-
           <ToolBtn label="Tag scripture" active={scriptureOpen} onClick={() => setScriptureOpen((v) => !v)}>
             <BookOpen size={18} />
           </ToolBtn>
 
-          {/* Spacer + char counter */}
           <span style={{ flex: 1 }} />
           <span style={{
             fontSize: 'var(--font-size-xs)',
@@ -228,7 +172,6 @@ export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
             {charsLeft}
           </span>
 
-          {/* Post button */}
           <button
             onClick={handlePublish}
             disabled={uploading}
@@ -244,24 +187,16 @@ export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
               transition: 'background 0.15s',
             }}
           >
-            {uploading ? 'Posting…' : 'Post'}
+            {uploading ? 'Uploading…' : 'Post'}
           </button>
         </div>
 
-        {/* Hidden file inputs */}
-        <input
-          ref={imageInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          style={{ display: 'none' }}
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) pickFile(f, 'image'); e.target.value = ''; }}
-        />
         <input
           ref={videoInputRef}
           type="file"
           accept="video/mp4,video/webm,video/quicktime"
           style={{ display: 'none' }}
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) pickFile(f, 'video'); e.target.value = ''; }}
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) pickVideo(f); e.target.value = ''; }}
         />
       </div>
     </BottomSheet>

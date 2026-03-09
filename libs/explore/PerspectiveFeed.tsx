@@ -4,10 +4,6 @@ import React, { useRef, useEffect, useCallback, useState, forwardRef, useImperat
 import { Video as VideoIcon } from 'lucide-react';
 import type { FeedItem, ReactionType } from '../../lib/explore/types';
 import { VideoCard } from './VideoCard';
-import { TextPostCard } from './TextPostCard';
-import { ImageCard } from './ImageCard';
-import { RepostCard } from './RepostCard';
-import { RepostSheet } from './RepostSheet';
 import { getUnifiedFeed } from '../../lib/explore/actions';
 import { EmptyState } from '../shared-ui';
 
@@ -34,7 +30,6 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [repostTarget, setRepostTarget] = useState<{ id: string; type: 'video' | 'post' } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const loadingRef = useRef(false);
@@ -107,44 +102,11 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
     []
   );
 
-  const handlePostLikeChanged = useCallback(
-    (postId: string, liked: boolean, likeCount: number) => {
-      setItems((prev) =>
-        prev.map((item) =>
-          item.kind === 'post' && item.data.id === postId
-            ? { ...item, data: { ...item.data, user_liked: liked, like_count: likeCount } }
-            : item
-        )
-      );
-    },
-    []
-  );
-
-  const handleImageLikeChanged = useCallback(
-    (postId: string, liked: boolean, likeCount: number) => {
-      setItems((prev) =>
-        prev.map((item) =>
-          item.kind === 'image' && item.data.id === postId
-            ? { ...item, data: { ...item.data, user_liked: liked, like_count: likeCount } }
-            : item
-        )
-      );
-    },
-    []
-  );
-
-  const handleRepost = useCallback((id: string, type: 'video' | 'post') => {
-    setRepostTarget({ id, type });
-  }, []);
-
   const q = searchFilter?.trim().toLowerCase() ?? '';
+  const videoItems = items.filter((item) => item.kind === 'video');
   const visibleItems = q
-    ? items.filter((item) => {
-        if (item.kind === 'video') return item.data.caption?.toLowerCase().includes(q);
-        if (item.kind === 'repost') return false;
-        return item.data.content?.toLowerCase().includes(q);
-      })
-    : items;
+    ? videoItems.filter((item) => item.kind === 'video' && item.data.caption?.toLowerCase().includes(q))
+    : videoItems;
 
   if (visibleItems.length === 0) {
     return (
@@ -168,71 +130,19 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
       }}
     >
       {visibleItems.map((item, idx) => {
-        if (item.kind === 'video') {
-          return (
-            <div
-              key={item.data.id}
-              ref={(el) => { cardRefs.current[idx] = el; }}
-              style={{ height: feedHeight, scrollSnapAlign: 'start', flexShrink: 0 }}
-            >
-              <VideoCard
-                video={item.data}
-                isActive={activeIndex === idx}
-                onComment={() => onComment(item.data.id)}
-                onReactionChanged={handleVideoReactionChanged}
-                onRepost={handleRepost}
-                height={feedHeight}
-              />
-            </div>
-          );
-        }
-
-        if (item.kind === 'image') {
-          return (
-            <div
-              key={item.data.id}
-              ref={(el) => { cardRefs.current[idx] = el; }}
-              style={{ height: feedHeight, scrollSnapAlign: 'start', flexShrink: 0 }}
-            >
-              <ImageCard
-                post={item.data}
-                height={feedHeight}
-                onComment={() => onComment(item.data.id)}
-                onLikeChanged={handleImageLikeChanged}
-                onRepost={handleRepost}
-              />
-            </div>
-          );
-        }
-
-        // Repost card  natural height
-        if (item.kind === 'repost') {
-          return (
-            <div
-              key={item.data.id}
-              ref={(el) => { cardRefs.current[idx] = el; }}
-              style={{ scrollSnapAlign: 'start', padding: 'var(--space-3) var(--space-4)' }}
-            >
-              <RepostCard repost={item.data} />
-            </div>
-          );
-        }
-
-        // Text post  natural height, no full-screen snap
-        if (item.kind !== 'post') return null;
+        if (item.kind !== 'video') return null;
         return (
           <div
             key={item.data.id}
             ref={(el) => { cardRefs.current[idx] = el; }}
-            style={{
-              scrollSnapAlign: 'start',
-              padding: 'var(--space-3) var(--space-4)',
-            }}
+            style={{ height: feedHeight, scrollSnapAlign: 'start', flexShrink: 0 }}
           >
-            <TextPostCard
-              post={item.data}
-              onLikeChanged={handlePostLikeChanged}
-              onRepost={handleRepost}
+            <VideoCard
+              video={item.data}
+              isActive={activeIndex === idx}
+              onComment={() => onComment(item.data.id)}
+              onReactionChanged={handleVideoReactionChanged}
+              height={feedHeight}
             />
           </div>
         );
@@ -253,16 +163,6 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
         </div>
       )}
     </div>
-
-    {repostTarget && (
-      <RepostSheet
-        open={!!repostTarget}
-        onClose={() => setRepostTarget(null)}
-        originalId={repostTarget.id}
-        originalType={repostTarget.type}
-        onReposted={refreshFeed}
-      />
-    )}
     </>
   );
 });

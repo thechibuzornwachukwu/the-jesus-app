@@ -933,7 +933,7 @@ export async function getThread(rootPostId: string): Promise<{ root: Post; repli
 }
 
 // ---------------------------------------------------------------------------
-// getUnifiedFeed  merged video + post feed sorted by created_at DESC
+// getUnifiedFeed  video-only feed sorted by created_at DESC
 // ---------------------------------------------------------------------------
 const FEED_BATCH = 6;
 
@@ -953,116 +953,30 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
     video_verses: { verse_reference: string; verse_text: string; position_pct: number }[];
   };
 
-  type RawPost = {
-    id: string; user_id: string; content: string; image_url: string | null;
-    verse_reference: string | null; verse_text: string | null;
-    like_count: number; created_at: string;
-    thread_root_id: string | null;
-    reply_to_post_id: string | null;
-    reply_count: number | null;
-  };
-
-  type RawRepost = {
-    id: string;
-    user_id: string;
-    original_post_id: string;
-    original_type: 'video' | 'post';
-    quote_content: string | null;
-    quote_verse_ref: string | null;
-    quote_verse_text: string | null;
-    created_at: string;
-  };
-
   let videoQuery = supabase
     .from('videos')
     .select('id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at, video_verses(verse_reference, verse_text, position_pct)')
     .order('created_at', { ascending: false })
-    .limit(FEED_BATCH);
-
-  let postQuery = supabase
-    .from('posts')
-    .select(
-      'id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at, thread_root_id, reply_to_post_id, reply_count'
-    )
-    .is('reply_to_post_id', null)
-    .order('created_at', { ascending: false })
-    .limit(FEED_BATCH);
-
-  let repostQuery = supabase
-    .from('reposts')
-    .select(
-      'id, user_id, original_post_id, original_type, quote_content, quote_verse_ref, quote_verse_text, created_at'
-    )
-    .order('created_at', { ascending: false })
-    .limit(FEED_BATCH);
+    .limit(FEED_BATCH + 1);
 
   if (cursor) {
     videoQuery = videoQuery.lt('created_at', cursor);
-    postQuery = postQuery.lt('created_at', cursor);
-    repostQuery = repostQuery.lt('created_at', cursor);
   }
 
-  const [{ data: videoRows }, { data: postRows }, { data: repostRows }] = await Promise.all([
-    videoQuery,
-    postQuery,
-    repostQuery,
-  ]);
+  const { data: videoRows } = await videoQuery;
+  const rows = (videoRows ?? []) as unknown as RawVideo[];
+  const hasMore = rows.length > FEED_BATCH;
+  const batch = hasMore ? rows.slice(0, FEED_BATCH) : rows;
 
-  const videos = (videoRows ?? []) as unknown as RawVideo[];
-  const posts = (postRows ?? []) as unknown as RawPost[];
-  const reposts = (repostRows ?? []) as unknown as RawRepost[];
-
-  const repostVideoIds = [...new Set(reposts.filter((r) => r.original_type === 'video').map((r) => r.original_post_id))];
-  const repostPostIds = [...new Set(reposts.filter((r) => r.original_type === 'post').map((r) => r.original_post_id))];
-
-  const [repostOriginalVideos, repostOriginalPosts] = await Promise.all([
-    repostVideoIds.length > 0
-      ? supabase
-          .from('videos')
-          .select(
-            'id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at, video_verses(verse_reference, verse_text, position_pct)'
-          )
-          .in('id', repostVideoIds)
-          .then(({ data }) => (data ?? []) as unknown as RawVideo[])
-      : Promise.resolve([] as RawVideo[]),
-    repostPostIds.length > 0
-      ? supabase
-          .from('posts')
-          .select(
-            'id, user_id, content, image_url, verse_reference, verse_text, like_count, created_at, thread_root_id, reply_to_post_id, reply_count'
-          )
-          .in('id', repostPostIds)
-          .then(({ data }) => (data ?? []) as unknown as RawPost[])
-      : Promise.resolve([] as RawPost[]),
-  ]);
-
-  const allVideos = [...videos, ...repostOriginalVideos];
-  const allPosts = [...posts, ...repostOriginalPosts];
-
-  const videoIds = [...new Set(allVideos.map((v) => v.id))];
-  const postIds = [...new Set(allPosts.map((p) => p.id))];
-  const allUserIds = [
-    ...new Set([
-      ...allVideos.map((v) => v.user_id),
-      ...allPosts.map((p) => p.user_id),
-      ...reposts.map((r) => r.user_id),
-    ]),
-  ];
-
+  const videoIds = batch.map((v) => v.id);
+  const userIds = [...new Set(batch.map((v) => v.user_id))];
   const REACTION_TYPES_FEED: ReactionType[] = ['heart', 'amen', 'laugh', 'shock'];
 
-  const [commentMapVideo, commentMapPost, userLikedVideos, userLikedPosts, feedReactionRows, profileMap] = await Promise.all([
+  const [commentMap, userLikedVideos, feedReactionRows, profileMap] = await Promise.all([
     videoIds.length > 0
       ? supabase.from('comments').select('video_id').in('video_id', videoIds).then(({ data }) => {
           const m = new Map<string, number>();
           (data ?? []).forEach((c) => m.set(c.video_id, (m.get(c.video_id) ?? 0) + 1));
-          return m;
-        })
-      : Promise.resolve(new Map<string, number>()),
-    postIds.length > 0
-      ? supabase.from('post_comments').select('post_id').in('post_id', postIds).then(({ data }) => {
-          const m = new Map<string, number>();
-          (data ?? []).forEach((c) => m.set(c.post_id, (m.get(c.post_id) ?? 0) + 1));
           return m;
         })
       : Promise.resolve(new Map<string, number>()),
@@ -1078,18 +992,6 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
           return s;
         })
       : Promise.resolve(new Set<string>()),
-    user && postIds.length > 0
-      ? supabase
-          .from('post_likes')
-          .select('post_id')
-          .eq('user_id', user.id)
-          .in('post_id', postIds)
-          .then(({ data }) => {
-          const s = new Set<string>();
-          (data ?? []).forEach((l) => s.add(l.post_id));
-          return s;
-        })
-      : Promise.resolve(new Set<string>()),
     videoIds.length > 0
       ? supabase
           .from('video_reactions')
@@ -1097,10 +999,9 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
           .in('video_id', videoIds)
           .then(({ data }) => data ?? [])
       : Promise.resolve([] as { video_id: string; user_id: string; reaction_type: string }[]),
-    fetchProfiles(supabase, allUserIds),
+    fetchProfiles(supabase, userIds),
   ]);
 
-  // Build reaction maps for feed
   const feedReactionCountMap = new Map<string, Record<ReactionType, number>>();
   const feedUserReactionMap = new Map<string, ReactionType>();
   for (const r of feedReactionRows as { video_id: string; user_id: string; reaction_type: string }[]) {
@@ -1116,78 +1017,23 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
     }
   }
 
-  const toVideo = (v: RawVideo): Video => ({
-    id: v.id, user_id: v.user_id, url: v.url, thumbnail_url: v.thumbnail_url,
-    caption: v.caption, duration_sec: v.duration_sec, created_at: v.created_at,
-    like_count: v.like_count ?? 0,
-    comment_count: commentMapVideo.get(v.id) ?? 0,
-    user_liked: userLikedVideos.has(v.id),
-    user_reaction: feedUserReactionMap.get(v.id) ?? null,
-    reaction_counts: feedReactionCountMap.get(v.id) ?? { heart: 0, amen: 0, laugh: 0, shock: 0 },
-    verse: v.video_verses?.[0] ?? null,
-    profiles: profileMap.get(v.user_id) ?? null,
-  });
+  const items: FeedItem[] = batch.map((v) => ({
+    kind: 'video' as const,
+    data: {
+      id: v.id, user_id: v.user_id, url: v.url, thumbnail_url: v.thumbnail_url,
+      caption: v.caption, duration_sec: v.duration_sec, created_at: v.created_at,
+      like_count: v.like_count ?? 0,
+      comment_count: commentMap.get(v.id) ?? 0,
+      user_liked: userLikedVideos.has(v.id),
+      user_reaction: feedUserReactionMap.get(v.id) ?? null,
+      reaction_counts: feedReactionCountMap.get(v.id) ?? { heart: 0, amen: 0, laugh: 0, shock: 0 },
+      verse: v.video_verses?.[0] ?? null,
+      profiles: profileMap.get(v.user_id) ?? null,
+    } as Video,
+  }));
 
-  const toPostLikeItem = (p: RawPost): { kind: 'post' | 'image'; data: Post | ImagePost } => {
-    const base = {
-      id: p.id, user_id: p.user_id, content: p.content, image_url: p.image_url,
-      verse_reference: p.verse_reference, verse_text: p.verse_text,
-      like_count: p.like_count ?? 0,
-      comment_count: commentMapPost.get(p.id) ?? 0,
-      user_liked: userLikedPosts.has(p.id),
-      created_at: p.created_at,
-      thread_root_id: p.thread_root_id,
-      reply_to_post_id: p.reply_to_post_id,
-      reply_count: p.reply_count ?? 0,
-      profiles: profileMap.get(p.user_id) ?? null,
-    };
-    if (p.image_url) {
-      return { kind: 'image' as const, data: base as ImagePost };
-    }
-    return { kind: 'post' as const, data: base as Post };
-  };
-
-  const videoItems: FeedItem[] = videos.map((v) => ({ kind: 'video', data: toVideo(v) }));
-  const postItems: FeedItem[] = posts.map((p) => toPostLikeItem(p) as FeedItem);
-
-  const repostOriginalVideoMap = new Map<string, Video>(
-    repostOriginalVideos.map((v) => [v.id, toVideo(v)])
-  );
-  const repostOriginalPostMap = new Map<string, Post | ImagePost>(
-    repostOriginalPosts.map((p) => [p.id, toPostLikeItem(p).data])
-  );
-
-  const repostItems: FeedItem[] = reposts.map((r) => {
-    const original =
-      r.original_type === 'video'
-        ? repostOriginalVideoMap.get(r.original_post_id) ?? null
-        : repostOriginalPostMap.get(r.original_post_id) ?? null;
-
-    const data: Repost = {
-      id: r.id,
-      user_id: r.user_id,
-      original_post_id: r.original_post_id,
-      original_type: r.original_type,
-      quote_content: r.quote_content,
-      quote_verse_ref: r.quote_verse_ref,
-      quote_verse_text: r.quote_verse_text,
-      created_at: r.created_at,
-      profiles: profileMap.get(r.user_id) ?? null,
-      original,
-    };
-    return { kind: 'repost', data };
-  });
-
-  // Merge and sort by created_at DESC, take first 5
-  const merged = [...videoItems, ...postItems, ...repostItems].sort(
-    (a, b) => new Date(b.data.created_at).getTime() - new Date(a.data.created_at).getTime()
-  );
-
-  const PAGE = 5;
-  const page = merged.slice(0, PAGE);
-  const nextCursor = merged.length > PAGE ? page[page.length - 1].data.created_at : null;
-
-  return { items: page, nextCursor };
+  const nextCursor = hasMore ? batch[batch.length - 1].created_at : null;
+  return { items, nextCursor };
 }
 
 // ---------------------------------------------------------------------------
