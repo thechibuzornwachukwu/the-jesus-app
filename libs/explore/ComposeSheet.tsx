@@ -79,8 +79,23 @@ export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
   };
 
   return (
-    <BottomSheet open={open} onClose={handleClose} title="Upload Video">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+    <BottomSheet
+      open={open}
+      onClose={handleClose}
+      title="Upload Video"
+      contentScrollable={false}
+      contentStyle={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+    >
+      {/* Scrollable body — grows, shrinks, scrolls if keyboard pushes space */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        overscrollBehavior: 'contain',
+        padding: 'var(--space-4) var(--space-6)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-3)',
+      }}>
 
         {/* Video preview / picker */}
         {videoFile ? (
@@ -156,49 +171,58 @@ export function ComposeSheet({ open, onClose, onUploaded }: ComposeSheetProps) {
             {error}
           </p>
         )}
-
-        {/* Toolbar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-3)' }}>
-          <ToolBtn label="Tag scripture" active={scriptureOpen} onClick={() => setScriptureOpen((v) => !v)}>
-            <BookOpen size={18} />
-          </ToolBtn>
-
-          <span style={{ flex: 1 }} />
-          <span style={{
-            fontSize: 'var(--font-size-xs)',
-            color: charsLeft < 50 ? 'var(--color-error)' : 'var(--color-text-muted)',
-            fontVariantNumeric: 'tabular-nums',
-          }}>
-            {charsLeft}
-          </span>
-
-          <button
-            onClick={handlePublish}
-            disabled={uploading}
-            style={{
-              padding: 'var(--space-2) var(--space-5)',
-              borderRadius: 'var(--radius-full)',
-              background: uploading ? 'var(--color-border)' : 'var(--color-accent)',
-              border: 'none',
-              color: uploading ? 'var(--color-text-muted)' : 'var(--color-accent-text)',
-              fontWeight: 'var(--font-weight-semibold)',
-              fontSize: 'var(--font-size-sm)',
-              cursor: uploading ? 'default' : 'pointer',
-              transition: 'background 0.15s',
-            }}
-          >
-            {uploading ? 'Uploading…' : 'Post'}
-          </button>
-        </div>
-
-        <input
-          ref={videoInputRef}
-          type="file"
-          accept="video/mp4,video/webm,video/quicktime"
-          style={{ display: 'none' }}
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) pickVideo(f); e.target.value = ''; }}
-        />
       </div>
+
+      {/* Sticky toolbar — always visible above keyboard */}
+      <div style={{
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-2)',
+        borderTop: '1px solid var(--color-border)',
+        padding: 'var(--space-3) var(--space-6)',
+        paddingBottom: 'calc(var(--safe-bottom, 0px) + var(--space-3))',
+        background: 'var(--color-bg-surface)',
+      }}>
+        <ToolBtn label="Tag scripture" active={scriptureOpen} onClick={() => setScriptureOpen((v) => !v)}>
+          <BookOpen size={18} />
+        </ToolBtn>
+
+        <span style={{ flex: 1 }} />
+        <span style={{
+          fontSize: 'var(--font-size-xs)',
+          color: charsLeft < 50 ? 'var(--color-error)' : 'var(--color-text-muted)',
+          fontVariantNumeric: 'tabular-nums',
+        }}>
+          {charsLeft}
+        </span>
+
+        <button
+          onClick={handlePublish}
+          disabled={uploading}
+          style={{
+            padding: 'var(--space-2) var(--space-5)',
+            borderRadius: 'var(--radius-full)',
+            background: uploading ? 'var(--color-border)' : 'var(--color-accent)',
+            border: 'none',
+            color: uploading ? 'var(--color-text-muted)' : 'var(--color-accent-text)',
+            fontWeight: 'var(--font-weight-semibold)',
+            fontSize: 'var(--font-size-sm)',
+            cursor: uploading ? 'default' : 'pointer',
+            transition: 'background 0.15s',
+          }}
+        >
+          {uploading ? 'Uploading…' : 'Post'}
+        </button>
+      </div>
+
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/mp4,video/webm,video/quicktime"
+        style={{ display: 'none' }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) pickVideo(f); e.target.value = ''; }}
+      />
     </BottomSheet>
   );
 }
