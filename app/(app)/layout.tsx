@@ -4,6 +4,7 @@ import { BottomNav } from '../../components/BottomNav';
 import { PwaInstallPrompt } from '../../components/PwaInstallPrompt';
 import { ToastContainer } from '../../libs/shared-ui/Toast';
 import { BereanProvider } from '../../lib/berean/context';
+import { BibleProvider } from '../../lib/bible/context';
 import { CompleteProfileBanner } from '../../libs/shared-ui/CompleteProfileBanner';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -26,13 +27,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <BereanProvider>
-      {profileIncomplete && <CompleteProfileBanner />}
-      <main className="page-content">
-        {children}
-      </main>
-      <BottomNav />
-      <PwaInstallPrompt />
-      <ToastContainer />
+      <BibleProvider>
+        {profileIncomplete && <CompleteProfileBanner />}
+        <main className="page-content">
+          {children}
+        </main>
+        <BottomNav />
+        <PwaInstallPrompt />
+        <ToastContainer />
+      </BibleProvider>
     </BereanProvider>
   );
 }

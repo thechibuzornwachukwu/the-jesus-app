@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useTransition } from 'react';
-import { Search, Plus, Users } from 'lucide-react';
+import { Search, Plus, Users, BookOpenText } from 'lucide-react';
+import { useBible } from '../../../lib/bible/context';
 import { useRouter } from 'next/navigation';
 import { Avatar } from '../../../libs/shared-ui/Avatar';
 import { CreateCellSheet } from '../../../libs/cells/CreateCellSheet';
@@ -189,6 +190,7 @@ export function EngageClient({
   verse,
   verseEngagement,
 }: EngageClientProps) {
+  const { openBible } = useBible();
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -277,6 +279,25 @@ export function EngageClient({
         >
           Engage
         </h1>
+        <button
+          onClick={openBible}
+          aria-label="Open Bible"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 'var(--radius-full)',
+            border: 'none',
+            background: 'var(--color-surface)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--color-text-muted)',
+            flexShrink: 0,
+          }}
+        >
+          <BookOpenText size={17} />
+        </button>
         <button
           onClick={handleSearchToggle}
           aria-label="Search cells"

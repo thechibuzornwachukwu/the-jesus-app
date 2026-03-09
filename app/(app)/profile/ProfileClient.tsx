@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Bell, Settings } from 'lucide-react';
+import { Bell, Settings, BookOpenText } from 'lucide-react';
+import { useBible } from '../../../lib/bible/context';
 import {
   ProfileHeader,
   ContentTabs,
@@ -47,6 +48,7 @@ export function ProfileClient({
   friendCount,
   streakData,
 }: ProfileClientProps) {
+  const { openBible } = useBible();
   const [profile, setProfile] = useState(initialProfile);
   const [notifOpen, setNotifOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -149,6 +151,15 @@ export function ProfileClient({
             Profile
           </h1>
           <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+            {/* Bible */}
+            <button
+              className="profile-icon-btn"
+              onClick={openBible}
+              aria-label="Open Bible"
+            >
+              <BookOpenText size={22} />
+            </button>
+
             {/* Bell */}
             <button
               className="profile-icon-btn"

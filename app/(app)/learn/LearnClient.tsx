@@ -7,6 +7,8 @@ import { SermonExtractor } from '../../../libs/learn/SermonExtractor';
 import type { CourseProgress } from '../../../libs/learn/types';
 import { LIBRARY_BOOKS } from '../../../lib/learn/library-content';
 import { useBerean } from '../../../lib/berean/context';
+import { useBible } from '../../../lib/bible/context';
+import { BookOpenText } from 'lucide-react';
 
 interface LearnClientProps {
   initialProgress: CourseProgress[];
@@ -267,6 +269,7 @@ function BereanSection({ onOpen }: { onOpen: () => void }) {
 export function LearnClient({ initialProgress, initialBereanOpen = false }: LearnClientProps) {
   const [courseOpen, setCourseOpen] = React.useState(false);
   const { openBerean } = useBerean();
+  const { openBible } = useBible();
 
   useEffect(() => {
     if (initialBereanOpen) openBerean();
@@ -289,28 +292,52 @@ export function LearnClient({ initialProgress, initialBereanOpen = false }: Lear
       {/* Page header  hidden when a course track is open */}
       {!courseOpen && (
         <div style={{ padding: 'var(--space-6) var(--space-6) 0', flexShrink: 0 }}>
-          <h1
-            style={{
-              fontFamily: "'Archivo Condensed', var(--font-display)",
-              margin: '0 0 var(--space-1)',
-              fontSize: 'var(--font-size-4xl)',
-              fontWeight: 'var(--font-weight-black)' as React.CSSProperties['fontWeight'],
-              letterSpacing: 'var(--letter-spacing-tight)',
-              color: 'var(--color-text-primary)',
-              lineHeight: 'var(--line-height-tight)',
-            }}
-          >
-            Equip
-          </h1>
-          <p
-            style={{
-              margin: '0 0 var(--space-5)',
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-muted)',
-            }}
-          >
-            Push further with Biblical insights
-          </p>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div>
+              <h1
+                style={{
+                  fontFamily: "'Archivo Condensed', var(--font-display)",
+                  margin: '0 0 var(--space-1)',
+                  fontSize: 'var(--font-size-4xl)',
+                  fontWeight: 'var(--font-weight-black)' as React.CSSProperties['fontWeight'],
+                  letterSpacing: 'var(--letter-spacing-tight)',
+                  color: 'var(--color-text-primary)',
+                  lineHeight: 'var(--line-height-tight)',
+                }}
+              >
+                Equip
+              </h1>
+              <p
+                style={{
+                  margin: '0 0 var(--space-5)',
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                Push further with Biblical insights
+              </p>
+            </div>
+            <button
+              onClick={openBible}
+              aria-label="Open Bible"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 'var(--radius-full)',
+                border: 'none',
+                background: 'var(--color-surface)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--color-text-muted)',
+                flexShrink: 0,
+                marginTop: 2,
+              }}
+            >
+              <BookOpenText size={18} />
+            </button>
+          </div>
         </div>
       )}
 

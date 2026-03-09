@@ -1,18 +1,10 @@
-import { getBiblePassage, getBibleVerseOfDay } from '../../../lib/bible';
-import { BibleClient } from './BibleClient';
+// The Bible reader is now a global draggable overlay reachable from every page
+// via the BookOpenText button in each tab header. This route is retired visually
+// but kept so any old links / bookmarks don't 404.
+import { redirect } from 'next/navigation';
 
 export const metadata = { title: 'Bible | The JESUS App' };
 
-export default async function BiblePage() {
-  const [initialPassage, verseOfDay] = await Promise.all([
-    getBiblePassage('John 1:1'),
-    Promise.resolve(getBibleVerseOfDay()),
-  ]);
-
-  return (
-    <BibleClient
-      initialPassage={initialPassage}
-      verseOfDay={verseOfDay}
-    />
-  );
+export default function BiblePage() {
+  redirect('/explore');
 }

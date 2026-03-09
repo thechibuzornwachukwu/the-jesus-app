@@ -7,7 +7,8 @@ import { PerspectiveFeed, type PerspectiveFeedHandle } from '../../../libs/explo
 import { CommentSheet } from '../../../libs/explore/CommentSheet';
 import { ComposeSheet } from '../../../libs/explore/ComposeSheet';
 import { showToast } from '../../../libs/shared-ui/Toast';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, BookOpenText } from 'lucide-react';
+import { useBible } from '../../../lib/bible/context';
 
 const VERSE_BANNER_H = '56px';
 const HEADER_H = '56px';
@@ -39,6 +40,7 @@ export function ExploreClient({ initialItems, initialCursor, dailyVerse, userId 
   const [search, setSearch] = useState('');
   const feedRef = useRef<PerspectiveFeedHandle>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { openBible } = useBible();
 
   const handleUploaded = async (_id: string, _kind: 'video'): Promise<void> => {
     showToast('Perspective published!', 'success');
@@ -75,6 +77,15 @@ export function ExploreClient({ initialItems, initialCursor, dailyVerse, userId 
         }}>
           Experience
         </h1>
+
+        {/* Bible button */}
+        <button
+          onClick={openBible}
+          aria-label="Open Bible"
+          style={{ ...BTN, background: 'var(--color-surface)', color: 'var(--color-text)' }}
+        >
+          <BookOpenText size={18} />
+        </button>
 
         {/* Search button */}
         <button
