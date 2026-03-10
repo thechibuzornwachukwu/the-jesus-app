@@ -738,9 +738,14 @@ export async function followUser(targetId: string): Promise<{ error?: string }> 
     .from('user_follows')
     .insert({ follower_id: user.id, following_id: targetId });
 
-  if (error && error.code !== '23505') return { error: error.message }; // ignore duplicate
+  if (error) {
+    if (error.code === '23505') return {}; // already following — no-op
+    console.error('[followUser] insert failed:', error.code, error.message);
+    return { error: error.message };
+  }
 
-  // Fetch follower's username for the notification payload
+  // Fetch follower's username for push notification
+  // (DB trigger trg_notify_on_follow handles the notifications row)
   const { data: followerProfile } = await supabase
     .from('profiles')
     .select('username')
@@ -748,14 +753,6 @@ export async function followUser(targetId: string): Promise<{ error?: string }> 
     .single();
 
   const followerUsername = (followerProfile as { username?: string } | null)?.username ?? user.id;
-
-  // Insert follow notification (ignore errors — non-critical)
-  await supabase.from('notifications').insert({
-    user_id: targetId,
-    actor_id: user.id,
-    type: 'follow',
-    payload: { follower_id: user.id, follower_username: followerUsername },
-  });
 
   // Fire-and-forget push
   void sendPushToUser(
@@ -787,7 +784,11 @@ export async function unfollowUser(targetId: string): Promise<{ error?: string }
     .eq('follower_id', user.id)
     .eq('following_id', targetId);
 
-  return error ? { error: error.message } : {};
+  if (error) {
+    console.error('[unfollowUser] delete failed:', error.code, error.message);
+    return { error: error.message };
+  }
+  return {};
 }
 
 // ────────────────────────────────────────────────────────────

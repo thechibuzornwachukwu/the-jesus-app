@@ -14,6 +14,7 @@ import { ScheduledMessagesList } from './ScheduledMessagesList';
 import { TimestampReplyBar } from './TimestampReplyBar';
 import { scheduleMessage } from '../../lib/cells/actions';
 import { logStreakEvent } from '../../lib/streaks/actions';
+import { UserProfileSheet } from '../shared-ui/UserProfileSheet';
 import type { Message, Profile } from '../../lib/cells/types';
 
 function formatTime(isoStr: string): string {
@@ -77,6 +78,7 @@ export function Chat({
     username: string;
   } | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [profileSheetUserId, setProfileSheetUserId] = useState<string | null>(null);
 
   // Long-press timer ref for send button
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -810,6 +812,11 @@ export function Chat({
                 onTimestampReply={handleTimestampReply}
                 onScrollToMessage={scrollToMessage}
                 onOpenLightbox={setLightboxUrl}
+                onAvatarPress={
+                  msg.user_id !== currentUser.id
+                    ? (uid) => setProfileSheetUserId(uid)
+                    : undefined
+                }
               />
             );
           })}
@@ -1198,6 +1205,13 @@ export function Chat({
           />
         </div>
       )}
+
+      {/* User profile sheet */}
+      <UserProfileSheet
+        open={!!profileSheetUserId}
+        onClose={() => setProfileSheetUserId(null)}
+        userId={profileSheetUserId}
+      />
     </>
   );
 }
@@ -1212,6 +1226,7 @@ function DiscordMessage({
   onTimestampReply,
   onScrollToMessage,
   onOpenLightbox,
+  onAvatarPress,
 }: {
   msg: Message;
   isOwn: boolean;
@@ -1222,6 +1237,7 @@ function DiscordMessage({
   onTimestampReply?: (messageId: string, seconds: number) => void;
   onScrollToMessage?: (msgId: string) => void;
   onOpenLightbox?: (url: string) => void;
+  onAvatarPress?: (userId: string) => void;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -1276,7 +1292,12 @@ function DiscordMessage({
             {formatTime(msg.created_at)}
           </span>
         ) : (
-          <div style={{ position: 'relative' }}>
+          <div
+            style={{ position: 'relative', cursor: onAvatarPress ? 'pointer' : 'default' }}
+            onClick={() => onAvatarPress?.(msg.user_id)}
+            role={onAvatarPress ? 'button' : undefined}
+            aria-label={onAvatarPress ? `View ${msg.profiles?.username ?? 'user'}'s profile` : undefined}
+          >
             <Avatar src={msg.profiles?.avatar_url} name={msg.profiles?.username} size={36} />
             {isOnline && (
               <span
@@ -1308,10 +1329,12 @@ function DiscordMessage({
             }}
           >
             <span
+              onClick={() => !isOwn && onAvatarPress?.(msg.user_id)}
               style={{
                 fontWeight: 'var(--font-weight-semibold)',
                 fontSize: 'var(--font-size-sm)',
                 color: isOwn ? 'var(--color-accent)' : 'var(--color-text)',
+                cursor: !isOwn && onAvatarPress ? 'pointer' : 'default',
               }}
             >
               {isOwn ? 'You' : (msg.profiles?.username ?? 'Unknown')}

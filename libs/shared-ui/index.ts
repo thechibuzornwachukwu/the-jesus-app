@@ -17,3 +17,4 @@ export { Skeleton } from './Skeleton';
 export { ToastContainer, showToast } from './Toast';
 export type { ToastType } from './Toast';
 export { vibrate } from './haptics';
+export { UserProfileSheet } from './UserProfileSheet';

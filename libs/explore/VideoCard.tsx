@@ -9,6 +9,7 @@ import { ReactionPicker } from './ReactionPicker';
 import { toggleReaction, saveVerse } from '../../lib/explore/actions';
 import { vibrate } from '../shared-ui/haptics';
 import { showToast } from '../shared-ui';
+import { UserProfileSheet } from '../shared-ui/UserProfileSheet';
 
 interface VideoCardProps {
   video: Video;
@@ -29,6 +30,7 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
   const [amenBurst, setAmenBurst] = useState(false);
   const [muted, setMuted] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
 
   // Autoplay / pause when active changes
   useEffect(() => {
@@ -108,6 +110,7 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
   };
 
   return (
+    <>
     <div
       style={{
         position: 'relative',
@@ -212,7 +215,7 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
       >
         {/* Author row */}
         <button
-          onClick={() => { if (video.user_id) router.push('/profile/id/' + video.user_id); }}
+          onClick={() => { if (video.user_id) setProfileSheetOpen(true); }}
           style={{
             display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
             background: 'none', border: 'none', cursor: video.user_id ? 'pointer' : 'default',
@@ -334,6 +337,16 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
         }
       `}</style>
     </div>
+
+    {/* Author profile sheet */}
+    {video.user_id && (
+      <UserProfileSheet
+        open={profileSheetOpen}
+        onClose={() => setProfileSheetOpen(false)}
+        userId={video.user_id}
+      />
+    )}
+  </>
   );
 }
 
