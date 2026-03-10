@@ -119,7 +119,7 @@ export function CellCard({ cell, isMember, featured }: CellCardProps) {
           height: bannerHeight,
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(160deg, var(--color-surface-high) 0%, var(--color-sidebar) 100%)',
+          background: 'linear-gradient(160deg, var(--color-surface-high) 0%, var(--color-faint-bg, var(--color-sidebar, var(--color-surface))) 100%)',
         }}
       >
         {cell.banner_url ? (
@@ -131,6 +131,16 @@ export function CellCard({ cell, isMember, featured }: CellCardProps) {
         ) : (
           <FaintCross />
         )}
+        {/* Gradient overlay — always shown for clean content transition */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: cell.banner_url
+              ? 'linear-gradient(to bottom, transparent 30%, rgba(4,5,3,0.55) 100%)'
+              : 'none',
+          }}
+        />
       </div>
 
       {/* Content */}
@@ -204,31 +214,26 @@ export function CellCard({ cell, isMember, featured }: CellCardProps) {
           </div>
         </div>
 
-        {/* Footer: avatar stack + member overflow + activity */}
+        {/* Footer: avatar stack + member count + activity */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 'var(--space-2)',
+            gap: 6,
             marginTop: 'var(--space-2)',
           }}
         >
           {cell.member_preview.length > 0 && (
-            <>
-              <AvatarStack members={cell.member_preview} />
-              {(cell.member_count ?? 0) > 3 && (
-                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-accent)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  +{(cell.member_count ?? 0) - 3}
-                </span>
-              )}
-              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-faint)' }}>
-                ·
-              </span>
-            </>
+            <AvatarStack members={cell.member_preview} />
+          )}
+          {(cell.member_count ?? 0) > 0 && (
+            <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-faint)' }}>
+              {cell.member_count} {(cell.member_count ?? 0) === 1 ? 'member' : 'members'}
+            </span>
           )}
           <span
             style={{
-              fontSize: 'var(--font-size-xs)',
+              fontSize: '0.6875rem',
               color: 'var(--color-text-faint)',
               marginLeft: 'auto',
             }}

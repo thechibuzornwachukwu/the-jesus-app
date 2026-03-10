@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { ChevronDown, ChevronRight, Hash, Megaphone, Plus, MoreVertical, Info, X, Calendar } from 'lucide-react';
+import { Hash, Megaphone, Plus, MoreVertical, Info, X, Calendar } from 'lucide-react';
 import type { ChannelCategory, Channel, NotificationScore } from '../../lib/cells/types';
 import { sortChannelsByPriority, getChannelPriorityClass } from '../../lib/cells/notification-scoring';
 
@@ -52,7 +52,6 @@ export function ChannelSidebar({
   upcomingMeetings = [],
 }: ChannelSidebarProps) {
   const isAdmin = userRole === 'admin';
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [contextMenu, setContextMenu] = useState<{
     channelId: string;
     x: number;
@@ -64,15 +63,6 @@ export function ChannelSidebar({
   }>({ draggingId: null, overCategoryId: null });
   const dragItem = useRef<{ channelId: string; categoryId: string | null; position: number } | null>(null);
   const dragOver = useRef<{ channelId: string; position: number } | null>(null);
-
-  function toggleCategory(catId: string) {
-    setCollapsedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(catId)) next.delete(catId);
-      else next.add(catId);
-      return next;
-    });
-  }
 
   function handleDragStart(
     e: React.DragEvent,
@@ -115,8 +105,8 @@ export function ChannelSidebar({
   return (
     <div
       style={{
-        width: 240,
-        minWidth: 240,
+        width: 220,
+        minWidth: 220,
         height: '100%',
         background: 'var(--color-panel)',
         display: 'flex',
@@ -125,10 +115,17 @@ export function ChannelSidebar({
         overflow: 'hidden',
       }}
     >
+      {/* Mobile handle bar */}
+      {onClose && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 4px' }}>
+          <div style={{ width: 32, height: 3, borderRadius: 2, background: 'var(--color-border)' }} />
+        </div>
+      )}
+
       {/* Cell header */}
       <div
         style={{
-          height: 52,
+          height: 44,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -141,7 +138,7 @@ export function ChannelSidebar({
           href={`/engage/${cellSlug}/info`}
           style={{
             fontWeight: 'var(--font-weight-semibold)',
-            fontSize: 'var(--font-size-sm)',
+            fontSize: '0.875rem',
             color: 'var(--color-text)',
             textDecoration: 'none',
             overflow: 'hidden',
@@ -151,10 +148,11 @@ export function ChannelSidebar({
             display: 'flex',
             alignItems: 'center',
             gap: 'var(--space-1)',
+            letterSpacing: '-0.01em',
           }}
         >
           {cellName}
-          <Info size={12} style={{ opacity: 0.4, flexShrink: 0 }} />
+          <Info size={11} style={{ opacity: 0.35, flexShrink: 0 }} />
         </a>
         {onClose && (
           <button
@@ -170,242 +168,221 @@ export function ChannelSidebar({
               alignItems: 'center',
             }}
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         )}
       </div>
 
-      {/* Channels list */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-2) 0' }}>
-        {sortChannelsByPriority(categories, notificationScores).map((cat) => {
-          const collapsed = collapsedCategories.has(cat.id);
-          return (
+      {/* Channels list — flat grouped */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
+        {sortChannelsByPriority(categories, notificationScores).map((cat) => (
+          <div
+            key={cat.id}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragState((s) => ({ ...s, overCategoryId: cat.id }));
+            }}
+            onDrop={(e) => handleDrop(e, cat.id)}
+          >
+            {/* Flat category label */}
             <div
-              key={cat.id}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragState((s) => ({ ...s, overCategoryId: cat.id }));
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '10px var(--space-3) 3px',
               }}
-              onDrop={(e) => handleDrop(e, cat.id)}
             >
-              {/* Category header */}
-              <div
+              <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '6px var(--space-2) 2px',
-                  cursor: 'pointer',
-                  userSelect: 'none',
+                  fontSize: '0.625rem',
+                  fontWeight: 700,
+                  color: 'var(--color-text-faint)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  flex: 1,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                 }}
-                onClick={() => toggleCategory(cat.id)}
               >
-                {collapsed ? (
-                  <ChevronRight size={11} style={{ color: 'var(--color-text-faint)', marginRight: 2, flexShrink: 0 }} />
-                ) : (
-                  <ChevronDown size={11} style={{ color: 'var(--color-text-faint)', marginRight: 2, flexShrink: 0 }} />
-                )}
-                <span
-                  style={{
-                    fontSize: '0.6875rem',
-                    fontWeight: 'var(--font-weight-semibold)',
-                    color: 'var(--color-text-faint)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    flex: 1,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {cat.name}
-                </span>
+                {cat.name}
+              </span>
+              {isAdmin && (
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!isAdmin) return;
-                    onAddChannel(cat.id);
-                  }}
-                  aria-label={isAdmin ? 'Add channel' : 'Only admins can add channels'}
-                  title={isAdmin ? 'Add channel' : 'Only admins can add channels'}
-                  disabled={!isAdmin}
+                  onClick={() => onAddChannel(cat.id)}
+                  aria-label="Add channel"
+                  title="Add channel"
                   style={{
                     background: 'none',
                     border: 'none',
                     color: 'var(--color-text-faint)',
-                    cursor: isAdmin ? 'pointer' : 'not-allowed',
-                    opacity: isAdmin ? 1 : 0.45,
-                    padding: 2,
+                    cursor: 'pointer',
+                    padding: '1px 2px',
                     display: 'flex',
                     alignItems: 'center',
-                    borderRadius: 4,
+                    borderRadius: 3,
+                    opacity: 0.6,
                   }}
                 >
-                  <Plus size={13} />
+                  <Plus size={11} />
                 </button>
-              </div>
+              )}
+            </div>
 
-              {/* Channels in category */}
-              {!collapsed &&
-                (cat.channels ?? []).map((ch) => {
-                  const isActive = ch.id === activeChannelId;
-                  const unread = unreadCounts[ch.id] ?? 0;
-                  const score = notificationScores[ch.id] ?? 0;
-                  const priority = getChannelPriorityClass(score);
-                  const isDragging = dragState.draggingId === ch.id;
-                  const isMeeting = ch.channel_type === 'meeting';
-                  // eslint-disable-next-line react-hooks/rules-of-hooks
-                  const meetingAlert = useMeetingAlert(ch.id, upcomingMeetings);
+            {/* Channels */}
+            {(cat.channels ?? []).map((ch) => {
+              const isActive = ch.id === activeChannelId;
+              const unread = unreadCounts[ch.id] ?? 0;
+              const score = notificationScores[ch.id] ?? 0;
+              const priority = getChannelPriorityClass(score);
+              const isDragging = dragState.draggingId === ch.id;
+              const isMeeting = ch.channel_type === 'meeting';
+              // eslint-disable-next-line react-hooks/rules-of-hooks
+              const meetingAlert = useMeetingAlert(ch.id, upcomingMeetings);
 
-                  return (
-                    <div
-                      key={ch.id}
-                      draggable={isAdmin}
-                      onDragStart={(e) => handleDragStart(e, ch.id, cat.id, ch.position)}
-                      onDragOver={(e) => handleDragOver(e, ch.id, ch.position)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => onChannelSelect(ch.id)}
-                      onContextMenu={(e) => {
-                        if (!isAdmin) return;
-                        e.preventDefault();
-                        setContextMenu({ channelId: ch.id, x: e.clientX, y: e.clientY });
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--space-2)',
-                        padding: '5px var(--space-3)',
-                        marginLeft: 'var(--space-2)',
-                        marginRight: 'var(--space-2)',
-                        borderRadius: 'var(--radius-sm)',
-                        cursor: 'pointer',
-                        background: isActive
-                          ? 'var(--color-panel-hover)'
-                          : priority === 'high'
-                          ? 'var(--color-accent-soft)'
-                          : 'transparent',
-                        borderLeft: isActive
-                          ? '2px solid var(--color-accent)'
-                          : priority !== 'normal'
-                          ? '2px solid var(--color-accent)'
-                          : '2px solid transparent',
-                        opacity: isDragging ? 0.4 : 1,
-                        boxShadow: priority === 'high' ? '0 0 6px 1px rgba(212,146,42,0.25)' : 'none',
-                        transition: 'background 0.1s, box-shadow 0.2s',
-                        userSelect: 'none',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'var(--color-panel-hover)';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent';
-                      }}
-                    >
-                      <span style={{ flexShrink: 0, opacity: 0.6, fontSize: 14, position: 'relative' }}>
-                        {ch.emoji ? (
-                          ch.emoji
-                        ) : isMeeting ? (
-                          <Calendar size={14} />
-                        ) : ch.channel_type === 'announcement' ? (
-                          <Megaphone size={14} />
-                        ) : (
-                          <Hash size={14} />
-                        )}
-                        {meetingAlert && (
-                          <span
-                            style={{
-                              position: 'absolute',
-                              top: -3,
-                              right: -3,
-                              width: 7,
-                              height: 7,
-                              borderRadius: '50%',
-                              background: 'var(--color-accent)',
-                              animation: 'sidebar-meeting-pulse 1.4s ease-in-out infinite',
-                            }}
-                          />
-                        )}
-                      </span>
+              return (
+                <div
+                  key={ch.id}
+                  draggable={isAdmin}
+                  onDragStart={(e) => handleDragStart(e, ch.id, cat.id, ch.position)}
+                  onDragOver={(e) => handleDragOver(e, ch.id, ch.position)}
+                  onDragEnd={handleDragEnd}
+                  onClick={() => onChannelSelect(ch.id)}
+                  onContextMenu={(e) => {
+                    if (!isAdmin) return;
+                    e.preventDefault();
+                    setContextMenu({ channelId: ch.id, x: e.clientX, y: e.clientY });
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 10px',
+                    marginLeft: 6,
+                    marginRight: 6,
+                    borderRadius: 5,
+                    cursor: 'pointer',
+                    background: isActive
+                      ? 'var(--color-panel-hover)'
+                      : priority === 'high'
+                      ? 'var(--color-accent-soft)'
+                      : 'transparent',
+                    borderLeft: isActive
+                      ? '2px solid var(--color-accent)'
+                      : '2px solid transparent',
+                    opacity: isDragging ? 0.3 : 1,
+                    transition: 'background 0.12s, opacity 0.15s',
+                    userSelect: 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'var(--color-panel-hover)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) (e.currentTarget as HTMLDivElement).style.background =
+                      priority === 'high' ? 'var(--color-accent-soft)' : 'transparent';
+                  }}
+                >
+                  <span style={{ flexShrink: 0, opacity: 0.55, fontSize: 13, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    {ch.emoji ? (
+                      ch.emoji
+                    ) : isMeeting ? (
+                      <Calendar size={13} />
+                    ) : ch.channel_type === 'announcement' ? (
+                      <Megaphone size={13} />
+                    ) : (
+                      <Hash size={13} />
+                    )}
+                    {meetingAlert && (
                       <span
                         style={{
-                          flex: 1,
-                          fontSize: 'var(--font-size-sm)',
-                          color: isActive
-                            ? 'var(--color-text)'
-                            : unread > 0
-                            ? 'var(--color-text)'
-                            : 'var(--color-text-muted)',
-                          fontWeight: unread > 0 ? 'var(--font-weight-semibold)' : 'var(--font-weight-regular)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          position: 'absolute',
+                          top: -2,
+                          right: -2,
+                          width: 5,
+                          height: 5,
+                          borderRadius: '50%',
+                          background: 'var(--color-accent)',
+                          animation: 'sidebar-meeting-pulse 1.4s ease-in-out infinite',
                         }}
-                      >
-                        {ch.name}
-                      </span>
-                      {isMeeting && (
-                        <span
-                          style={{
-                            fontSize: '0.5625rem',
-                            fontWeight: 'var(--font-weight-bold)',
-                            color: 'var(--color-accent)',
-                            background: 'var(--color-accent-soft)',
-                            borderRadius: 3,
-                            padding: '1px 4px',
-                            letterSpacing: '0.04em',
-                            flexShrink: 0,
-                          }}
-                        >
-                          MTG
-                        </span>
-                      )}
-                      {unread > 0 && (
-                        <span
-                          style={{
-                            background: 'var(--color-error)',
-                            color: '#fff',
-                            fontSize: '0.625rem',
-                            fontWeight: 'var(--font-weight-bold)',
-                            borderRadius: 'var(--radius-full)',
-                            padding: '1px 5px',
-                            minWidth: 16,
-                            textAlign: 'center',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {unread > 99 ? '99+' : unread}
-                        </span>
-                      )}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isAdmin) return;
-                          setContextMenu({ channelId: ch.id, x: e.clientX, y: e.clientY });
-                        }}
-                        aria-label={isAdmin ? 'Channel options' : 'Only admins can manage channels'}
-                        title={isAdmin ? 'Channel options' : 'Only admins can manage channels'}
-                        disabled={!isAdmin}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--color-text-faint)',
-                          cursor: isAdmin ? 'pointer' : 'not-allowed',
-                          opacity: isAdmin ? 0 : 0.45,
-                          padding: 2,
-                          display: 'flex',
-                          alignItems: 'center',
-                          borderRadius: 4,
-                          flexShrink: 0,
-                        }}
-                        className={isAdmin ? 'channel-menu-btn' : undefined}
-                      >
-                        <MoreVertical size={13} />
-                      </button>
-                    </div>
-                  );
-                })}
-            </div>
-          );
-        })}
+                      />
+                    )}
+                  </span>
+                  <span
+                    style={{
+                      flex: 1,
+                      fontSize: '0.8125rem',
+                      color: isActive || unread > 0 ? 'var(--color-text)' : 'var(--color-text-muted)',
+                      fontWeight: isActive || unread > 0 ? 600 : 400,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {ch.name}
+                  </span>
+                  {isMeeting && !meetingAlert && (
+                    <span
+                      style={{
+                        fontSize: '0.5rem',
+                        fontWeight: 700,
+                        color: 'var(--color-accent)',
+                        background: 'var(--color-accent-soft)',
+                        borderRadius: 3,
+                        padding: '1px 3px',
+                        letterSpacing: '0.04em',
+                        flexShrink: 0,
+                      }}
+                    >
+                      MTG
+                    </span>
+                  )}
+                  {unread > 0 && (
+                    <span
+                      style={{
+                        background: 'var(--color-accent)',
+                        color: 'var(--color-accent-text)',
+                        fontSize: '0.5625rem',
+                        fontWeight: 700,
+                        borderRadius: 'var(--radius-full)',
+                        padding: '1px 4px',
+                        minWidth: 14,
+                        textAlign: 'center',
+                        flexShrink: 0,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {unread > 99 ? '99+' : unread}
+                    </span>
+                  )}
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setContextMenu({ channelId: ch.id, x: e.clientX, y: e.clientY });
+                      }}
+                      aria-label="Channel options"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--color-text-faint)',
+                        cursor: 'pointer',
+                        opacity: 0,
+                        padding: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        borderRadius: 3,
+                        flexShrink: 0,
+                      }}
+                      className="channel-menu-btn"
+                    >
+                      <MoreVertical size={12} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {/* Context menu */}

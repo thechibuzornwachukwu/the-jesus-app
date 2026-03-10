@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useTransition } from 'react';
-import { Search, Plus, Users, BookOpenText, UserSearch } from 'lucide-react';
-import { useBible } from '../../../lib/bible/context';
+import { Search, Plus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Avatar } from '../../../libs/shared-ui/Avatar';
 import { CreateCellSheet } from '../../../libs/cells/CreateCellSheet';
@@ -76,8 +75,8 @@ function CommunityRow({ cell, lastMsg, onLeave, defaultChannelId }: CommunityRow
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
-          padding: '10px 16px',
+          gap: 14,
+          padding: '13px 16px',
           background: pressed ? 'var(--color-surface)' : 'transparent',
           cursor: 'pointer',
           outline: 'none',
@@ -89,15 +88,15 @@ function CommunityRow({ cell, lastMsg, onLeave, defaultChannelId }: CommunityRow
         {/* Avatar */}
         <div
           style={{
-            width: 48,
-            height: 48,
+            width: 50,
+            height: 50,
             borderRadius: '50%',
             overflow: 'hidden',
             flexShrink: 0,
             border: '2px solid var(--color-border)',
           }}
         >
-          <Avatar src={cell.avatar_url} name={cell.name} size={48} />
+          <Avatar src={cell.avatar_url} name={cell.name} size={50} />
         </div>
 
         {/* Text */}
@@ -105,24 +104,26 @@ function CommunityRow({ cell, lastMsg, onLeave, defaultChannelId }: CommunityRow
           <p
             style={{
               margin: 0,
-              fontSize: 'var(--font-size-sm)',
+              fontSize: '0.9375rem',
               fontWeight: 'var(--font-weight-semibold)',
               color: 'var(--color-text)',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
+              letterSpacing: '-0.01em',
             }}
           >
             {cell.name}
           </p>
           <p
             style={{
-              margin: '2px 0 0',
-              fontSize: 12,
+              margin: '3px 0 0',
+              fontSize: '0.8125rem',
               color: 'var(--color-text-muted)',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
+              lineHeight: 1.3,
             }}
           >
             {lastMessagePreview(lastMsg)}
@@ -190,7 +191,6 @@ export function EngageClient({
   verse,
   verseEngagement,
 }: EngageClientProps) {
-  const { openBible } = useBible();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -256,7 +256,7 @@ export function EngageClient({
           position: 'sticky',
           top: 0,
           zIndex: 10,
-          height: 56,
+          height: 52,
           display: 'flex',
           alignItems: 'center',
           padding: '0 var(--space-4)',
@@ -271,7 +271,7 @@ export function EngageClient({
             flex: 1,
             margin: 0,
             fontFamily: "'Archivo Condensed', var(--font-display)",
-            fontSize: '1.6rem',
+            fontSize: '1.5rem',
             fontWeight: 900,
             letterSpacing: '-0.01em',
             color: 'var(--color-text)',
@@ -281,81 +281,24 @@ export function EngageClient({
           Engage
         </h1>
         <button
-          onClick={() => { vibrate([8]); router.push('/discover'); }}
-          aria-label="Discover people"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 'var(--radius-full)',
-            border: 'none',
-            background: 'var(--color-surface)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--color-text-muted)',
-            flexShrink: 0,
-          }}
-        >
-          <UserSearch size={17} />
-        </button>
-        <button
-          onClick={openBible}
-          aria-label="Open Bible"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 'var(--radius-full)',
-            border: 'none',
-            background: 'var(--color-surface)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--color-text-muted)',
-            flexShrink: 0,
-          }}
-        >
-          <BookOpenText size={17} />
-        </button>
-        <button
           onClick={handleSearchToggle}
           aria-label="Search cells"
           style={{
-            width: 36,
-            height: 36,
+            width: 34,
+            height: 34,
             borderRadius: 'var(--radius-full)',
             border: 'none',
-            background: searchOpen ? 'var(--color-accent)' : 'var(--color-surface)',
+            background: searchOpen ? 'var(--color-accent-soft)' : 'transparent',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: searchOpen ? 'var(--color-accent-text)' : 'var(--color-text-muted)',
-            transition: 'background 0.15s',
+            color: searchOpen ? 'var(--color-accent)' : 'var(--color-text-muted)',
+            transition: 'background 0.15s, color 0.15s',
             flexShrink: 0,
           }}
         >
           <Search size={17} />
-        </button>
-        <button
-          onClick={() => setCreateOpen(true)}
-          aria-label="Create a new cell"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 'var(--radius-full)',
-            border: 'none',
-            background: 'var(--color-accent)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--color-accent-text)',
-            flexShrink: 0,
-          }}
-        >
-          <Plus size={18} />
         </button>
       </div>
 
@@ -429,7 +372,7 @@ export function EngageClient({
           </section>
         )}
 
-        <div style={{ height: 1, background: 'var(--color-border)', margin: '0 var(--space-4) var(--space-4)' }} />
+        <div style={{ height: 8 }} />
 
         {/* ── Discover ── */}
         <section style={{ padding: '0 var(--space-4) var(--space-6)' }}>
@@ -488,7 +431,7 @@ export function EngageClient({
           ) : (
             <>
               {featuredDiscover.length > 0 && (
-                <div style={{ marginBottom: 'var(--space-3)' }}>
+                <div style={{ marginBottom: 'var(--space-4)' }}>
                   <SectionHeader>Featured</SectionHeader>
                   <div className="stagger-list" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
                     {featuredDiscover.map((cell) => (
@@ -498,8 +441,8 @@ export function EngageClient({
                 </div>
               )}
 
-              {/* Full-width photo cards */}
-              <div className="stagger-list" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {/* Grid on tablet+, single column on mobile */}
+              <div className="stagger-list discover-grid">
                 {regularDiscover.map((cell) => (
                   <CellCard key={cell.id} cell={cell} isMember={false} featured />
                 ))}
@@ -526,7 +469,48 @@ export function EngageClient({
         </section>
       </div>
 
+      {/* ── FAB: Create Cell ── */}
+      <button
+        onClick={() => { vibrate([8]); setCreateOpen(true); }}
+        aria-label="Create a new cell"
+        style={{
+          position: 'fixed',
+          bottom: 'calc(var(--nav-height, 56px) + var(--safe-bottom, 0px) + 20px)',
+          right: 20,
+          zIndex: 20,
+          width: 52,
+          height: 52,
+          borderRadius: 'var(--radius-full)',
+          border: 'none',
+          background: 'var(--color-accent)',
+          color: 'var(--color-accent-text)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 16px rgba(244,117,33,0.4)',
+          animation: 'fab-spring 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+        }}
+      >
+        <Plus size={22} />
+      </button>
+
       <CreateCellSheet open={createOpen} onClose={() => setCreateOpen(false)} />
+
+      <style>{`
+        .discover-grid {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-3);
+        }
+        @media (min-width: 600px) {
+          .discover-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-3);
+          }
+        }
+      `}</style>
     </div>
   );
 }

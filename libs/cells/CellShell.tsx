@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useTransition, useEffect } from 'react';
-import { ChevronLeft, Users, MoreVertical, CalendarPlus, Menu } from 'lucide-react';
+import { ChevronLeft, Users, MoreVertical, CalendarPlus, Hash, Calendar, Megaphone } from 'lucide-react';
 import {
   applyScore,
   NOTIFICATION_CLICK,
@@ -80,7 +80,6 @@ export function CellShell({
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [createCategoryId, setCreateCategoryId] = useState<string>('');
   const [createStoryOpen, setCreateStoryOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [meetingsData, setMeetingsData] = useState<Record<string, MeetingWithRsvps[]>>({});
   const [upcomingMeetingHints, setUpcomingMeetingHints] = useState<UpcomingMeetingHint[]>([]);
@@ -273,35 +272,20 @@ export function CellShell({
         overflow: 'hidden',
       }}
     >
+      {/* ── Slim header ── */}
       <div
         style={{
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
           alignItems: 'center',
-          gap: 'var(--space-2)',
-          height: 48,
-          padding: '0 var(--space-3)',
+          height: 44,
+          padding: '0 var(--space-2)',
           borderBottom: '1px solid var(--color-border)',
           background: 'var(--color-bg)',
           flexShrink: 0,
         }}
       >
-        <button
-          onClick={() => setSidebarOpen(true)}
-          aria-label="Open channels"
-          className="mobile-only-btn"
-          style={{
-            display: 'flex',
-            background: 'none',
-            border: 'none',
-            color: 'var(--color-text-muted)',
-            cursor: 'pointer',
-            alignItems: 'center',
-            padding: 4,
-            flexShrink: 0,
-          }}
-        >
-          <Menu size={18} />
-        </button>
+        {/* Left: back */}
         <button
           onClick={() => router.push('/engage')}
           aria-label="Back"
@@ -312,65 +296,121 @@ export function CellShell({
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            padding: 4,
-            flexShrink: 0,
+            padding: '4px 8px',
+            justifyContent: 'flex-start',
           }}
         >
           <ChevronLeft size={20} />
         </button>
+        {/* Center: name */}
         <span
           style={{
-            flex: 1,
-            fontSize: 'var(--font-size-sm)',
+            fontSize: '0.9375rem',
             fontWeight: 'var(--font-weight-semibold)',
             color: 'var(--color-text)',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
+            textAlign: 'center',
+            letterSpacing: '-0.01em',
           }}
         >
           {cell.name}
         </span>
-        <button
-          onClick={() => setMemberListOpen(true)}
-          aria-label={`${onlineCount} members`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--color-text-muted)',
-            padding: '4px 6px',
-            borderRadius: 'var(--radius-sm)',
-          }}
-        >
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-success)', flexShrink: 0 }} />
-          <Users size={14} />
-          <span style={{ fontSize: 12, fontWeight: 500 }}>{onlineCount}</span>
-        </button>
-        <button
-          onClick={() => router.push(`/engage/${cell.slug}/info`)}
-          aria-label="Cell info"
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--color-text-muted)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            padding: 4,
-          }}
-        >
-          <MoreVertical size={18} />
-        </button>
+        {/* Right: members + more */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 2 }}>
+          <button
+            onClick={() => setMemberListOpen(true)}
+            aria-label={`${onlineCount} members`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              padding: '4px 6px',
+              borderRadius: 'var(--radius-sm)',
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-success)', flexShrink: 0 }} />
+            <Users size={13} />
+            <span style={{ fontSize: 12, fontWeight: 500 }}>{onlineCount}</span>
+          </button>
+          <button
+            onClick={() => router.push(`/engage/${cell.slug}/info`)}
+            aria-label="Cell info"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--color-text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              padding: 4,
+            }}
+          >
+            <MoreVertical size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Mobile channel pills (hidden on desktop) ── */}
+      <div className="mobile-channel-pills">
+        <div style={{ display: 'flex', gap: 6, padding: '6px 12px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {allChannels.map((ch) => {
+            const isActive = ch.id === activeChannelId;
+            const unread = unreadCounts[ch.id] ?? 0;
+            const isMeeting = ch.channel_type === 'meeting';
+            const icon = ch.emoji
+              ? ch.emoji
+              : isMeeting
+              ? <Calendar size={12} />
+              : ch.channel_type === 'announcement'
+              ? <Megaphone size={12} />
+              : <Hash size={12} />;
+            return (
+              <button
+                key={ch.id}
+                onClick={() => handleChannelSelect(ch.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '4px 10px',
+                  borderRadius: 'var(--radius-full)',
+                  border: 'none',
+                  background: isActive ? 'var(--color-accent)' : 'var(--color-surface)',
+                  color: isActive ? 'var(--color-accent-text)' : unread > 0 ? 'var(--color-text)' : 'var(--color-text-muted)',
+                  fontSize: '0.8125rem',
+                  fontWeight: isActive || unread > 0 ? 600 : 400,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  position: 'relative',
+                  transition: 'background 0.15s',
+                }}
+              >
+                <span style={{ fontSize: 12, opacity: 0.8 }}>{icon}</span>
+                {ch.name}
+                {unread > 0 && !isActive && (
+                  <span style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: 'var(--color-accent)',
+                    flexShrink: 0,
+                  }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {cell.banner_url && (
         <div
           style={{
-            height: 100,
+            height: 80,
             position: 'relative',
             overflow: 'hidden',
             flexShrink: 0,
@@ -379,13 +419,13 @@ export function CellShell({
           <img
             src={cell.banner_url}
             alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            style={{ width: '100%', height: '140%', objectFit: 'cover', display: 'block', objectPosition: 'center 30%' }}
           />
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(to bottom, transparent 40%, var(--color-bg) 100%)',
+              background: 'linear-gradient(to bottom, rgba(4,5,3,0.1) 0%, rgba(4,5,3,0.7) 70%, var(--color-bg) 100%)',
             }}
           />
         </div>
@@ -492,37 +532,6 @@ export function CellShell({
         </div>
       </div>
 
-      {sidebarOpen && (
-        <>
-          <div
-            onClick={() => setSidebarOpen(false)}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 40 }}
-          />
-          <div style={{ position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 41 }}>
-            <ChannelSidebar
-              cellName={cell.name}
-              cellSlug={cell.slug}
-              categories={localCategories}
-              activeChannelId={activeChannelId}
-              onChannelSelect={(id) => {
-                setSidebarOpen(false);
-                handleChannelSelect(id);
-              }}
-              userRole={userRole}
-              unreadCounts={unreadCounts}
-              notificationScores={notificationScores}
-              onAddChannel={handleOpenCreateChannel}
-              onEditChannel={handleEditChannel}
-              onDeleteChannel={handleDeleteChannel}
-              onReorderChannels={handleReorderChannels}
-              onClose={() => setSidebarOpen(false)}
-              cellId={cell.id}
-              upcomingMeetings={upcomingMeetingHints}
-            />
-          </div>
-        </>
-      )}
-
       <MemberList
         open={memberListOpen}
         onClose={() => setMemberListOpen(false)}
@@ -571,9 +580,11 @@ export function CellShell({
 
       <style>{`
         .desktop-sidebar-shell { display: none; }
+        .mobile-channel-pills { display: flex; border-bottom: 1px solid var(--color-border); background: var(--color-bg); flex-shrink: 0; }
+        .mobile-channel-pills div::-webkit-scrollbar { display: none; }
         @media (min-width: 980px) {
           .desktop-sidebar-shell { display: flex; }
-          .mobile-only-btn { display: none !important; }
+          .mobile-channel-pills { display: none; }
         }
       `}</style>
     </div>
