@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { redirect } from 'next/navigation';
 import { createClient } from '../../../../../lib/supabase/server';
 import { CellShell } from '../../../../../libs/cells/CellShell';
@@ -77,7 +79,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
   const [messagesResult, blockedUserIds, categories, unreadCounts, members, storyGroups] = await Promise.all([
     supabase
       .from('chat_messages')
-      .select('*, profiles(username, avatar_url)')
+      .select('*')
       .eq('cell_id', cell.id)
       .eq('channel_id', channelId)
       .order('created_at', { ascending: true })
@@ -88,6 +90,24 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
     getCellMembers(cell.id),
     getStoriesForCells([cell.id], user.id).catch(() => []),
   ]);
+
+  // Batch-fetch profiles for all message authors
+  const rawMessages = messagesResult.data ?? [];
+  const userIds = [...new Set(rawMessages.map((m: any) => m.user_id).filter(Boolean))];
+  let profileMap: Record<string, { username: string; avatar_url: string | null }> = {};
+  if (userIds.length > 0) {
+    const { data: profileRows } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .in('id', userIds);
+    for (const p of profileRows ?? []) {
+      profileMap[p.id] = { username: p.username, avatar_url: p.avatar_url };
+    }
+  }
+  const messagesWithProfiles = rawMessages.map((m: any) => ({
+    ...m,
+    profiles: profileMap[m.user_id] ?? null,
+  }));
 
   // Mark this channel as read
   await supabase.from('channel_read_state').upsert(
@@ -102,7 +122,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
       cell={cell as unknown as Cell}
       categories={categories}
       activeChannelId={channelId}
-      initialMessages={(messagesResult.data as Message[]) ?? []}
+      initialMessages={messagesWithProfiles as unknown as Message[]}
       currentUser={currentUser}
       userRole={membership.role as 'admin' | 'member'}
       members={members}

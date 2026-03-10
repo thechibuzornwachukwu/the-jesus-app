@@ -30,12 +30,10 @@ export function DiscoverSheet({ open, onClose }: DiscoverSheetProps) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load suggestions when sheet opens
+  // Load suggestions when sheet opens — always re-fetch for fresh is_following values
   useEffect(() => {
     if (open) {
-      if (suggested.length === 0) {
-        getSuggestedUsers(20).then(setSuggested);
-      }
+      getSuggestedUsers(20).then(setSuggested);
       setTimeout(() => inputRef.current?.focus(), 120);
     } else {
       setQuery('');
@@ -69,7 +67,14 @@ export function DiscoverSheet({ open, onClose }: DiscoverSheetProps) {
   function handleFollow(e: React.MouseEvent, user: ProfileSummary) {
     e.stopPropagation();
     const currently = getIsFollowing(user);
-    setFollowState((s) => ({ ...s, [user.id]: !currently }));
+    const next = !currently;
+    // Update overlay state
+    setFollowState((s) => ({ ...s, [user.id]: next }));
+    // Mutate in-place so list stays consistent during this session
+    const patch = (list: ProfileSummary[]) =>
+      list.map((u) => (u.id === user.id ? { ...u, is_following: next } : u));
+    setSuggested((prev) => patch(prev));
+    setResults((prev) => patch(prev));
     startTransition(async () => {
       if (currently) {
         await unfollowUser(user.id);
