@@ -8,8 +8,8 @@ import {
   getUnreadCount,
   getBlockedUsers,
   getStreakData,
+  getFollowCounts,
 } from '../../../lib/profile/actions';
-import { getFriendCount } from '../../../lib/friends/actions';
 import { ProfileClient } from './ProfileClient';
 
 export const metadata = { title: 'Profile  The JESUS App' };
@@ -23,7 +23,7 @@ export default async function ProfilePage() {
     posts,
     unreadCount,
     blockedUserIds,
-    friendCount,
+    followCounts,
     streakData,
   ] = await Promise.all([
     getFullProfile(),
@@ -33,7 +33,7 @@ export default async function ProfilePage() {
     getUserPosts(),
     getUnreadCount(),
     getBlockedUsers(),
-    getFriendCount(),
+    getFollowCounts(),
     getStreakData(),
   ]);
 
@@ -48,7 +48,8 @@ export default async function ProfilePage() {
       posts={posts}
       unreadCount={unreadCount}
       blockedUserIds={blockedUserIds}
-      friendCount={friendCount}
+      followerCount={followCounts.follower_count}
+      followingCount={followCounts.following_count}
       streakData={streakData}
     />
   );

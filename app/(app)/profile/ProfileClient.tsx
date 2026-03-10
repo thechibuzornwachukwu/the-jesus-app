@@ -8,6 +8,8 @@ import {
   ContentTabs,
   NotificationCenter,
   SettingsPanel,
+  FollowersSheet,
+  FollowingSheet,
 } from '../../../libs/profile';
 import { StreakWidget } from '../../../libs/profile/StreakWidget';
 import {
@@ -33,7 +35,8 @@ interface ProfileClientProps {
   posts: Post[];
   unreadCount: number;
   blockedUserIds: string[];
-  friendCount: number;
+  followerCount: number;
+  followingCount: number;
   streakData: StreakData;
 }
 
@@ -45,13 +48,16 @@ export function ProfileClient({
   posts,
   unreadCount: initialUnread,
   blockedUserIds: initialBlocked,
-  friendCount,
+  followerCount,
+  followingCount,
   streakData,
 }: ProfileClientProps) {
   const { openBible } = useBible();
   const [profile, setProfile] = useState(initialProfile);
   const [notifOpen, setNotifOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [followersOpen, setFollowersOpen] = useState(false);
+  const [followingOpen, setFollowingOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(initialUnread);
   const [notifLoaded, setNotifLoaded] = useState(false);
@@ -151,21 +157,10 @@ export function ProfileClient({
             Profile
           </h1>
           <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-            {/* Bible */}
-            <button
-              className="profile-icon-btn"
-              onClick={openBible}
-              aria-label="Open Bible"
-            >
+            <button className="profile-icon-btn" onClick={openBible} aria-label="Open Bible">
               <BookOpenText size={22} />
             </button>
-
-            {/* Bell */}
-            <button
-              className="profile-icon-btn"
-              onClick={openNotifications}
-              aria-label="Notifications"
-            >
+            <button className="profile-icon-btn" onClick={openNotifications} aria-label="Notifications">
               <Bell size={22} />
               {unreadCount > 0 && (
                 <span
@@ -190,8 +185,6 @@ export function ProfileClient({
                 </span>
               )}
             </button>
-
-            {/* Gear */}
             <button
               className="profile-icon-btn"
               onClick={() => setSettingsOpen(true)}
@@ -206,8 +199,12 @@ export function ProfileClient({
         <div className="profile-section">
           <ProfileHeader
             profile={profile}
-            friendCount={friendCount}
             streakCount={streakData.current}
+            followerCount={followerCount}
+            followingCount={followingCount}
+            isOwnProfile
+            onFollowersClick={() => setFollowersOpen(true)}
+            onFollowingClick={() => setFollowingOpen(true)}
           />
         </div>
 
@@ -249,6 +246,18 @@ export function ProfileClient({
           onProfileUpdate={setProfile}
           blockedUserIds={blockedUserIds}
           onUnblock={handleUnblock}
+        />
+
+        <FollowersSheet
+          open={followersOpen}
+          onClose={() => setFollowersOpen(false)}
+          userId={profile.id}
+        />
+
+        <FollowingSheet
+          open={followingOpen}
+          onClose={() => setFollowingOpen(false)}
+          userId={profile.id}
         />
       </div>
     </>

@@ -8,6 +8,9 @@ export { NotificationCenter } from './NotificationCenter';
 export { SettingsPanel } from './SettingsPanel';
 export { StreakWidget } from './StreakWidget';
 export { BadgesGrid } from './BadgesGrid';
+export { UserCard } from './UserCard';
+export { FollowersSheet } from './FollowersSheet';
+export { FollowingSheet } from './FollowingSheet';
 export type {
   FullProfile,
   SavedVerse,
@@ -15,4 +18,6 @@ export type {
   PostedVideo,
   Post,
   AppNotification,
+  ProfileSummary,
+  PublicProfile,
 } from './types';

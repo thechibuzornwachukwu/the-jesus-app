@@ -12,6 +12,8 @@ import type {
   PostedVideo,
   Post,
   AppNotification,
+  ProfileSummary,
+  PublicProfile,
 } from '../../libs/profile/types';
 import {
   sendFriendRequest as _sendFriendRequest,
@@ -595,6 +597,314 @@ export async function acceptFriendRequest(
   requesterId: string
 ): Promise<{ error?: string }> {
   return _acceptFriendRequest(requesterId);
+}
+
+// ────────────────────────────────────────────────────────────
+// searchUsers  B1 — search profiles by username/bio
+// ────────────────────────────────────────────────────────────
+export async function searchUsers(
+  query: string,
+  limit = 20
+): Promise<ProfileSummary[]> {
+  const parsed = z.string().trim().min(1).max(100).safeParse(query);
+  if (!parsed.success) return [];
+
+  const supabase = await createClient();
+  const {
+    data: { user: me },
+  } = await supabase.auth.getUser();
+  if (!me) return [];
+
+  // My blocked list (both directions)
+  const { data: blocked } = await supabase
+    .from('blocked_users')
+    .select('blocked_id, blocker_id')
+    .or(`blocker_id.eq.${me.id},blocked_id.eq.${me.id}`);
+
+  const blockedIds = new Set<string>(
+    (blocked ?? []).flatMap((r) => [r.blocked_id, r.blocker_id]).filter((id) => id !== me.id)
+  );
+
+  const q = `%${parsed.data}%`;
+  const { data: rows } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url, bio, city, church_name, follower_count, following_count')
+    .or(`username.ilike.${q},bio.ilike.${q}`)
+    .is('deleted_at', null)
+    .neq('id', me.id)
+    .limit(limit + blockedIds.size + 5);
+
+  if (!rows) return [];
+
+  // Filter out blocked users
+  const filtered = rows.filter((r) => !blockedIds.has(r.id)).slice(0, limit);
+  if (filtered.length === 0) return [];
+
+  // Check which ones I already follow
+  const targetIds = filtered.map((r) => r.id);
+  const { data: follows } = await supabase
+    .from('user_follows')
+    .select('following_id')
+    .eq('follower_id', me.id)
+    .in('following_id', targetIds);
+
+  const followingSet = new Set((follows ?? []).map((f) => f.following_id));
+
+  return filtered.map((r) => ({
+    id: r.id,
+    username: r.username,
+    avatar_url: r.avatar_url,
+    bio: r.bio,
+    city: r.city,
+    church_name: r.church_name,
+    follower_count: r.follower_count ?? 0,
+    following_count: r.following_count ?? 0,
+    is_following: followingSet.has(r.id),
+  }));
+}
+
+// ────────────────────────────────────────────────────────────
+// followUser  B1
+// ────────────────────────────────────────────────────────────
+export async function followUser(targetId: string): Promise<{ error?: string }> {
+  const parsed = z.string().uuid().safeParse(targetId);
+  if (!parsed.success) return { error: 'Invalid user ID' };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthenticated' };
+  if (user.id === targetId) return { error: 'Cannot follow yourself' };
+
+  const { error } = await supabase
+    .from('user_follows')
+    .insert({ follower_id: user.id, following_id: targetId });
+
+  if (error && error.code !== '23505') return { error: error.message }; // ignore duplicate
+
+  // Fetch follower's username for the notification payload
+  const { data: followerProfile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
+
+  const followerUsername = (followerProfile as { username?: string } | null)?.username ?? user.id;
+
+  // Insert follow notification (ignore errors — non-critical)
+  await supabase.from('notifications').insert({
+    user_id: targetId,
+    actor_id: user.id,
+    type: 'follow',
+    payload: { follower_id: user.id, follower_username: followerUsername },
+  });
+
+  // Fire-and-forget push
+  void sendPushToUser(
+    targetId,
+    `@${followerUsername} followed you`,
+    'Tap to view their profile',
+    `/profile/${followerUsername}`
+  );
+
+  return {};
+}
+
+// ────────────────────────────────────────────────────────────
+// unfollowUser  B1
+// ────────────────────────────────────────────────────────────
+export async function unfollowUser(targetId: string): Promise<{ error?: string }> {
+  const parsed = z.string().uuid().safeParse(targetId);
+  if (!parsed.success) return { error: 'Invalid user ID' };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthenticated' };
+
+  const { error } = await supabase
+    .from('user_follows')
+    .delete()
+    .eq('follower_id', user.id)
+    .eq('following_id', targetId);
+
+  return error ? { error: error.message } : {};
+}
+
+// ────────────────────────────────────────────────────────────
+// getPublicProfile  C1 — look up another user's profile by username
+// ────────────────────────────────────────────────────────────
+export async function getPublicProfile(username: string): Promise<PublicProfile | null> {
+  const parsed = z.string().min(1).max(30).safeParse(username);
+  if (!parsed.success) return null;
+
+  const supabase = await createClient();
+  const {
+    data: { user: me },
+  } = await supabase.auth.getUser();
+  if (!me) return null;
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url, bio, church_name, city, is_public, follower_count, following_count')
+    .eq('username', parsed.data)
+    .is('deleted_at', null)
+    .single();
+
+  if (!data) return null;
+
+  const { data: followRow } = await supabase
+    .from('user_follows')
+    .select('follower_id')
+    .eq('follower_id', me.id)
+    .eq('following_id', data.id)
+    .maybeSingle();
+
+  return {
+    id: data.id,
+    username: data.username,
+    avatar_url: data.avatar_url,
+    bio: data.bio,
+    church_name: data.church_name,
+    city: data.city,
+    is_public: data.is_public,
+    follower_count: data.follower_count ?? 0,
+    following_count: data.following_count ?? 0,
+    is_following: !!followRow,
+  };
+}
+
+// ────────────────────────────────────────────────────────────
+// getFollowCounts  C2 — follower/following counts for a profile
+// ────────────────────────────────────────────────────────────
+export async function getFollowCounts(
+  userId?: string
+): Promise<{ follower_count: number; following_count: number }> {
+  const supabase = await createClient();
+  const {
+    data: { user: me },
+  } = await supabase.auth.getUser();
+  if (!me) return { follower_count: 0, following_count: 0 };
+
+  const targetId = userId ?? me.id;
+  const { data } = await supabase
+    .from('profiles')
+    .select('follower_count, following_count')
+    .eq('id', targetId)
+    .single();
+
+  return {
+    follower_count: (data as { follower_count?: number } | null)?.follower_count ?? 0,
+    following_count: (data as { following_count?: number } | null)?.following_count ?? 0,
+  };
+}
+
+// ────────────────────────────────────────────────────────────
+// getFollowersList  C3 — paginated followers list
+// ────────────────────────────────────────────────────────────
+const FOLLOW_PAGE_SIZE = 20;
+
+export async function getFollowersList(
+  userId: string,
+  page = 0
+): Promise<ProfileSummary[]> {
+  const supabase = await createClient();
+  const {
+    data: { user: me },
+  } = await supabase.auth.getUser();
+  if (!me) return [];
+
+  const { data: follows } = await supabase
+    .from('user_follows')
+    .select('follower_id')
+    .eq('following_id', userId)
+    .order('created_at', { ascending: false })
+    .range(page * FOLLOW_PAGE_SIZE, (page + 1) * FOLLOW_PAGE_SIZE - 1);
+
+  if (!follows || follows.length === 0) return [];
+  const ids = follows.map((f) => f.follower_id);
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url, bio, city, church_name, follower_count, following_count')
+    .in('id', ids)
+    .is('deleted_at', null);
+
+  if (!profiles) return [];
+
+  const { data: myFollows } = await supabase
+    .from('user_follows')
+    .select('following_id')
+    .eq('follower_id', me.id)
+    .in('following_id', ids);
+
+  const followingSet = new Set((myFollows ?? []).map((f) => f.following_id));
+
+  return profiles.map((p) => ({
+    id: p.id,
+    username: p.username,
+    avatar_url: p.avatar_url,
+    bio: p.bio,
+    city: p.city,
+    church_name: p.church_name,
+    follower_count: (p as { follower_count?: number }).follower_count ?? 0,
+    following_count: (p as { following_count?: number }).following_count ?? 0,
+    is_following: followingSet.has(p.id),
+  }));
+}
+
+// ────────────────────────────────────────────────────────────
+// getFollowingList  C3 — paginated following list
+// ────────────────────────────────────────────────────────────
+export async function getFollowingList(
+  userId: string,
+  page = 0
+): Promise<ProfileSummary[]> {
+  const supabase = await createClient();
+  const {
+    data: { user: me },
+  } = await supabase.auth.getUser();
+  if (!me) return [];
+
+  const { data: follows } = await supabase
+    .from('user_follows')
+    .select('following_id')
+    .eq('follower_id', userId)
+    .order('created_at', { ascending: false })
+    .range(page * FOLLOW_PAGE_SIZE, (page + 1) * FOLLOW_PAGE_SIZE - 1);
+
+  if (!follows || follows.length === 0) return [];
+  const ids = follows.map((f) => f.following_id);
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url, bio, city, church_name, follower_count, following_count')
+    .in('id', ids)
+    .is('deleted_at', null);
+
+  if (!profiles) return [];
+
+  const { data: myFollows } = await supabase
+    .from('user_follows')
+    .select('following_id')
+    .eq('follower_id', me.id)
+    .in('following_id', ids);
+
+  const followingSet = new Set((myFollows ?? []).map((f) => f.following_id));
+
+  return profiles.map((p) => ({
+    id: p.id,
+    username: p.username,
+    avatar_url: p.avatar_url,
+    bio: p.bio,
+    city: p.city,
+    church_name: p.church_name,
+    follower_count: (p as { follower_count?: number }).follower_count ?? 0,
+    following_count: (p as { following_count?: number }).following_count ?? 0,
+    is_following: followingSet.has(p.id),
+  }));
 }
 
 // ────────────────────────────────────────────────────────────

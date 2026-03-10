@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useTransition } from 'react';
-import { Search, Plus, Users, BookOpenText } from 'lucide-react';
+import { Search, Plus, Users, BookOpenText, UserSearch } from 'lucide-react';
 import { useBible } from '../../../lib/bible/context';
 import { useRouter } from 'next/navigation';
 import { Avatar } from '../../../libs/shared-ui/Avatar';
@@ -191,6 +191,7 @@ export function EngageClient({
   verseEngagement,
 }: EngageClientProps) {
   const { openBible } = useBible();
+  const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -279,6 +280,25 @@ export function EngageClient({
         >
           Engage
         </h1>
+        <button
+          onClick={() => { vibrate([8]); router.push('/discover'); }}
+          aria-label="Discover people"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 'var(--radius-full)',
+            border: 'none',
+            background: 'var(--color-surface)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--color-text-muted)',
+            flexShrink: 0,
+          }}
+        >
+          <UserSearch size={17} />
+        </button>
         <button
           onClick={openBible}
           aria-label="Open Bible"

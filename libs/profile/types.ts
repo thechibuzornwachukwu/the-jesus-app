@@ -48,7 +48,7 @@ export interface PostedVideo {
 
 export interface AppNotification {
   id: string;
-  type: 'like' | 'comment' | 'mention';
+  type: 'like' | 'comment' | 'mention' | 'follow';
   payload: Record<string, unknown>;
   is_read: boolean;
   created_at: string;
@@ -56,4 +56,29 @@ export interface AppNotification {
     username: string;
     avatar_url: string | null;
   } | null;
+}
+
+export interface ProfileSummary {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+  bio: string | null;
+  city: string | null;
+  church_name: string | null;
+  follower_count: number;
+  following_count: number;
+  is_following: boolean;
+}
+
+export interface PublicProfile {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+  bio: string | null;
+  church_name: string | null;
+  city: string | null;
+  is_public: boolean;
+  follower_count: number;
+  following_count: number;
+  is_following: boolean;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Avatar } from '../shared-ui/Avatar';
 import { Button } from '../shared-ui/Button';
 import { FullScreenModal, EmptyState } from '../shared-ui';
@@ -35,7 +36,16 @@ function describe(n: AppNotification): string {
     const preview = (n.payload.preview as string) ?? '';
     return `${actor} mentioned you: "${preview}"`;
   }
+  if (n.type === 'follow') return `@${actor} started following you`;
   return `${actor} interacted with you`;
+}
+
+function getNavTarget(n: AppNotification): string | null {
+  if (n.type === 'follow') {
+    const username = (n.payload.follower_username as string) ?? n.actor?.username;
+    return username ? `/profile/${username}` : null;
+  }
+  return null;
 }
 
 export function NotificationCenter({
@@ -45,6 +55,8 @@ export function NotificationCenter({
   onMarkAll,
   onMarkRead,
 }: NotificationCenterProps) {
+  const router = useRouter();
+
   const markAllAction = notifications.some((n) => !n.is_read) ? (
     <Button
       variant="ghost"
@@ -60,10 +72,15 @@ export function NotificationCenter({
       {notifications.length === 0 ? (
         <EmptyState message="No notifications yet." />
       ) : (
-        notifications.map((n) => (
+        notifications.map((n) => {
+          const navTarget = getNavTarget(n);
+          return (
           <button
             key={n.id}
-            onClick={() => !n.is_read && onMarkRead(n.id)}
+            onClick={() => {
+              if (!n.is_read) onMarkRead(n.id);
+              if (navTarget) { onClose(); router.push(navTarget); }
+            }}
             style={{
               display: 'flex',
               alignItems: 'flex-start',
@@ -73,7 +90,7 @@ export function NotificationCenter({
               background: n.is_read ? 'transparent' : 'var(--color-accent-wash)',
               border: 'none',
               borderBottom: '1px solid var(--color-border)',
-              cursor: n.is_read ? 'default' : 'pointer',
+              cursor: (navTarget || !n.is_read) ? 'pointer' : 'default',
               textAlign: 'left',
             }}
           >
@@ -112,7 +129,8 @@ export function NotificationCenter({
               />
             )}
           </button>
-        ))
+          );
+        })
       )}
     </FullScreenModal>
   );
