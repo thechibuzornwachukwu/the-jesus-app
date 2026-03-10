@@ -14,6 +14,7 @@ interface PerspectiveFeedProps {
   feedHeight: string;
   onComment: (videoId: string) => void;
   searchFilter?: string;
+  loadFeed?: (cursor?: string) => Promise<{ items: FeedItem[]; nextCursor: string | null }>;
 }
 
 export interface PerspectiveFeedHandle {
@@ -23,7 +24,7 @@ export interface PerspectiveFeedHandle {
 
 export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeedProps>(
   function PerspectiveFeed(
-    { initialItems, initialCursor, userId: _userId, feedHeight, onComment, searchFilter },
+    { initialItems, initialCursor, userId: _userId, feedHeight, onComment, searchFilter, loadFeed },
     ref
   ) {
   const [items, setItems] = useState<FeedItem[]>(initialItems);
@@ -36,7 +37,8 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
 
   const refreshFeed = useCallback(async () => {
     try {
-      const { items: fresh, nextCursor } = await getUnifiedFeed();
+      const fetcher = loadFeed ?? getUnifiedFeed;
+      const { items: fresh, nextCursor } = await fetcher();
       setItems(fresh);
       setCursor(nextCursor);
       setActiveIndex(0);
@@ -44,7 +46,7 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
     } catch {
       // silent  feed keeps showing existing items
     }
-  }, []);
+  }, [loadFeed]);
 
   const prependItem = useCallback((item: FeedItem) => {
     setItems((prev) => [item, ...prev]);
@@ -82,12 +84,13 @@ export const PerspectiveFeed = forwardRef<PerspectiveFeedHandle, PerspectiveFeed
     if (loadingRef.current || !cursor) return;
     loadingRef.current = true;
     setLoadingMore(true);
-    const { items: newItems, nextCursor } = await getUnifiedFeed(cursor);
+    const fetcher = loadFeed ?? getUnifiedFeed;
+    const { items: newItems, nextCursor } = await fetcher(cursor);
     setItems((prev) => [...prev, ...newItems]);
     setCursor(nextCursor);
     setLoadingMore(false);
     loadingRef.current = false;
-  }, [cursor]);
+  }, [cursor, loadFeed]);
 
   const handleVideoReactionChanged = useCallback(
     (videoId: string, userReaction: ReactionType | null, counts: Record<ReactionType, number>) => {

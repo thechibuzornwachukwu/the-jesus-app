@@ -1037,6 +1037,115 @@ export async function getUnifiedFeed(cursor?: string): Promise<{
 }
 
 // ---------------------------------------------------------------------------
+// getFollowingFeed  feed filtered to users the current user follows
+// ---------------------------------------------------------------------------
+export async function getFollowingFeed(cursor?: string): Promise<{
+  items: FeedItem[];
+  nextCursor: string | null;
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { items: [], nextCursor: null };
+
+  // Fetch followed user IDs
+  const { data: follows } = await supabase
+    .from('user_follows')
+    .select('following_id')
+    .eq('follower_id', user.id);
+
+  const followingIds = (follows ?? []).map((f: { following_id: string }) => f.following_id);
+  if (followingIds.length === 0) return { items: [], nextCursor: null };
+
+  type RawVideo = {
+    id: string; user_id: string; url: string; thumbnail_url: string | null;
+    caption: string | null; duration_sec: number | null; like_count: number;
+    created_at: string;
+    video_verses: { verse_reference: string; verse_text: string; position_pct: number }[];
+  };
+
+  let videoQuery = supabase
+    .from('videos')
+    .select('id, user_id, url, thumbnail_url, caption, duration_sec, like_count, created_at, video_verses(verse_reference, verse_text, position_pct)')
+    .in('user_id', followingIds)
+    .order('created_at', { ascending: false })
+    .limit(FEED_BATCH + 1);
+
+  if (cursor) {
+    videoQuery = videoQuery.lt('created_at', cursor);
+  }
+
+  const { data: videoRows } = await videoQuery;
+  const rows = (videoRows ?? []) as unknown as RawVideo[];
+  const hasMore = rows.length > FEED_BATCH;
+  const batch = hasMore ? rows.slice(0, FEED_BATCH) : rows;
+
+  if (batch.length === 0) return { items: [], nextCursor: null };
+
+  const videoIds = batch.map((v) => v.id);
+  const userIds = [...new Set(batch.map((v) => v.user_id))];
+  const REACTION_TYPES_FEED: ReactionType[] = ['heart', 'amen', 'laugh', 'shock'];
+
+  const [commentMap, userLikedVideos, feedReactionRows, profileMap] = await Promise.all([
+    supabase.from('comments').select('video_id').in('video_id', videoIds).then(({ data }) => {
+      const m = new Map<string, number>();
+      (data ?? []).forEach((c) => m.set(c.video_id, (m.get(c.video_id) ?? 0) + 1));
+      return m;
+    }),
+    supabase
+      .from('likes')
+      .select('video_id')
+      .eq('user_id', user.id)
+      .in('video_id', videoIds)
+      .then(({ data }) => {
+        const s = new Set<string>();
+        (data ?? []).forEach((l) => s.add(l.video_id));
+        return s;
+      }),
+    supabase
+      .from('video_reactions')
+      .select('video_id, user_id, reaction_type')
+      .in('video_id', videoIds)
+      .then(({ data }) => data ?? []),
+    fetchProfiles(supabase, userIds),
+  ]);
+
+  const feedReactionCountMap = new Map<string, Record<ReactionType, number>>();
+  const feedUserReactionMap = new Map<string, ReactionType>();
+  for (const r of feedReactionRows as { video_id: string; user_id: string; reaction_type: string }[]) {
+    if (!feedReactionCountMap.has(r.video_id)) {
+      feedReactionCountMap.set(r.video_id, { heart: 0, amen: 0, laugh: 0, shock: 0 });
+    }
+    const counts = feedReactionCountMap.get(r.video_id)!;
+    if (REACTION_TYPES_FEED.includes(r.reaction_type as ReactionType)) {
+      counts[r.reaction_type as ReactionType]++;
+    }
+    if (r.user_id === user.id) {
+      feedUserReactionMap.set(r.video_id, r.reaction_type as ReactionType);
+    }
+  }
+
+  const items: FeedItem[] = batch.map((v) => ({
+    kind: 'video' as const,
+    data: {
+      id: v.id, user_id: v.user_id, url: v.url, thumbnail_url: v.thumbnail_url,
+      caption: v.caption, duration_sec: v.duration_sec, created_at: v.created_at,
+      like_count: v.like_count ?? 0,
+      comment_count: commentMap.get(v.id) ?? 0,
+      user_liked: userLikedVideos.has(v.id),
+      user_reaction: feedUserReactionMap.get(v.id) ?? null,
+      reaction_counts: feedReactionCountMap.get(v.id) ?? { heart: 0, amen: 0, laugh: 0, shock: 0 },
+      verse: v.video_verses?.[0] ?? null,
+      profiles: profileMap.get(v.user_id) ?? null,
+    } as Video,
+  }));
+
+  const nextCursor = hasMore ? batch[batch.length - 1].created_at : null;
+  return { items, nextCursor };
+}
+
+// ---------------------------------------------------------------------------
 // toggleVerseLike  like / unlike today's daily verse
 // ---------------------------------------------------------------------------
 export async function toggleVerseLike(
