@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { MessageSquare, Share2, Volume2, VolumeX, Repeat2 } from 'lucide-react';
 import type { Video, ReactionType } from '../../lib/explore/types';
 import { ScriptureOverlay } from './ScriptureOverlay';
@@ -19,6 +20,7 @@ interface VideoCardProps {
 }
 
 export function VideoCard({ video, isActive, height, onComment, onReactionChanged, onRepost }: VideoCardProps) {
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [userReaction, setUserReaction] = useState<ReactionType | null>(video.user_reaction);
   const [reactionCounts, setReactionCounts] = useState<Record<ReactionType, number>>(video.reaction_counts);
@@ -209,7 +211,14 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
         }}
       >
         {/* Author row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        <button
+          onClick={() => { const u = video.profiles?.username; if (u) router.push('/profile/' + u); }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+            background: 'none', border: 'none', cursor: video.profiles?.username ? 'pointer' : 'default',
+            padding: 0, WebkitTapHighlightColor: 'transparent',
+          }}
+        >
           <div
             style={{
               width: 32,
@@ -243,7 +252,7 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
           >
             @{video.profiles?.username ?? 'believer'}
           </p>
-        </div>
+        </button>
 
         {/* Caption */}
         {video.caption && (
