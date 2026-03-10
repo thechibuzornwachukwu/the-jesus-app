@@ -94,6 +94,7 @@ export function BottomSheet({
       <div
         role="dialog"
         aria-modal="true"
+        className={isDragging ? undefined : 'sheet-enter'}
         style={{
           position: 'relative',
           width: '100%',
@@ -106,8 +107,8 @@ export function BottomSheet({
           flexDirection: 'column',
           border: '1px solid var(--color-border)',
           borderBottom: 'none',
-          transform: isDragging ? `translateY(${dragCurrentY}px)` : 'translateY(0)',
-          transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+          transform: isDragging ? `translateY(${dragCurrentY}px)` : undefined,
+          transition: isDragging ? 'none' : undefined,
         }}
       >
         {/* Drag handle */}

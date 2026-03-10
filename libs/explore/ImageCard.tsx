@@ -5,6 +5,7 @@ import { MessageSquare, Share2, Heart, Repeat2 } from 'lucide-react';
 import type { ImagePost } from '../../lib/explore/types';
 import { togglePostLike } from '../../lib/explore/actions';
 import { vibrate } from '../shared-ui/haptics';
+import { UserProfileSheet } from '../shared-ui/UserProfileSheet';
 
 interface ImageCardProps {
   post: ImagePost;
@@ -18,6 +19,7 @@ export function ImageCard({ post, height, onComment, onLikeChanged, onRepost }: 
   const [liked, setLiked] = useState(post.user_liked);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [liking, setLiking] = useState(false);
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
 
   const handleLike = useCallback(async () => {
     if (liking) return;
@@ -97,6 +99,9 @@ export function ImageCard({ post, height, onComment, onLikeChanged, onRepost }: 
         }}
       >
         <div
+          onClick={() => setProfileSheetOpen(true)}
+          role="button"
+          aria-label={`View ${post.profiles?.username ?? 'user'}'s profile`}
           style={{
             width: 36,
             height: 36,
@@ -111,6 +116,7 @@ export function ImageCard({ post, height, onComment, onLikeChanged, onRepost }: 
             color: 'var(--color-accent)',
             fontWeight: 'var(--font-weight-bold)',
             flexShrink: 0,
+            cursor: 'pointer',
           }}
         >
           {post.profiles?.avatar_url ? (
@@ -222,6 +228,14 @@ export function ImageCard({ post, height, onComment, onLikeChanged, onRepost }: 
           onClick={handleShare}
         />
       </div>
+
+      {post.user_id && (
+        <UserProfileSheet
+          open={profileSheetOpen}
+          onClose={() => setProfileSheetOpen(false)}
+          userId={post.user_id}
+        />
+      )}
     </div>
   );
 }

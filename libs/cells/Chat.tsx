@@ -109,6 +109,22 @@ export function Chat({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // D4: Keyboard-aware scroll — when the virtual keyboard opens on iOS/Android,
+  // the visualViewport shrinks. Instantly snap the message list to the bottom
+  // so the input stays above the keyboard without manual scrolling.
+  useEffect(() => {
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (!vv) return;
+    const onViewportResize = () => {
+      // Small delay lets the layout settle before we measure
+      requestAnimationFrame(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+      });
+    };
+    vv.addEventListener('resize', onViewportResize);
+    return () => vv.removeEventListener('resize', onViewportResize);
+  }, []);
+
   // Realtime member count
   useEffect(() => {
     const supabase = createClient();
@@ -823,10 +839,11 @@ export function Chat({
           <div ref={bottomRef} />
         </div>
 
-        {/* Input area */}
+        {/* Input area — padding-bottom absorbs iPhone home indicator */}
         <div
           style={{
             padding: 'var(--space-2) var(--space-3) var(--space-3)',
+            paddingBottom: 'calc(var(--space-3) + var(--safe-bottom))',
             background: 'var(--color-bg)',
             flexShrink: 0,
           }}

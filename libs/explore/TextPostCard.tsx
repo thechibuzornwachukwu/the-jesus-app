@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Heart, MessageCircle, MessageSquare, Share2, Repeat2 } from 'lucide-react';
 import type { Post } from '../../lib/explore/types';
 import { Avatar } from '../shared-ui/Avatar';
+import { UserProfileSheet } from '../shared-ui/UserProfileSheet';
 import { togglePostLike } from '../../lib/explore/actions';
 
 interface TextPostCardProps {
@@ -37,6 +38,7 @@ export function TextPostCard({
   const [liked, setLiked] = useState(post.user_liked);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [isPressing, setIsPressing] = useState(false);
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const threadHref = `/explore/thread/${post.thread_root_id ?? post.id}`;
 
   const handleLike = useCallback(async () => {
@@ -89,11 +91,16 @@ export function TextPostCard({
     >
       {/* Author row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-        <Avatar
-          src={post.profiles?.avatar_url ?? null}
-          name={post.profiles?.username ?? '?'}
-          size={32}
-        />
+        <div
+          onClick={(e) => { e.stopPropagation(); setProfileSheetOpen(true); }}
+          style={{ cursor: 'pointer', flexShrink: 0 }}
+        >
+          <Avatar
+            src={post.profiles?.avatar_url ?? null}
+            name={post.profiles?.username ?? '?'}
+            size={32}
+          />
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
@@ -219,6 +226,13 @@ export function TextPostCard({
         >
           {post.reply_count} {post.reply_count === 1 ? 'reply' : 'replies'} →
         </Link>
+      )}
+      {post.user_id && (
+        <UserProfileSheet
+          open={profileSheetOpen}
+          onClose={() => setProfileSheetOpen(false)}
+          userId={post.user_id}
+        />
       )}
     </div>
   );

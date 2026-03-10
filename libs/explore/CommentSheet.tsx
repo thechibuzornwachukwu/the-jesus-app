@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useTransition, useRef } from 'react';
 import { BottomSheet } from '../shared-ui/BottomSheet';
+import { UserProfileSheet } from '../shared-ui/UserProfileSheet';
 import { getComments, addComment } from '../../lib/explore/actions';
 import type { Comment } from '../../lib/explore/types';
 import { EmptyState } from '../shared-ui';
@@ -16,6 +17,7 @@ export function CommentSheet({ videoId, onClose }: CommentSheetProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [profileSheetUserId, setProfileSheetUserId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -48,6 +50,12 @@ export function CommentSheet({ videoId, onClose }: CommentSheetProps) {
   };
 
   return (
+    <>
+    <UserProfileSheet
+      open={!!profileSheetUserId}
+      onClose={() => setProfileSheetUserId(null)}
+      userId={profileSheetUserId}
+    />
     <BottomSheet open={!!videoId} onClose={onClose} title="Comments">
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '40dvh' }}>
         {/* Comment list */}
@@ -64,6 +72,9 @@ export function CommentSheet({ videoId, onClose }: CommentSheetProps) {
                 <div key={c.id} style={{ display: 'flex', gap: 'var(--space-3)' }}>
                   {/* Avatar */}
                   <div
+                    onClick={() => setProfileSheetUserId(c.user_id)}
+                    role="button"
+                    aria-label={`View ${c.profiles?.username ?? 'user'}'s profile`}
                     style={{
                       width: 32,
                       height: 32,
@@ -78,6 +89,7 @@ export function CommentSheet({ videoId, onClose }: CommentSheetProps) {
                       color: 'var(--color-accent)',
                       fontWeight: 'var(--font-weight-bold)',
                       overflow: 'hidden',
+                      cursor: 'pointer',
                     }}
                   >
                     {c.profiles?.avatar_url ? (
@@ -87,7 +99,10 @@ export function CommentSheet({ videoId, onClose }: CommentSheetProps) {
                     )}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-accent)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--space-1)' }}>
+                    <p
+                      onClick={() => setProfileSheetUserId(c.user_id)}
+                      style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-accent)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--space-1)', cursor: 'pointer' }}
+                    >
                       {c.profiles?.username ?? 'Anonymous'}
                     </p>
                     <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', lineHeight: 'var(--line-height-normal)' }}>
@@ -135,5 +150,6 @@ export function CommentSheet({ videoId, onClose }: CommentSheetProps) {
         </form>
       </div>
     </BottomSheet>
+    </>
   );
 }

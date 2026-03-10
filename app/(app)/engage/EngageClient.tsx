@@ -15,6 +15,7 @@ import type { CellStoryGroup } from '../../../lib/cells/types';
 import type { DailyVerseType } from '../../../lib/explore/types';
 import { getDiscoverCellsWithActivityMatch } from '../../../lib/cells/actions';
 import { vibrate } from '../../../libs/shared-ui/haptics';
+import { PullToRefresh } from '../../../libs/shared-ui/PullToRefresh';
 
 const CATEGORIES = ['For You', 'All', 'Prayer', 'Bible Study', 'Youth', 'Worship', 'Discipleship', 'General'];
 
@@ -250,18 +251,22 @@ export function EngageClient({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-      {/* ── Sticky header ── */}
+      {/* ── Sticky header (D2: safe-area top) ── */}
       <div
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 10,
-          height: 52,
+          height: 'calc(52px + var(--safe-top))',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-end',
+          paddingBottom: 0,
           padding: '0 var(--space-4)',
+          paddingTop: 'var(--safe-top)',
           background: 'var(--color-bg)',
           borderBottom: '1px solid var(--color-border)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           flexShrink: 0,
           gap: 'var(--space-2)',
         }}
@@ -326,8 +331,15 @@ export function EngageClient({
         </div>
       )}
 
-      {/* Scrollable content */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      {/* Scrollable content — D4: pull-to-refresh */}
+      <PullToRefresh
+        onRefresh={async () => {
+          // Re-fetch discover cells to surface new communities
+          const fresh = await getDiscoverCellsWithActivityMatch(userCategories, [...joinedIds]);
+          setForYouCells(fresh);
+        }}
+        style={{ flex: 1 }}
+      >
 
         {/* ── Stories strip ── */}
         {storyGroups.length > 0 && (
@@ -467,7 +479,7 @@ export function EngageClient({
             </>
           )}
         </section>
-      </div>
+      </PullToRefresh>
 
       {/* ── FAB: Create Cell ── */}
       <button

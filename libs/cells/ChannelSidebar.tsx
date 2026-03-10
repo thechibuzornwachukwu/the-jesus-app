@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Hash, Megaphone, Plus, MoreVertical, Info, X, Calendar } from 'lucide-react';
+import { Hash, Megaphone, Plus, X, Calendar } from 'lucide-react';
 import type { ChannelCategory, Channel, NotificationScore } from '../../lib/cells/types';
 import { sortChannelsByPriority, getChannelPriorityClass } from '../../lib/cells/notification-scoring';
 
@@ -105,10 +105,10 @@ export function ChannelSidebar({
   return (
     <div
       style={{
-        width: 220,
-        minWidth: 220,
+        width: 196,
+        minWidth: 196,
         height: '100%',
-        background: 'var(--color-panel)',
+        background: 'var(--color-bg)',
         display: 'flex',
         flexDirection: 'column',
         borderRight: '1px solid var(--color-border)',
@@ -122,83 +122,70 @@ export function ChannelSidebar({
         </div>
       )}
 
-      {/* Cell header */}
+      {/* Slim header — cell name link + optional close */}
       <div
         style={{
-          height: 44,
+          height: 40,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 var(--space-3)',
+          padding: '0 10px',
           borderBottom: '1px solid var(--color-border)',
           flexShrink: 0,
+          gap: 4,
         }}
       >
         <a
           href={`/engage/${cellSlug}/info`}
           style={{
             fontWeight: 'var(--font-weight-semibold)',
-            fontSize: '0.875rem',
+            fontSize: '0.8125rem',
             color: 'var(--color-text)',
             textDecoration: 'none',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
             flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-1)',
             letterSpacing: '-0.01em',
           }}
         >
           {cellName}
-          <Info size={11} style={{ opacity: 0.35, flexShrink: 0 }} />
         </a>
         {onClose && (
           <button
             onClick={onClose}
             aria-label="Close sidebar"
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--color-text-muted)',
-              cursor: 'pointer',
-              padding: 4,
-              display: 'flex',
-              alignItems: 'center',
-            }}
+            style={{ background: 'none', border: 'none', color: 'var(--color-text-faint)', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center', flexShrink: 0, borderRadius: 4 }}
           >
-            <X size={15} />
+            <X size={14} />
           </button>
         )}
       </div>
 
-      {/* Channels list — flat grouped */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
-        {sortChannelsByPriority(categories, notificationScores).map((cat) => (
+      {/* Channels list */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0 8px' }}>
+        {sortChannelsByPriority(categories, notificationScores).map((cat, catIdx) => (
           <div
             key={cat.id}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragState((s) => ({ ...s, overCategoryId: cat.id }));
-            }}
+            onDragOver={(e) => { e.preventDefault(); setDragState((s) => ({ ...s, overCategoryId: cat.id })); }}
             onDrop={(e) => handleDrop(e, cat.id)}
           >
-            {/* Flat category label */}
+            {/* Category label row */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                padding: '10px var(--space-3) 3px',
+                padding: `${catIdx === 0 ? 6 : 14}px 10px 2px`,
+                gap: 4,
               }}
             >
               <span
                 style={{
-                  fontSize: '0.625rem',
+                  fontSize: '0.5625rem',
                   fontWeight: 700,
                   color: 'var(--color-text-faint)',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
+                  letterSpacing: '0.1em',
                   flex: 1,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -212,24 +199,14 @@ export function ChannelSidebar({
                   onClick={() => onAddChannel(cat.id)}
                   aria-label="Add channel"
                   title="Add channel"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--color-text-faint)',
-                    cursor: 'pointer',
-                    padding: '1px 2px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    borderRadius: 3,
-                    opacity: 0.6,
-                  }}
+                  style={{ background: 'none', border: 'none', color: 'var(--color-text-faint)', cursor: 'pointer', padding: '1px 2px', display: 'flex', alignItems: 'center', borderRadius: 3, opacity: 0.5 }}
                 >
-                  <Plus size={11} />
+                  <Plus size={10} />
                 </button>
               )}
             </div>
 
-            {/* Channels */}
+            {/* Channel items */}
             {(cat.channels ?? []).map((ch) => {
               const isActive = ch.id === activeChannelId;
               const unread = unreadCounts[ch.id] ?? 0;
@@ -253,53 +230,46 @@ export function ChannelSidebar({
                     e.preventDefault();
                     setContextMenu({ channelId: ch.id, x: e.clientX, y: e.clientY });
                   }}
+                  className={`ch-item${isActive ? ' ch-active' : ''}`}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 6,
-                    padding: '4px 10px',
-                    marginLeft: 6,
-                    marginRight: 6,
-                    borderRadius: 5,
+                    gap: 5,
+                    padding: '5px 8px',
+                    marginInline: 4,
+                    borderRadius: 6,
                     cursor: 'pointer',
                     background: isActive
-                      ? 'var(--color-panel-hover)'
+                      ? 'var(--color-surface)'
                       : priority === 'high'
                       ? 'var(--color-accent-soft)'
                       : 'transparent',
-                    borderLeft: isActive
-                      ? '2px solid var(--color-accent)'
-                      : '2px solid transparent',
                     opacity: isDragging ? 0.3 : 1,
-                    transition: 'background 0.12s, opacity 0.15s',
+                    transition: 'background 0.1s, opacity 0.12s',
                     userSelect: 'none',
                   }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'var(--color-panel-hover)';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) (e.currentTarget as HTMLDivElement).style.background =
-                      priority === 'high' ? 'var(--color-accent-soft)' : 'transparent';
-                  }}
                 >
-                  <span style={{ flexShrink: 0, opacity: 0.55, fontSize: 13, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    {ch.emoji ? (
-                      ch.emoji
-                    ) : isMeeting ? (
-                      <Calendar size={13} />
-                    ) : ch.channel_type === 'announcement' ? (
-                      <Megaphone size={13} />
-                    ) : (
-                      <Hash size={13} />
-                    )}
+                  {/* Channel icon */}
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      color: isActive ? 'var(--color-accent)' : 'var(--color-text-faint)',
+                      fontSize: 12,
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      transition: 'color 0.1s',
+                    }}
+                  >
+                    {ch.emoji ? ch.emoji : isMeeting ? <Calendar size={12} /> : ch.channel_type === 'announcement' ? <Megaphone size={12} /> : <Hash size={12} />}
                     {meetingAlert && (
                       <span
                         style={{
                           position: 'absolute',
-                          top: -2,
+                          top: -1,
                           right: -2,
-                          width: 5,
-                          height: 5,
+                          width: 4,
+                          height: 4,
                           borderRadius: '50%',
                           background: 'var(--color-accent)',
                           animation: 'sidebar-meeting-pulse 1.4s ease-in-out infinite',
@@ -307,76 +277,41 @@ export function ChannelSidebar({
                       />
                     )}
                   </span>
+
+                  {/* Channel name */}
                   <span
                     style={{
                       flex: 1,
                       fontSize: '0.8125rem',
-                      color: isActive || unread > 0 ? 'var(--color-text)' : 'var(--color-text-muted)',
+                      color: isActive ? 'var(--color-text)' : unread > 0 ? 'var(--color-text)' : 'var(--color-text-muted)',
                       fontWeight: isActive || unread > 0 ? 600 : 400,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
+                      lineHeight: 1.25,
                     }}
                   >
                     {ch.name}
                   </span>
-                  {isMeeting && !meetingAlert && (
-                    <span
-                      style={{
-                        fontSize: '0.5rem',
-                        fontWeight: 700,
-                        color: 'var(--color-accent)',
-                        background: 'var(--color-accent-soft)',
-                        borderRadius: 3,
-                        padding: '1px 3px',
-                        letterSpacing: '0.04em',
-                        flexShrink: 0,
-                      }}
-                    >
-                      MTG
-                    </span>
-                  )}
+
+                  {/* Unread badge */}
                   {unread > 0 && (
                     <span
                       style={{
                         background: 'var(--color-accent)',
                         color: 'var(--color-accent-text)',
-                        fontSize: '0.5625rem',
+                        fontSize: '0.5rem',
                         fontWeight: 700,
                         borderRadius: 'var(--radius-full)',
                         padding: '1px 4px',
                         minWidth: 14,
                         textAlign: 'center',
                         flexShrink: 0,
-                        lineHeight: 1.4,
+                        lineHeight: 1.5,
                       }}
                     >
                       {unread > 99 ? '99+' : unread}
                     </span>
-                  )}
-                  {isAdmin && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setContextMenu({ channelId: ch.id, x: e.clientX, y: e.clientY });
-                      }}
-                      aria-label="Channel options"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--color-text-faint)',
-                        cursor: 'pointer',
-                        opacity: 0,
-                        padding: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        borderRadius: 3,
-                        flexShrink: 0,
-                      }}
-                      className="channel-menu-btn"
-                    >
-                      <MoreVertical size={12} />
-                    </button>
                   )}
                 </div>
               );
@@ -385,25 +320,22 @@ export function ChannelSidebar({
         ))}
       </div>
 
-      {/* Context menu */}
+      {/* Context menu (right-click only, no visible button) */}
       {contextMenu && (
         <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 99 }}
-            onClick={() => setContextMenu(null)}
-          />
+          <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setContextMenu(null)} />
           <div
             style={{
               position: 'fixed',
               top: contextMenu.y,
               left: contextMenu.x,
-              background: 'var(--color-surface-dp2)',
+              background: 'var(--color-surface)',
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-md)',
-              boxShadow: 'var(--shadow-lg)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
               zIndex: 100,
               overflow: 'hidden',
-              minWidth: 140,
+              minWidth: 130,
             }}
           >
             <button
@@ -412,49 +344,25 @@ export function ChannelSidebar({
                 if (channel) onEditChannel(channel);
                 setContextMenu(null);
               }}
-              style={{
-                width: '100%',
-                padding: 'var(--space-2) var(--space-3)',
-                background: 'none',
-                border: 'none',
-                color: 'var(--color-text)',
-                fontSize: 'var(--font-size-sm)',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontFamily: 'var(--font-sans)',
-              }}
+              style={{ width: '100%', padding: '9px 12px', background: 'none', border: 'none', color: 'var(--color-text)', fontSize: 'var(--font-size-sm)', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-sans)' }}
             >
-              Edit Channel
+              Edit
             </button>
             <button
-              onClick={() => {
-                onDeleteChannel(contextMenu.channelId, cellId);
-                setContextMenu(null);
-              }}
-              style={{
-                width: '100%',
-                padding: 'var(--space-2) var(--space-3)',
-                background: 'none',
-                border: 'none',
-                color: 'var(--color-error)',
-                fontSize: 'var(--font-size-sm)',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontFamily: 'var(--font-sans)',
-              }}
+              onClick={() => { onDeleteChannel(contextMenu.channelId, cellId); setContextMenu(null); }}
+              style={{ width: '100%', padding: '9px 12px', background: 'none', border: 'none', borderTop: '1px solid var(--color-border)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-sans)' }}
             >
-              Delete Channel
+              Delete
             </button>
           </div>
         </>
       )}
 
       <style>{`
-        .channel-menu-btn { opacity: 0 !important; }
-        div:hover > .channel-menu-btn { opacity: 1 !important; }
+        .ch-item:not(.ch-active):hover { background: var(--color-surface) !important; }
         @keyframes sidebar-meeting-pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
-          50%       { opacity: 0.4; transform: scale(0.7); }
+          50%       { opacity: 0.3; transform: scale(0.6); }
         }
       `}</style>
     </div>

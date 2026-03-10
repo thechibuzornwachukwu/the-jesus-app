@@ -6,6 +6,7 @@ import { createClient } from '../../lib/supabase/client';
 import { kickMember, promoteToAdmin } from '../../lib/cells/actions';
 import { Avatar } from '../shared-ui/Avatar';
 import { BottomSheet } from '../shared-ui/BottomSheet';
+import { UserProfileSheet } from '../shared-ui/UserProfileSheet';
 import type { CellMemberWithProfile } from '../../lib/cells/types';
 
 interface MemberListProps {
@@ -28,6 +29,7 @@ export function MemberList({
   const [members, setMembers] = useState<CellMemberWithProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionTarget, setActionTarget] = useState<CellMemberWithProfile | null>(null);
+  const [profileSheetUserId, setProfileSheetUserId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -101,6 +103,7 @@ export function MemberList({
                 userRole={userRole}
                 onlineMemberIds={onlineMemberIds}
                 onAction={setActionTarget}
+                onAvatarPress={setProfileSheetUserId}
               />
             )}
             {regularMembers.length > 0 && (
@@ -111,11 +114,19 @@ export function MemberList({
                 userRole={userRole}
                 onlineMemberIds={onlineMemberIds}
                 onAction={setActionTarget}
+                onAvatarPress={setProfileSheetUserId}
               />
             )}
           </div>
         )}
       </BottomSheet>
+
+      {/* User profile sheet */}
+      <UserProfileSheet
+        open={!!profileSheetUserId}
+        onClose={() => setProfileSheetUserId(null)}
+        userId={profileSheetUserId}
+      />
 
       {/* Admin action sheet */}
       {actionTarget && (
@@ -239,6 +250,7 @@ function MemberSection({
   userRole,
   onlineMemberIds,
   onAction,
+  onAvatarPress,
 }: {
   label: string;
   members: CellMemberWithProfile[];
@@ -246,6 +258,7 @@ function MemberSection({
   userRole: 'admin' | 'member';
   onlineMemberIds: Set<string>;
   onAction: (m: CellMemberWithProfile) => void;
+  onAvatarPress?: (userId: string) => void;
 }) {
   return (
     <div style={{ marginBottom: 'var(--space-4)' }}>
@@ -275,7 +288,12 @@ function MemberSection({
             }}
           >
             {/* Avatar + online dot */}
-            <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div
+              style={{ position: 'relative', flexShrink: 0, cursor: !isSelf && onAvatarPress ? 'pointer' : 'default' }}
+              onClick={() => !isSelf && onAvatarPress?.(member.user_id)}
+              role={!isSelf && onAvatarPress ? 'button' : undefined}
+              aria-label={!isSelf && onAvatarPress ? `View ${member.profiles?.username ?? 'user'}'s profile` : undefined}
+            >
               <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden' }}>
                 <Avatar
                   src={member.profiles?.avatar_url}
