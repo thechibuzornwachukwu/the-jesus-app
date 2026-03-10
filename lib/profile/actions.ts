@@ -777,6 +777,49 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
 }
 
 // ────────────────────────────────────────────────────────────
+// getPublicProfileById  look up another user's profile by UUID
+// ────────────────────────────────────────────────────────────
+export async function getPublicProfileById(userId: string): Promise<PublicProfile | null> {
+  const parsed = z.string().uuid().safeParse(userId);
+  if (!parsed.success) return null;
+
+  const supabase = await createClient();
+  const {
+    data: { user: me },
+  } = await supabase.auth.getUser();
+  if (!me) return null;
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url, bio, church_name, city, is_public, follower_count, following_count')
+    .eq('id', parsed.data)
+    .is('deleted_at', null)
+    .single();
+
+  if (!data) return null;
+
+  const { data: followRow } = await supabase
+    .from('user_follows')
+    .select('follower_id')
+    .eq('follower_id', me.id)
+    .eq('following_id', data.id)
+    .maybeSingle();
+
+  return {
+    id: data.id,
+    username: data.username,
+    avatar_url: data.avatar_url,
+    bio: data.bio,
+    church_name: data.church_name,
+    city: data.city,
+    is_public: data.is_public,
+    follower_count: data.follower_count ?? 0,
+    following_count: data.following_count ?? 0,
+    is_following: !!followRow,
+  };
+}
+
+// ────────────────────────────────────────────────────────────
 // getFollowCounts  C2 — follower/following counts for a profile
 // ────────────────────────────────────────────────────────────
 export async function getFollowCounts(

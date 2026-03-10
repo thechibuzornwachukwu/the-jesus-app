@@ -7,7 +7,7 @@ import { CommentSheet } from '../../../libs/explore/CommentSheet';
 import { ComposeSheet } from '../../../libs/explore/ComposeSheet';
 import { showToast } from '../../../libs/shared-ui/Toast';
 import { EmptyState } from '../../../libs/shared-ui';
-import { Users, Microscope, Plus, X } from 'lucide-react';
+import { Users, Search, Plus, X } from 'lucide-react';
 import { getFollowingFeed } from '../../../lib/explore/actions';
 
 const FEED_HEIGHT = `calc(100dvh - var(--safe-top) - var(--nav-height) - var(--safe-bottom))`;
@@ -154,7 +154,7 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
           >
             {searchOpen
               ? <X size={18} color="#fff" />
-              : <Microscope size={18} color="#fff" />}
+              : <Search size={18} color="#fff" />}
           </button>
           <button
             aria-label="Create post"
