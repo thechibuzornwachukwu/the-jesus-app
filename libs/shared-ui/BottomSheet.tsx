@@ -14,6 +14,8 @@ interface BottomSheetProps {
 }
 
 const DISMISS_THRESHOLD = 120;
+// Match sheet-exit duration in globals.css
+const EXIT_DURATION_MS = 240;
 
 export function BottomSheet({
   open,
@@ -27,12 +29,30 @@ export function BottomSheet({
   const [dragStartY, setDragStartY] = useState<number | null>(null);
   const [dragCurrentY, setDragCurrentY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  // mounted: whether the DOM node should exist; closing: play exit animation
+  const [mounted, setMounted] = useState(false);
+  const [closing, setClosing] = useState(false);
   const handleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    if (open) {
+      setMounted(true);
+      setClosing(false);
+    } else if (mounted && !closing) {
+      setClosing(true);
+      const t = setTimeout(() => {
+        setMounted(false);
+        setClosing(false);
+      }, EXIT_DURATION_MS);
+      return () => clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  useEffect(() => {
+    document.body.style.overflow = (mounted && !closing) ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mounted, closing]);
 
   // Reset drag state when sheet closes
   useEffect(() => {
@@ -43,7 +63,7 @@ export function BottomSheet({
     }
   }, [open]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     setDragStartY(e.clientY);
@@ -87,6 +107,8 @@ export function BottomSheet({
           inset: 0,
           background: 'rgba(0,0,0,0.6)',
           backdropFilter: 'blur(4px)',
+          opacity: closing ? 0 : 1,
+          transition: `opacity ${EXIT_DURATION_MS}ms ease`,
         }}
       />
 
@@ -94,7 +116,7 @@ export function BottomSheet({
       <div
         role="dialog"
         aria-modal="true"
-        className={isDragging ? undefined : 'sheet-enter'}
+        className={closing ? 'sheet-exit' : isDragging ? undefined : 'sheet-enter'}
         style={{
           position: 'relative',
           width: '100%',
@@ -182,7 +204,7 @@ export function BottomSheet({
               flexShrink: 0,
               borderTop: '1px solid var(--color-border)',
               padding: 'var(--space-3) var(--space-6)',
-              paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom, 0px) + var(--space-3))',
+              paddingBottom: 'calc(var(--safe-bottom, 0px) + var(--space-3))',
               background: 'var(--color-bg-surface)',
             }}
           >

@@ -291,12 +291,11 @@ export function LearnClient({ initialProgress, initialBereanOpen = false }: Lear
     >
       {/* Page header  hidden when a course track is open */}
       {!courseOpen && (
-        <div style={{ padding: 'var(--space-6) var(--space-6) 0', flexShrink: 0 }}>
+        <div style={{ padding: 'var(--space-6) var(--page-gutter) 0', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div>
               <h1
                 style={{
-                  fontFamily: "'Archivo Condensed', var(--font-display)",
                   margin: '0 0 var(--space-1)',
                   fontSize: 'var(--font-size-4xl)',
                   fontWeight: 'var(--font-weight-black)' as React.CSSProperties['fontWeight'],
@@ -347,8 +346,8 @@ export function LearnClient({ initialProgress, initialBereanOpen = false }: Lear
           flex: 1,
           overflowY: 'auto',
           paddingTop: courseOpen ? 0 : 'var(--space-5)',
-          paddingLeft: 'var(--space-6)',
-          paddingRight: 'var(--space-6)',
+          paddingLeft: 'var(--page-gutter)',
+          paddingRight: 'var(--page-gutter)',
           paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom) + var(--space-6))',
         }}
       >

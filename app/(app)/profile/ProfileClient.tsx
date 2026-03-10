@@ -138,11 +138,18 @@ export function ProfileClient({
         <div
           className="profile-section"
           style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 'var(--z-overlay)' as React.CSSProperties['zIndex'],
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: 'var(--space-4) var(--space-4) var(--space-2)',
+            padding: 'calc(var(--safe-top) + var(--space-3)) var(--space-4) var(--space-2)',
             flexShrink: 0,
+            background: 'var(--color-bg)',
+            borderBottom: '1px solid var(--color-border)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
           }}
         >
           <h1
@@ -150,7 +157,6 @@ export function ProfileClient({
               margin: 0,
               fontSize: 'var(--font-size-2xl)',
               fontWeight: 900,
-              fontFamily: 'var(--font-display)',
               color: 'var(--color-text)',
             }}
           >

@@ -275,7 +275,6 @@ export function EngageClient({
           style={{
             flex: 1,
             margin: 0,
-            fontFamily: "'Archivo Condensed', var(--font-display)",
             fontSize: '1.5rem',
             fontWeight: 900,
             letterSpacing: '-0.01em',
