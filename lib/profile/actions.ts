@@ -600,6 +600,63 @@ export async function acceptFriendRequest(
 }
 
 // ────────────────────────────────────────────────────────────
+// getSuggestedUsers  3A — public profiles not followed/blocked, ranked by follower_count
+// ────────────────────────────────────────────────────────────
+export async function getSuggestedUsers(limit = 20): Promise<ProfileSummary[]> {
+  const supabase = await createClient();
+  const {
+    data: { user: me },
+  } = await supabase.auth.getUser();
+  if (!me) return [];
+
+  // Blocked list (both directions)
+  const { data: blocked } = await supabase
+    .from('blocked_users')
+    .select('blocked_id, blocker_id')
+    .or(`blocker_id.eq.${me.id},blocked_id.eq.${me.id}`);
+
+  const blockedIds = new Set<string>(
+    (blocked ?? []).flatMap((r) => [r.blocked_id, r.blocker_id]).filter((id) => id !== me.id)
+  );
+
+  // IDs I already follow
+  const { data: follows } = await supabase
+    .from('user_follows')
+    .select('following_id')
+    .eq('follower_id', me.id);
+
+  const followingIds = new Set((follows ?? []).map((f) => f.following_id));
+
+  const fetchLimit = limit + blockedIds.size + followingIds.size + 10;
+  const { data: rows } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url, bio, city, church_name, follower_count, following_count')
+    .eq('is_public', true)
+    .is('deleted_at', null)
+    .neq('id', me.id)
+    .order('follower_count', { ascending: false })
+    .limit(fetchLimit);
+
+  if (!rows) return [];
+
+  const filtered = rows
+    .filter((r) => !blockedIds.has(r.id) && !followingIds.has(r.id))
+    .slice(0, limit);
+
+  return filtered.map((r) => ({
+    id: r.id,
+    username: r.username,
+    avatar_url: r.avatar_url,
+    bio: r.bio,
+    city: r.city,
+    church_name: r.church_name,
+    follower_count: (r as { follower_count?: number }).follower_count ?? 0,
+    following_count: (r as { following_count?: number }).following_count ?? 0,
+    is_following: false,
+  }));
+}
+
+// ────────────────────────────────────────────────────────────
 // searchUsers  B1 — search profiles by username/bio
 // ────────────────────────────────────────────────────────────
 export async function searchUsers(

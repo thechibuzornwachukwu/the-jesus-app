@@ -212,10 +212,10 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
       >
         {/* Author row */}
         <button
-          onClick={() => { const u = video.profiles?.username; if (u) router.push('/profile/' + u); }}
+          onClick={() => { if (video.user_id) router.push('/profile/id/' + video.user_id); }}
           style={{
             display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
-            background: 'none', border: 'none', cursor: video.profiles?.username ? 'pointer' : 'default',
+            background: 'none', border: 'none', cursor: video.user_id ? 'pointer' : 'default',
             padding: 0, WebkitTapHighlightColor: 'transparent',
           }}
         >

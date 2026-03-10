@@ -5,9 +5,10 @@ import type { FeedItem } from '../../../lib/explore/types';
 import { PerspectiveFeed, type PerspectiveFeedHandle } from '../../../libs/explore/PerspectiveFeed';
 import { CommentSheet } from '../../../libs/explore/CommentSheet';
 import { ComposeSheet } from '../../../libs/explore/ComposeSheet';
+import { DiscoverSheet } from '../../../libs/explore/DiscoverSheet';
 import { showToast } from '../../../libs/shared-ui/Toast';
 import { EmptyState } from '../../../libs/shared-ui';
-import { Users, Search, Plus, X } from 'lucide-react';
+import { Users, Search, Plus } from 'lucide-react';
 import { getFollowingFeed } from '../../../lib/explore/actions';
 
 const FEED_HEIGHT = `calc(100dvh - var(--safe-top) - var(--nav-height) - var(--safe-bottom))`;
@@ -24,15 +25,13 @@ interface ExploreClientProps {
 export function ExploreClient({ initialItems, initialCursor, userId }: ExploreClientProps) {
   const [commentVideoId, setCommentVideoId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [discoverOpen, setDiscoverOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('For Me');
   const [followingItems, setFollowingItems] = useState<FeedItem[]>([]);
   const [followingCursor, setFollowingCursor] = useState<string | null>(null);
   const [followingLoading, setFollowingLoading] = useState(false);
   const [followingLoaded, setFollowingLoaded] = useState(false);
   const feedRef = useRef<PerspectiveFeedHandle>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const loadFollowingFeed = useCallback(async () => {
     if (followingLoaded) return;
@@ -52,14 +51,6 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
       loadFollowingFeed();
     }
   }, [tab, loadFollowingFeed]);
-
-  useEffect(() => {
-    if (searchOpen) {
-      searchInputRef.current?.focus();
-    } else {
-      setSearch('');
-    }
-  }, [searchOpen]);
 
   const handleUploaded = async (_id: string, _kind: 'video'): Promise<void> => {
     showToast('Perspective published!', 'success');
@@ -134,8 +125,8 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
         {/* Right actions */}
         <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 8, pointerEvents: 'auto' }}>
           <button
-            aria-label="Search"
-            onClick={() => setSearchOpen(o => !o)}
+            aria-label="Discover people"
+            onClick={() => setDiscoverOpen(true)}
             style={{
               background: 'rgba(0,0,0,0.32)',
               backdropFilter: 'blur(8px)',
@@ -152,9 +143,7 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            {searchOpen
-              ? <X size={18} color="#fff" />
-              : <Search size={18} color="#fff" />}
+            <Search size={18} color="#fff" />
           </button>
           <button
             aria-label="Create post"
@@ -177,40 +166,6 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
           </button>
         </div>
       </div>
-
-      {/* ── Floating search bar (drops below overlay) ── */}
-      {searchOpen && (
-        <div
-          style={{
-            position: 'absolute',
-            top: `calc(var(--safe-top, 0px) + 62px)`,
-            left: 12,
-            right: 12,
-            zIndex: 9,
-            pointerEvents: 'auto',
-          }}
-        >
-          <input
-            ref={searchInputRef}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search perspectives…"
-            style={{
-              width: '100%',
-              background: 'rgba(0,0,0,0.5)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255,255,255,0.18)',
-              borderRadius: 12,
-              padding: '10px 16px',
-              color: '#fff',
-              fontSize: 'var(--font-size-sm)',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
-        </div>
-      )}
 
       {/* Friends: loading */}
       {!isForMe && followingLoading && (
@@ -245,7 +200,6 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
           initialCursor={isForMe ? initialCursor : followingCursor}
           userId={userId}
           feedHeight={FEED_HEIGHT}
-          searchFilter={isForMe ? search : undefined}
           onComment={(id) => setCommentVideoId(id)}
           loadFeed={isForMe ? undefined : getFollowingFeed}
         />
@@ -253,6 +207,7 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
 
       <CommentSheet videoId={commentVideoId} onClose={() => setCommentVideoId(null)} />
       <ComposeSheet open={uploadOpen} onClose={() => setUploadOpen(false)} onUploaded={handleUploaded} />
+      <DiscoverSheet open={discoverOpen} onClose={() => setDiscoverOpen(false)} />
     </div>
   );
 }
