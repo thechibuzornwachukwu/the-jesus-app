@@ -1259,7 +1259,7 @@ export async function startCall(
         .single();
       if (existing) return existing as unknown as CellCall;
     }
-    return { error: 'Failed to start call.' };
+    return { error: `Failed to start call: [${error.code}] ${error.message}` };
   }
 
   // Stage 4E — Push notification to all cell members (excluding caller), fire-and-forget
