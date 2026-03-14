@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { createClient } from '../supabase/server';
+import { appError, logError } from '../errors';
 import type { Cell, CellMemberWithProfile, CellWithPreview, MemberPreview } from './types';
 import {
   getDiscoverActivityScore,
@@ -47,7 +48,7 @@ export async function createCell(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const raw = {
     name: formData.get('name'),
@@ -58,7 +59,7 @@ export async function createCell(
   };
 
   const parsed = cellSchema.safeParse(raw);
-  if (!parsed.success) return { error: 'Invalid cell details.' };
+  if (!parsed.success) return appError('JA-8002');
 
   // Generate slug atomically with the insert to avoid race conditions
   const newId = crypto.randomUUID();
@@ -79,7 +80,7 @@ export async function createCell(
     .select('id')
     .single();
 
-  if (cellError || !cell) return { error: cellError?.message ?? 'Failed to create cell.' };
+  if (cellError || !cell) { logError('JA-4001', cellError); return appError('JA-4001'); }
 
   await supabase.from('cell_members').insert({
     cell_id: cell.id,
@@ -115,7 +116,7 @@ export async function joinCell(cellId: string): Promise<{ success: true } | { er
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const { error } = await supabase.from('cell_members').insert({
     cell_id: cellId,
@@ -123,7 +124,7 @@ export async function joinCell(cellId: string): Promise<{ success: true } | { er
     role: 'member',
   });
 
-  if (error) return { error: 'Failed to join cell.' };
+  if (error) return appError('JA-4004');
 
   const slug = await fetchCellSlug(supabase, cellId);
   revalidatePath('/engage');
@@ -136,7 +137,7 @@ export async function leaveCell(cellId: string): Promise<{ success: true } | { e
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   await supabase
     .from('cell_members')
@@ -158,7 +159,7 @@ export async function updateCell(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   // Allow creator OR any admin member to update (parallel fetch)
   const [{ data: membership }, { data: cell }] = await Promise.all([
@@ -168,7 +169,7 @@ export async function updateCell(
 
   const isCreator = (cell as { creator_id: string } | null)?.creator_id === user.id;
   const isAdmin = membership?.role === 'admin';
-  if (!isCreator && !isAdmin) return { error: 'Not authorized.' };
+  if (!isCreator && !isAdmin) return appError('JA-4008');
 
   const memberLimitRaw = formData.get('member_limit');
   const raw = {
@@ -183,7 +184,7 @@ export async function updateCell(
   };
 
   const parsed = updateCellSchema.safeParse(raw);
-  if (!parsed.success) return { error: 'Invalid cell details.' };
+  if (!parsed.success) return appError('JA-8002');
 
   const { error } = await supabase
     .from('cells')
@@ -199,7 +200,7 @@ export async function updateCell(
     })
     .eq('id', cellId);
 
-  if (error) return { error: 'Failed to update cell.' };
+  if (error) return appError('JA-4009');
 
   const slug = await fetchCellSlug(supabase, cellId);
   revalidatePath('/engage');
@@ -421,7 +422,7 @@ export async function createInvite(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   // Only admins can create invites
   const { data: membership } = await supabase
@@ -431,7 +432,7 @@ export async function createInvite(
     .eq('user_id', user.id)
     .single();
 
-  if (!membership || membership.role !== 'admin') return { error: 'Not authorized.' };
+  if (!membership || membership.role !== 'admin') return appError('JA-4008');
 
   const code = generateInviteCode();
   const expiresAt = expiresInDays
@@ -446,7 +447,7 @@ export async function createInvite(
     max_uses: null,
   });
 
-  if (error) return { error: 'Failed to create invite.' };
+  if (error) return appError('JA-4007');
   return { code };
 }
 
@@ -457,7 +458,7 @@ export async function joinByInvite(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const { data: invite } = await supabase
     .from('cell_invites')
@@ -465,14 +466,14 @@ export async function joinByInvite(
     .eq('code', code.toUpperCase())
     .single();
 
-  if (!invite) return { error: 'Invite not found.' };
+  if (!invite) return appError('JA-4006');
 
   if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
-    return { error: 'Invite has expired.' };
+    return appError('JA-4006');
   }
 
   if (invite.max_uses !== null && invite.use_count >= invite.max_uses) {
-    return { error: 'Invite has reached its maximum uses.' };
+    return appError('JA-4006');
   }
 
   // Check already a member
@@ -493,7 +494,7 @@ export async function joinByInvite(
     role: 'member',
   });
 
-  if (joinError) return { error: 'Failed to join cell.' };
+  if (joinError) return appError('JA-4004');
 
   // Increment use_count
   await supabase
@@ -513,7 +514,7 @@ export async function kickMember(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const { data: membership } = await supabase
     .from('cell_members')
@@ -522,8 +523,8 @@ export async function kickMember(
     .eq('user_id', user.id)
     .single();
 
-  if (!membership || membership.role !== 'admin') return { error: 'Not authorized.' };
-  if (targetUserId === user.id) return { error: 'Cannot kick yourself.' };
+  if (!membership || membership.role !== 'admin') return appError('JA-4008');
+  if (targetUserId === user.id) return appError('JA-8002');
 
   await supabase
     .from('cell_members')
@@ -544,7 +545,7 @@ export async function promoteToAdmin(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const { data: membership } = await supabase
     .from('cell_members')
@@ -553,7 +554,7 @@ export async function promoteToAdmin(
     .eq('user_id', user.id)
     .single();
 
-  if (!membership || membership.role !== 'admin') return { error: 'Not authorized.' };
+  if (!membership || membership.role !== 'admin') return appError('JA-4008');
 
   const { error } = await supabase
     .from('cell_members')
@@ -561,7 +562,7 @@ export async function promoteToAdmin(
     .eq('cell_id', cellId)
     .eq('user_id', targetUserId);
 
-  if (error) return { error: 'Failed to promote member.' };
+  if (error) return appError('JA-8005');
 
   const slug = await fetchCellSlug(supabase, cellId);
   revalidatePath(`/engage/${slug}`);
@@ -593,7 +594,7 @@ export async function scheduleMessage(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   // Must be a cell member
   const { data: membership } = await supabase
@@ -602,11 +603,11 @@ export async function scheduleMessage(
     .eq('cell_id', cellId)
     .eq('user_id', user.id)
     .single();
-  if (!membership) return { error: 'Not a cell member.' };
+  if (!membership) return appError('JA-4003');
 
   // Must be in the future (at least 1 minute)
   if (new Date(sendAt).getTime() < Date.now() + 60_000) {
-    return { error: 'Send time must be at least 1 minute in the future.' };
+    return appError('JA-8002');
   }
 
   const { data, error } = await supabase
@@ -622,7 +623,7 @@ export async function scheduleMessage(
     .select('id')
     .single();
 
-  if (error || !data) return { error: 'Failed to schedule message.' };
+  if (error || !data) return appError('JA-8005');
   return { id: data.id };
 }
 
@@ -651,7 +652,7 @@ export async function cancelScheduledMessage(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const { error } = await supabase
     .from('scheduled_messages')
@@ -660,7 +661,7 @@ export async function cancelScheduledMessage(
     .eq('user_id', user.id)
     .eq('sent', false);
 
-  if (error) return { error: 'Failed to cancel message.' };
+  if (error) return appError('JA-8005');
   return { success: true };
 }
 
@@ -708,7 +709,7 @@ export async function createChannel(
 ): Promise<{ id: string } | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const { data: membership } = await supabase
     .from('cell_members')
@@ -716,7 +717,7 @@ export async function createChannel(
     .eq('cell_id', cellId)
     .eq('user_id', user.id)
     .single();
-  if (!membership || membership.role !== 'admin') return { error: 'Not authorized.' };
+  if (!membership || membership.role !== 'admin') return appError('JA-4008');
 
   const { count } = await supabase
     .from('channels')
@@ -738,7 +739,7 @@ export async function createChannel(
     .select('id')
     .single();
 
-  if (error || !ch) return { error: 'Failed to create channel.' };
+  if (error || !ch) return appError('JA-8005');
 
   const slug = await fetchCellSlug(supabase, cellId);
   revalidatePath(`/engage/${slug}`);
@@ -751,7 +752,7 @@ export async function deleteChannel(
 ): Promise<{ success: true } | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const { data: membership } = await supabase
     .from('cell_members')
@@ -759,7 +760,7 @@ export async function deleteChannel(
     .eq('cell_id', cellId)
     .eq('user_id', user.id)
     .single();
-  if (!membership || membership.role !== 'admin') return { error: 'Not authorized.' };
+  if (!membership || membership.role !== 'admin') return appError('JA-4008');
 
   await supabase.from('channels').delete().eq('id', channelId).eq('cell_id', cellId);
 
@@ -775,7 +776,7 @@ export async function updateChannel(
 ): Promise<{ success: true } | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const { data: membership } = await supabase
     .from('cell_members')
@@ -783,7 +784,7 @@ export async function updateChannel(
     .eq('cell_id', cellId)
     .eq('user_id', user.id)
     .single();
-  if (!membership || membership.role !== 'admin') return { error: 'Not authorized.' };
+  if (!membership || membership.role !== 'admin') return appError('JA-4008');
 
   const { error } = await supabase
     .from('channels')
@@ -795,7 +796,7 @@ export async function updateChannel(
     })
     .eq('id', channelId);
 
-  if (error) return { error: 'Failed to update channel.' };
+  if (error) return appError('JA-8005');
   const slug = await fetchCellSlug(supabase, cellId);
   revalidatePath(`/engage/${slug}`);
   return { success: true };
@@ -1000,13 +1001,13 @@ export async function reportCell(input: {
     details: z.string().max(400).optional(),
   });
   const parsed = schema.safeParse(input);
-  if (!parsed.success) return { error: 'Invalid report details.' };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const { data: exists } = await supabase
     .from('cells')
@@ -1014,7 +1015,7 @@ export async function reportCell(input: {
     .eq('id', parsed.data.cellId)
     .eq('is_public', true)
     .maybeSingle();
-  if (!exists) return { error: 'Community not found.' };
+  if (!exists) return appError('JA-4002');
 
   const { error } = await supabase.from('cell_reports').upsert(
     {
@@ -1027,7 +1028,7 @@ export async function reportCell(input: {
     },
     { onConflict: 'cell_id,reporter_id' }
   );
-  if (error) return { error: 'Failed to submit report.' };
+  if (error) return appError('JA-8005');
 
   revalidatePath('/engage');
   return { success: true };
@@ -1041,10 +1042,10 @@ export async function updateScheduledMessage(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   if (new Date(sendAt).getTime() < Date.now() + 60_000) {
-    return { error: 'Send time must be at least 1 minute in the future.' };
+    return appError('JA-8002');
   }
 
   const { error } = await supabase
@@ -1054,7 +1055,7 @@ export async function updateScheduledMessage(
     .eq('user_id', user.id)
     .eq('sent', false);
 
-  if (error) return { error: 'Failed to update scheduled message.' };
+  if (error) return appError('JA-8005');
   return { success: true };
 }
 
@@ -1163,7 +1164,7 @@ export async function createStory(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const { data: membership } = await supabase
     .from('cell_members')
@@ -1172,7 +1173,7 @@ export async function createStory(
     .eq('user_id', user.id)
     .single();
 
-  if (membership?.role !== 'admin') return { error: 'Only admins can post stories.' };
+  if (membership?.role !== 'admin') return appError('JA-4008');
 
   const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
@@ -1181,7 +1182,7 @@ export async function createStory(
     .select('id')
     .single();
 
-  if (error) return { error: 'Failed to create story.' };
+  if (error) return appError('JA-8005');
   return { id: (data as { id: string }).id };
 }
 
@@ -1223,7 +1224,7 @@ export async function startCall(
 ): Promise<CellCall | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const { data: membership } = await supabase
     .from('cell_members')
@@ -1231,7 +1232,7 @@ export async function startCall(
     .eq('cell_id', cellId)
     .eq('user_id', user.id)
     .single();
-  if (!membership) return { error: 'Not a cell member.' };
+  if (!membership) return appError('JA-4003');
 
   const [{ data: cell }, { data: profile }] = await Promise.all([
     supabase.from('cells').select('slug, name').eq('id', cellId).single(),
@@ -1259,7 +1260,7 @@ export async function startCall(
         .single();
       if (existing) return existing as unknown as CellCall;
     }
-    return { error: `Failed to start call: [${error.code}] ${error.message}` };
+    logError('JA-8005', error); return appError('JA-8005');
   }
 
   // Stage 4E — Push notification to all cell members (excluding caller), fire-and-forget
@@ -1295,7 +1296,7 @@ export async function endCall(
 ): Promise<{ success: true } | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated.' };
+  if (!user) return appError('JA-1003');
 
   const { data: call } = await supabase
     .from('cell_calls')
@@ -1303,7 +1304,7 @@ export async function endCall(
     .eq('id', callId)
     .is('ended_at', null)
     .single();
-  if (!call) return { error: 'Call not found.' };
+  if (!call) return appError('JA-8005');
 
   const isStarter = (call as { started_by: string }).started_by === user.id;
   if (!isStarter) {
@@ -1313,7 +1314,7 @@ export async function endCall(
       .eq('cell_id', cellId)
       .eq('user_id', user.id)
       .single();
-    if (!mem || mem.role !== 'admin') return { error: 'Not authorized.' };
+    if (!mem || mem.role !== 'admin') return appError('JA-4008');
   }
 
   await supabase

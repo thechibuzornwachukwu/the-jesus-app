@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '../../../../lib/supabase/server';
+import { appError, logError } from '../../../../lib/errors';
 
 function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY! }); }
 
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user) return NextResponse.json(appError('JA-1003'), { status: 401 });
 
   const contentType = req.headers.get('content-type') ?? '';
 
@@ -42,16 +43,16 @@ export async function POST(req: NextRequest) {
     try {
       formData = await req.formData();
     } catch {
-      return NextResponse.json({ error: 'Invalid form data' }, { status: 400 });
+      return NextResponse.json(appError('JA-2004'), { status: 400 });
     }
 
     const audio = formData.get('audio') as File | null;
-    if (!audio) return NextResponse.json({ error: 'No audio file' }, { status: 400 });
+    if (!audio) return NextResponse.json(appError('JA-8002'), { status: 400 });
     if (!ALLOWED_AUDIO.has(audio.type)) {
-      return NextResponse.json({ error: 'Unsupported audio format' }, { status: 400 });
+      return NextResponse.json(appError('JA-2002'), { status: 400 });
     }
     if (audio.size > MAX_AUDIO_BYTES) {
-      return NextResponse.json({ error: 'Audio exceeds 25 MB limit' }, { status: 400 });
+      return NextResponse.json(appError('JA-2001'), { status: 400 });
     }
 
     const transcription = await getOpenAI().audio.transcriptions.create({
@@ -63,13 +64,13 @@ export async function POST(req: NextRequest) {
     // ── Text paste path ──────────────────────────────────────────────────────
     const body = await req.json().catch(() => null);
     if (!body?.transcript || typeof body.transcript !== 'string') {
-      return NextResponse.json({ error: 'transcript field required' }, { status: 400 });
+      return NextResponse.json(appError('JA-8002'), { status: 400 });
     }
     transcript = body.transcript.trim().slice(0, 20000); // cap at 20k chars
   }
 
   if (!transcript) {
-    return NextResponse.json({ error: 'Empty transcript' }, { status: 400 });
+    return NextResponse.json(appError('JA-8002'), { status: 400 });
   }
 
   // Extract structured notes with GPT-4o
@@ -92,8 +93,9 @@ export async function POST(req: NextRequest) {
   let notes: unknown;
   try {
     notes = JSON.parse(raw);
-  } catch {
-    return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
+  } catch (e) {
+    logError('JA-6002', e);
+    return NextResponse.json(appError('JA-6002'), { status: 500 });
   }
 
   return NextResponse.json({ notes, transcript: transcript.slice(0, 500) + (transcript.length > 500 ? '…' : '') });

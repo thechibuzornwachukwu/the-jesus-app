@@ -39,9 +39,9 @@ export function CommentSheet({ videoId, onClose }: CommentSheetProps) {
     const draft = text.trim();
     setText('');
     startTransition(async () => {
-      const { comment, error } = await addComment(videoId, draft);
+      const { comment, error, code } = await addComment(videoId, draft);
       if (error) {
-        showToast(error, 'error');
+        showToast(error, 'error', code);
       } else if (comment) {
         setComments((prev) => [...prev, comment]);
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { appError, logError } from '../../../../lib/errors';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const MAX_SIZE = 8 * 1024 * 1024; // 8 MB
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user) return NextResponse.json(appError('JA-1003'), { status: 401 });
 
   const formData = await req.formData();
   const file = formData.get('file') as File | null;
@@ -31,16 +32,13 @@ export async function POST(req: NextRequest) {
   const channelId = formData.get('channelId') as string | null;
 
   if (!file || !cellId) {
-    return NextResponse.json({ error: 'Missing file or cellId' }, { status: 400 });
+    return NextResponse.json(appError('JA-8002'), { status: 400 });
   }
   if (!ALLOWED_TYPES.includes(file.type)) {
-    return NextResponse.json(
-      { error: 'File type not allowed. Use JPEG, PNG, GIF, or WebP.' },
-      { status: 400 }
-    );
+    return NextResponse.json(appError('JA-2002'), { status: 400 });
   }
   if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: 'File exceeds 8 MB limit.' }, { status: 400 });
+    return NextResponse.json(appError('JA-2001'), { status: 400 });
   }
 
   const ext = file.type.split('/')[1].replace('jpeg', 'jpg');
@@ -53,7 +51,8 @@ export async function POST(req: NextRequest) {
     .upload(path, arrayBuffer, { contentType: file.type, upsert: false });
 
   if (uploadError) {
-    return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    logError('JA-2003', uploadError);
+    return NextResponse.json(appError('JA-2003'), { status: 500 });
   }
 
   const { data: signedData, error: signError } = await supabase.storage
@@ -61,7 +60,8 @@ export async function POST(req: NextRequest) {
     .createSignedUrl(path, 3600);
 
   if (signError || !signedData?.signedUrl) {
-    return NextResponse.json({ error: 'Failed to create signed URL.' }, { status: 500 });
+    logError('JA-2003', signError);
+    return NextResponse.json(appError('JA-2003'), { status: 500 });
   }
 
   return NextResponse.json({ signedUrl: signedData.signedUrl, path });

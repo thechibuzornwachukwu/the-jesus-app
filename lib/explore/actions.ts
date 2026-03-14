@@ -2,6 +2,7 @@
 
 import { createClient } from '../supabase/server';
 import { z } from 'zod';
+import { appError, logError } from '../errors';
 import type { Video, Comment, Post, ImagePost, Repost, FeedItem, ReactionType, VerseComment } from './types';
 import { logStreakEvent } from '../streaks/actions';
 
@@ -413,15 +414,15 @@ export async function addComment(
   targetId: string,
   content: string,
   targetType: 'video' | 'post' = 'video'
-): Promise<{ comment?: Comment; error?: string }> {
+): Promise<{ comment?: Comment; error?: string; code?: string }> {
   const parsed = commentSchema.safeParse({ targetId, content, targetType });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const table = parsed.data.targetType === 'post' ? 'post_comments' : 'comments';
   const idField = parsed.data.targetType === 'post' ? 'post_id' : 'video_id';
@@ -432,7 +433,7 @@ export async function addComment(
     .select(`id, ${idField}, user_id, content, created_at`)
     .single();
 
-  if (error || !data) return { error: error?.message ?? 'Failed to post comment' };
+  if (error || !data) { logError('JA-5003', error); return appError('JA-5003'); }
 
   void logStreakEvent('post_content');
 
@@ -474,13 +475,13 @@ export async function createImagePost(
   verseText?: string
 ): Promise<{ postId: string } | { error: string }> {
   const parsed = imagePostSchema.safeParse({ imageUrl, caption, verseReference, verseText });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const { data, error } = await supabase
     .from('posts')
@@ -494,7 +495,7 @@ export async function createImagePost(
     .select('id')
     .single();
 
-  if (error || !data) return { error: error?.message ?? 'Failed to create post' };
+  if (error || !data) { logError('JA-8005', error); return appError('JA-8005'); }
   void logStreakEvent('post_content');
   return { postId: data.id };
 }
@@ -512,13 +513,13 @@ export async function saveVerse(
   verseText: string
 ): Promise<{ error?: string }> {
   const parsed = saveVerseSchema.safeParse({ verseReference, verseText });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const { error } = await supabase.from('saved_verses').upsert({
     user_id: user.id,
@@ -527,7 +528,8 @@ export async function saveVerse(
   });
 
   if (!error) void logStreakEvent('verse_save');
-  return error ? { error: error.message } : {};
+  if (error) { logError('JA-5004', error); return appError('JA-5004'); }
+  return {};
 }
 
 // ---------------------------------------------------------------------------
@@ -545,13 +547,13 @@ export async function createPost(
   verseText?: string
 ): Promise<{ postId: string } | { error: string }> {
   const parsed = createPostSchema.safeParse({ content, verseReference, verseText });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const { data, error } = await supabase
     .from('posts')
@@ -564,7 +566,7 @@ export async function createPost(
     .select('id')
     .single();
 
-  if (error || !data) return { error: error?.message ?? 'Failed to create post' };
+  if (error || !data) { logError('JA-8005', error); return appError('JA-8005'); }
   void logStreakEvent('post_content');
   return { postId: data.id };
 }
@@ -591,13 +593,13 @@ export async function createRepost(
     quoteVerseRef,
     quoteVerseText,
   });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const { data, error } = await supabase
     .from('reposts')
@@ -612,7 +614,7 @@ export async function createRepost(
     .select('id')
     .single();
 
-  if (error || !data) return { error: error?.message ?? 'Failed to repost' };
+  if (error || !data) { logError('JA-8005', error); return appError('JA-8005'); }
 
   void logStreakEvent('post_content');
   return { repostId: data.id };
@@ -622,13 +624,13 @@ export async function deleteRepost(
   repostId: string
 ): Promise<{ success: true } | { error: string }> {
   const parsed = z.string().uuid().safeParse(repostId);
-  if (!parsed.success) return { error: 'Invalid repost ID' };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const { error } = await supabase
     .from('reposts')
@@ -636,7 +638,7 @@ export async function deleteRepost(
     .eq('id', parsed.data)
     .eq('user_id', user.id);
 
-  if (error) return { error: error.message ?? 'Failed to delete repost' };
+  if (error) { logError('JA-8005', error); return appError('JA-8005'); }
   return { success: true };
 }
 
@@ -662,13 +664,13 @@ export async function addThreadReply(
     verseReference,
     verseText,
   });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   type RawPost = {
     id: string;
@@ -699,7 +701,7 @@ export async function addThreadReply(
     )
     .single();
 
-  if (error || !data) return { error: error?.message ?? 'Failed to post reply' };
+  if (error || !data) { logError('JA-5003', error); return appError('JA-5003'); }
 
   void logStreakEvent('post_content');
 
@@ -1240,11 +1242,11 @@ export async function addVerseComment(
   body: string
 ): Promise<{ comment?: VerseComment; error?: string }> {
   const parsed = verseCommentSchema.safeParse({ verseReference, body });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -1259,7 +1261,7 @@ export async function addVerseComment(
     .select('id, user_id, verse_reference, verse_date, body, created_at')
     .single();
 
-  if (error || !data) return { error: error?.message ?? 'Failed to post comment' };
+  if (error || !data) { logError('JA-5003', error); return appError('JA-5003'); }
 
   void logStreakEvent('verse_save');
 

@@ -28,7 +28,7 @@ export function CreateCellSheet({ open, onClose }: CreateCellSheetProps) {
   const [isPublic, setIsPublic] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; code?: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
@@ -39,6 +39,8 @@ export function CreateCellSheet({ open, onClose }: CreateCellSheetProps) {
     setIsPublic(true);
     setError(null);
   };
+
+  const setErrorMsg = (message: string, code?: string) => setError({ message, code });
 
   const handleClose = () => {
     reset();
@@ -65,7 +67,7 @@ export function CreateCellSheet({ open, onClose }: CreateCellSheetProps) {
       const { data } = supabase.storage.from('cell-avatars').getPublicUrl(path);
       setAvatarUrl(data.publicUrl);
     } catch {
-      setError('Avatar upload failed. You can still create the cell without one.');
+      setErrorMsg('Avatar upload failed. You can still create the cell without one.');
     } finally {
       setUploading(false);
     }
@@ -74,7 +76,7 @@ export function CreateCellSheet({ open, onClose }: CreateCellSheetProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim().length < 2) {
-      setError('Cell name must be at least 2 characters.');
+      setErrorMsg('Cell name must be at least 2 characters.');
       return;
     }
 
@@ -91,7 +93,7 @@ export function CreateCellSheet({ open, onClose }: CreateCellSheetProps) {
     const result = await createCell(formData);
 
     if ('error' in result) {
-      setError(result.error);
+      setErrorMsg(result.error, (result as { error: string; code?: string }).code);
       setSubmitting(false);
       return;
     }
@@ -294,7 +296,27 @@ export function CreateCellSheet({ open, onClose }: CreateCellSheetProps) {
         </button>
 
         {error && (
-          <p style={{ color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>{error}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
+            <span>{error.message}</span>
+            {error.code && (
+              <code
+                title="Tap to copy error code"
+                onClick={() => navigator.clipboard?.writeText(error.code!).catch(() => {})}
+                style={{
+                  fontFamily: 'monospace',
+                  fontSize: 10,
+                  padding: '2px 5px',
+                  borderRadius: 3,
+                  background: 'rgba(248,113,113,0.12)',
+                  border: '1px solid rgba(248,113,113,0.25)',
+                  cursor: 'copy',
+                  userSelect: 'all',
+                }}
+              >
+                {error.code}
+              </code>
+            )}
+          </div>
         )}
       </form>
     </FullScreenModal>

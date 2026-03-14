@@ -61,7 +61,7 @@ export function Chat({
     hardBlock?: boolean;
     message?: string;
   }>({ show: false });
-  const [sendError, setSendError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<{ message: string; code?: string } | null>(null);
   const [memberListOpen, setMemberListOpen] = useState(false);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [sendMenuOpen, setSendMenuOpen] = useState(false);
@@ -428,7 +428,7 @@ export function Chat({
 
       if (error) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
-        setSendError('Failed to send. Please try again.');
+        setSendError({ message: 'Failed to send. Please try again.', code: error.code });
       } else {
         void logStreakEvent('cell_message');
         if (content.includes('@')) {
@@ -502,7 +502,7 @@ export function Chat({
       .upload(path, blob, { contentType: mimeType });
 
     if (uploadError) {
-      setSendError('Failed to upload voice message.');
+      setSendError({ message: 'Failed to upload voice message.', code: uploadError.error ?? undefined });
       return;
     }
 
@@ -511,7 +511,7 @@ export function Chat({
       .createSignedUrl(path, 3600);
 
     if (!signedData?.signedUrl) {
-      setSendError('Failed to process voice message.');
+      setSendError({ message: 'Failed to process voice message.' });
       return;
     }
 
@@ -543,7 +543,7 @@ export function Chat({
 
     if (insertError) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      setSendError('Failed to send voice message.');
+      setSendError({ message: 'Failed to send voice message.', code: insertError.code });
     }
   };
 
@@ -590,7 +590,7 @@ export function Chat({
       if (!res.ok) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         URL.revokeObjectURL(objectUrl);
-        setSendError('Failed to upload image.');
+        setSendError({ message: 'Failed to upload image.' });
         setImageUploading(false);
         return;
       }
@@ -611,7 +611,7 @@ export function Chat({
       URL.revokeObjectURL(objectUrl);
       if (insertError) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
-        setSendError('Failed to send image.');
+        setSendError({ message: 'Failed to send image.', code: insertError.code });
       }
       setImageUploading(false);
     },
@@ -916,15 +916,36 @@ export function Chat({
           )}
 
           {sendError && (
-            <p
+            <div
               style={{
                 marginBottom: 'var(--space-1)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
                 color: 'var(--color-error)',
                 fontSize: 'var(--font-size-xs)',
               }}
             >
-              {sendError}
-            </p>
+              <span>{sendError.message}</span>
+              {sendError.code && (
+                <code
+                  title="Tap to copy error code"
+                  onClick={() => navigator.clipboard?.writeText(sendError.code!).catch(() => {})}
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: 10,
+                    padding: '2px 5px',
+                    borderRadius: 3,
+                    background: 'rgba(248,113,113,0.12)',
+                    border: '1px solid rgba(248,113,113,0.25)',
+                    cursor: 'copy',
+                    userSelect: 'all',
+                  }}
+                >
+                  {sendError.code}
+                </code>
+              )}
+            </div>
           )}
           {typingLabel && (
             <p

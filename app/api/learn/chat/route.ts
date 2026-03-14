@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '../../../../lib/supabase/server';
 import { z } from 'zod';
+import { appError } from '../../../../lib/errors';
 
 function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY! }); }
 
@@ -19,12 +20,12 @@ export async function POST(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user) return NextResponse.json(appError('JA-1003'), { status: 401 });
 
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    return NextResponse.json(appError('JA-8002'), { status: 400 });
   }
   const { message, history, sessionId } = parsed.data;
 

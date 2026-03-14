@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import OpenAI from 'openai';
 import { createClient } from '../../../lib/supabase/server';
+import { appError } from '../../../lib/errors';
 
 const bodySchema = z.object({
   content: z.string().min(1).max(2000),
@@ -23,12 +24,12 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 });
+    return NextResponse.json(appError('JA-8002'), { status: 400 });
   }
 
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid request.' }, { status: 400 });
+    return NextResponse.json(appError('JA-8002'), { status: 400 });
   }
 
   const supabase = await createClient();

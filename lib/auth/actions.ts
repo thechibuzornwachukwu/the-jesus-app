@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { createClient } from '../supabase/server';
+import { appError, logError } from '../errors';
 
 const authSchema = z.object({
   email: z.string().email(),
@@ -14,16 +15,14 @@ export async function signIn(_: unknown, formData: FormData) {
     email: formData.get('email'),
     password: formData.get('password'),
   });
-  if (!parsed.success) {
-    return { error: 'Invalid email or password.' };
-  }
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const { data: signInData, error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
-    // Generic message  no info leakage
-    return { error: 'Sign in failed. Check your credentials and try again.' };
+    logError('JA-1001', error);
+    return appError('JA-1001');
   }
 
   // Upsert profile at sign-in so it always exists before the app loads
@@ -40,8 +39,8 @@ export async function signIn(_: unknown, formData: FormData) {
       { onConflict: 'id', ignoreDuplicates: true },
     );
     if (upsertError) {
-      console.error('[auth/signIn] profile upsert failed:', upsertError.message);
-      return { error: 'Account setup failed. Please try signing in again.' };
+      logError('JA-8005', upsertError);
+      return appError('JA-8005');
     }
   }
 
@@ -53,14 +52,10 @@ export async function signUp(_: unknown, formData: FormData) {
     email: formData.get('email'),
     password: formData.get('password'),
   });
-  if (!parsed.success) {
-    return { error: 'Please enter a valid email and a password of at least 8 characters.' };
-  }
+  if (!parsed.success) return appError('JA-8002');
 
   const acceptPolicies = formData.get('acceptPolicies');
-  if (acceptPolicies !== 'true' && acceptPolicies !== 'on') {
-    return { error: 'Please review and accept the Privacy Policy and Terms to continue.' };
-  }
+  if (acceptPolicies !== 'true' && acceptPolicies !== 'on') return appError('JA-8002');
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
@@ -71,7 +66,8 @@ export async function signUp(_: unknown, formData: FormData) {
   });
 
   if (error) {
-    return { error: 'Sign up failed. Please try again.' };
+    logError('JA-1002', error);
+    return appError('JA-1002');
   }
 
   return { success: 'Check your email to confirm your account.' };
@@ -87,9 +83,7 @@ export async function requireAuth() {
 export async function signInWithMagicLink(_: unknown, formData: FormData) {
   const email = formData.get('email');
   const parsed = z.string().email().safeParse(email);
-  if (!parsed.success) {
-    return { error: 'Please enter a valid email address.' };
-  }
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
@@ -100,7 +94,8 @@ export async function signInWithMagicLink(_: unknown, formData: FormData) {
   });
 
   if (error) {
-    return { error: 'Failed to send magic link. Please try again.' };
+    logError('JA-1004', error);
+    return appError('JA-1004');
   }
 
   return { success: 'Magic link sent! Check your email.' };

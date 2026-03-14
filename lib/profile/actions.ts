@@ -4,6 +4,7 @@ import { createClient } from '../supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import { appError, logError } from '../errors';
 import { sendPushToUser } from '../notifications/push';
 import type {
   FullProfile,
@@ -94,13 +95,13 @@ export async function updateProfile(
   };
 
   const parsed = updateProfileSchema.safeParse(raw);
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   // Username uniqueness
   const { data: existing } = await supabase
@@ -110,7 +111,7 @@ export async function updateProfile(
     .neq('id', user.id)
     .maybeSingle();
 
-  if (existing) return { error: 'Username already taken' };
+  if (existing) return appError('JA-8002');
 
   const { data, error } = await supabase
     .from('profiles')
@@ -123,7 +124,7 @@ export async function updateProfile(
     )
     .single();
 
-  if (error) return { error: error.message };
+  if (error) { logError('JA-7002', error); return appError('JA-7002'); }
   revalidatePath('/profile');
   return { profile: data as FullProfile };
 }
@@ -231,13 +232,13 @@ export async function updateVerseNote(
     verseReference: z.string().min(1).max(100),
     note: z.string().max(2000).trim(),
   }).safeParse({ verseReference, note });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const { error } = await supabase
     .from('saved_verses')
@@ -246,7 +247,8 @@ export async function updateVerseNote(
     .eq('verse_reference', parsed.data.verseReference);
 
   if (!error && parsed.data.note) void logStreakEvent('verse_save_with_note');
-  return error ? { error: error.message } : {};
+  if (error) { logError('JA-8005', error); return appError('JA-8005'); }
+  return {};
 }
 
 // ────────────────────────────────────────────────────────────
@@ -257,7 +259,7 @@ export async function deleteSavedVerse(verseReference: string): Promise<{ error?
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const { error } = await supabase
     .from('saved_verses')
@@ -265,7 +267,7 @@ export async function deleteSavedVerse(verseReference: string): Promise<{ error?
     .eq('user_id', user.id)
     .eq('verse_reference', verseReference);
 
-  if (error) return { error: error.message };
+  if (error) { logError('JA-8005', error); return appError('JA-8005'); }
   revalidatePath('/profile');
   return {};
 }
@@ -436,20 +438,21 @@ export async function getBlockedUsers(): Promise<string[]> {
 // ────────────────────────────────────────────────────────────
 export async function blockUser(targetId: string): Promise<{ error?: string }> {
   const parsed = z.string().uuid().safeParse(targetId);
-  if (!parsed.success) return { error: 'Invalid user ID' };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
-  if (user.id === targetId) return { error: 'Cannot block yourself' };
+  if (!user) return appError('JA-1003');
+  if (user.id === targetId) return appError('JA-8002');
 
   const { error } = await supabase
     .from('blocked_users')
     .upsert({ blocker_id: user.id, blocked_id: targetId });
 
-  return error ? { error: error.message } : {};
+  if (error) { logError('JA-8005', error); return appError('JA-8005'); }
+  return {};
 }
 
 // ────────────────────────────────────────────────────────────
@@ -457,13 +460,13 @@ export async function blockUser(targetId: string): Promise<{ error?: string }> {
 // ────────────────────────────────────────────────────────────
 export async function unblockUser(targetId: string): Promise<{ error?: string }> {
   const parsed = z.string().uuid().safeParse(targetId);
-  if (!parsed.success) return { error: 'Invalid user ID' };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const { error } = await supabase
     .from('blocked_users')
@@ -471,7 +474,8 @@ export async function unblockUser(targetId: string): Promise<{ error?: string }>
     .eq('blocker_id', user.id)
     .eq('blocked_id', targetId);
 
-  return error ? { error: error.message } : {};
+  if (error) { logError('JA-8005', error); return appError('JA-8005'); }
+  return {};
 }
 
 // ────────────────────────────────────────────────────────────
@@ -482,14 +486,14 @@ export async function updatePrivacy(isPublic: boolean): Promise<{ error?: string
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const { error } = await supabase
     .from('profiles')
     .update({ is_public: isPublic })
     .eq('id', user.id);
 
-  if (error) return { error: error.message };
+  if (error) { logError('JA-7002', error); return appError('JA-7002'); }
   revalidatePath('/profile');
   return {};
 }
@@ -502,20 +506,21 @@ export async function updateContentPreferences(
 ): Promise<{ error?: string }> {
   const schema = z.array(z.enum(KNOWN_CATEGORIES));
   const parsed = schema.safeParse(categories);
-  if (!parsed.success) return { error: 'Invalid categories' };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const { error } = await supabase
     .from('profiles')
     .update({ content_categories: parsed.data })
     .eq('id', user.id);
 
-  return error ? { error: error.message } : {};
+  if (error) { logError('JA-7002', error); return appError('JA-7002'); }
+  return {};
 }
 
 // ────────────────────────────────────────────────────────────
@@ -523,11 +528,11 @@ export async function updateContentPreferences(
 // ────────────────────────────────────────────────────────────
 export async function changeEmail(email: string): Promise<{ success?: string; error?: string }> {
   const parsed = z.string().email().safeParse(email);
-  if (!parsed.success) return { error: 'Invalid email' };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ email: parsed.data });
-  if (error) return { error: error.message };
+  if (error) { logError('JA-8005', error); return appError('JA-8005'); }
   return { success: 'Confirmation email sent. Check your inbox.' };
 }
 
@@ -538,11 +543,11 @@ export async function changePassword(
   password: string
 ): Promise<{ success?: string; error?: string }> {
   const parsed = z.string().min(8).safeParse(password);
-  if (!parsed.success) return { error: 'Password must be at least 8 characters' };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password: parsed.data });
-  if (error) return { error: error.message };
+  if (error) { logError('JA-8005', error); return appError('JA-8005'); }
   return { success: 'Password updated.' };
 }
 
@@ -725,14 +730,14 @@ export async function searchUsers(
 // ────────────────────────────────────────────────────────────
 export async function followUser(targetId: string): Promise<{ error?: string }> {
   const parsed = z.string().uuid().safeParse(targetId);
-  if (!parsed.success) return { error: 'Invalid user ID' };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
-  if (user.id === targetId) return { error: 'Cannot follow yourself' };
+  if (!user) return appError('JA-1003');
+  if (user.id === targetId) return appError('JA-8002');
 
   const { error } = await supabase
     .from('user_follows')
@@ -740,8 +745,8 @@ export async function followUser(targetId: string): Promise<{ error?: string }> 
 
   if (error) {
     if (error.code === '23505') return {}; // already following — no-op
-    console.error('[followUser] insert failed:', error.code, error.message);
-    return { error: error.message };
+    logError('JA-8005', error);
+    return appError('JA-8005');
   }
 
   // Fetch follower's username for push notification
@@ -770,13 +775,13 @@ export async function followUser(targetId: string): Promise<{ error?: string }> 
 // ────────────────────────────────────────────────────────────
 export async function unfollowUser(targetId: string): Promise<{ error?: string }> {
   const parsed = z.string().uuid().safeParse(targetId);
-  if (!parsed.success) return { error: 'Invalid user ID' };
+  if (!parsed.success) return appError('JA-8002');
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthenticated' };
+  if (!user) return appError('JA-1003');
 
   const { error } = await supabase
     .from('user_follows')
@@ -785,8 +790,8 @@ export async function unfollowUser(targetId: string): Promise<{ error?: string }
     .eq('following_id', targetId);
 
   if (error) {
-    console.error('[unfollowUser] delete failed:', error.code, error.message);
-    return { error: error.message };
+    logError('JA-8005', error);
+    return appError('JA-8005');
   }
   return {};
 }

@@ -10,6 +10,7 @@ interface ToastItem {
   id: number;
   message: string;
   type: ToastType;
+  code?: string;
   exiting?: boolean;
 }
 
@@ -18,8 +19,8 @@ type Listener = (item: Omit<ToastItem, 'exiting'>) => void;
 const _listeners = new Set<Listener>();
 let _nextId = 0;
 
-export function showToast(message: string, type: ToastType = 'info'): void {
-  const item = { id: ++_nextId, message, type };
+export function showToast(message: string, type: ToastType = 'info', code?: string): void {
+  const item = { id: ++_nextId, message, type, code };
   _listeners.forEach((fn) => fn(item));
 }
 
@@ -110,6 +111,30 @@ export function ToastContainer() {
           >
             {icons[t.type]}
             <span style={{ flex: 1 }}>{t.message}</span>
+            {t.type === 'error' && t.code && (
+              <code
+                title="Tap to copy error code"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard?.writeText(t.code!).catch(() => {});
+                }}
+                style={{
+                  flexShrink: 0,
+                  fontFamily: 'monospace',
+                  fontSize: 10,
+                  lineHeight: 1,
+                  padding: '3px 6px',
+                  borderRadius: 4,
+                  background: 'rgba(0,0,0,0.35)',
+                  color: 'var(--color-error)',
+                  border: '1px solid rgba(248,113,113,0.25)',
+                  cursor: 'copy',
+                  userSelect: 'all',
+                }}
+              >
+                {t.code}
+              </code>
+            )}
           </div>
         );
       })}
