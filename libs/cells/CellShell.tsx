@@ -20,6 +20,7 @@ import { ScheduleMeetingSheet } from './ScheduleMeetingSheet';
 import { ChannelSidebar, type UpcomingMeetingHint } from './ChannelSidebar';
 import ActiveCallBanner from './ActiveCallBanner';
 import JitsiCallScreen from './JitsiCallScreen';
+import { showToast } from '../shared-ui/Toast';
 import {
   createChannel,
   deleteChannel,
@@ -98,6 +99,7 @@ export function CellShell({
   const [isInCall, setIsInCall] = useState(false);
   const [callRoomName, setCallRoomName] = useState<string | null>(null);
   const [activeCallId, setActiveCallId] = useState<string | null>(null);
+  const [callLoading, setCallLoading] = useState(false);
   const callRoomNameRef = useRef<string | null>(null);
   callRoomNameRef.current = callRoomName;
 
@@ -191,6 +193,7 @@ export function CellShell({
 
   // Stage 4D handlers
   const handleStartOrJoinCall = useCallback(async () => {
+    if (callLoading) return;
     const existing = activeCallByChannel[activeChannelId];
     if (existing) {
       setCallRoomName(existing.room_name);
@@ -198,13 +201,23 @@ export function CellShell({
       setIsInCall(true);
       return;
     }
-    const result = await startCall(activeChannelId, cell.id);
-    if ('error' in result) return;
-    setActiveCallByChannel((prev) => ({ ...prev, [result.channel_id]: result }));
-    setCallRoomName(result.room_name);
-    setActiveCallId(result.id);
-    setIsInCall(true);
-  }, [activeCallByChannel, activeChannelId, cell.id]);
+    setCallLoading(true);
+    try {
+      const result = await startCall(activeChannelId, cell.id);
+      if ('error' in result) {
+        showToast(result.error, 'error');
+        return;
+      }
+      setActiveCallByChannel((prev) => ({ ...prev, [result.channel_id]: result }));
+      setCallRoomName(result.room_name);
+      setActiveCallId(result.id);
+      setIsInCall(true);
+    } catch {
+      showToast('Could not start call. Please try again.', 'error');
+    } finally {
+      setCallLoading(false);
+    }
+  }, [callLoading, activeCallByChannel, activeChannelId, cell.id]);
 
   const handleEndCall = useCallback(async () => {
     const callId = activeCallByChannel[activeChannelId]?.id ?? activeCallId;
@@ -435,17 +448,20 @@ export function CellShell({
           {(activeChannel?.channel_type === 'text' || activeChannel?.channel_type === 'announcement') && (
             <button
               onClick={handleStartOrJoinCall}
+              disabled={callLoading}
               aria-label="Start voice call"
               title={activeCallByChannel[activeChannelId] ? 'Join active call' : 'Start voice call'}
               style={{
                 background: activeCallByChannel[activeChannelId] ? 'var(--color-accent-soft)' : 'none',
                 border: 'none',
-                color: activeCallByChannel[activeChannelId] ? 'var(--color-accent)' : 'var(--color-text-muted)',
-                cursor: 'pointer',
+                color: callLoading ? 'var(--color-text-faint)' : activeCallByChannel[activeChannelId] ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                cursor: callLoading ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 padding: 4,
                 borderRadius: 'var(--radius-sm)',
+                opacity: callLoading ? 0.5 : 1,
+                transition: 'opacity 0.15s',
               }}
             >
               <Phone size={15} />
@@ -701,6 +717,7 @@ export function CellShell({
                   </div>
                   <button
                     onClick={handleStartOrJoinCall}
+                    disabled={callLoading}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -712,12 +729,13 @@ export function CellShell({
                       color: 'var(--color-accent-text)',
                       fontSize: 'var(--font-size-base)',
                       fontWeight: 'var(--font-weight-semibold)',
-                      cursor: 'pointer',
+                      cursor: callLoading ? 'not-allowed' : 'pointer',
                       fontFamily: 'var(--font-sans)',
+                      opacity: callLoading ? 0.6 : 1,
                     }}
                   >
                     <Phone size={16} />
-                    Join Call
+                    {callLoading ? 'Joining…' : 'Join Call'}
                   </button>
                 </>
               ) : (
@@ -732,6 +750,7 @@ export function CellShell({
                   </div>
                   <button
                     onClick={handleStartOrJoinCall}
+                    disabled={callLoading}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -743,12 +762,13 @@ export function CellShell({
                       color: 'var(--color-accent-text)',
                       fontSize: 'var(--font-size-base)',
                       fontWeight: 'var(--font-weight-semibold)',
-                      cursor: 'pointer',
+                      cursor: callLoading ? 'not-allowed' : 'pointer',
                       fontFamily: 'var(--font-sans)',
+                      opacity: callLoading ? 0.6 : 1,
                     }}
                   >
                     <Phone size={16} />
-                    Start Call
+                    {callLoading ? 'Starting…' : 'Start Call'}
                   </button>
                 </>
               )}
