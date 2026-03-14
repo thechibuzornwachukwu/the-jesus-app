@@ -1234,7 +1234,7 @@ export async function startCall(
   if (!membership) return { error: 'Not a cell member.' };
 
   const [{ data: cell }, { data: profile }] = await Promise.all([
-    supabase.from('cells').select('slug').eq('id', cellId).single(),
+    supabase.from('cells').select('slug, name').eq('id', cellId).single(),
     supabase.from('profiles').select('username').eq('id', user.id).single(),
   ]);
 
@@ -1260,6 +1260,30 @@ export async function startCall(
       if (existing) return existing as unknown as CellCall;
     }
     return { error: 'Failed to start call.' };
+  }
+
+  // Stage 4E — Push notification to all cell members (excluding caller), fire-and-forget
+  try {
+    const { data: memberRows } = await supabase
+      .from('cell_members')
+      .select('user_id')
+      .eq('cell_id', cellId)
+      .neq('user_id', user.id);
+    if (memberRows && memberRows.length > 0) {
+      const { sendPushToUser } = await import('../notifications/push');
+      const cellName = (cell as { slug?: string; name?: string } | null)?.name ?? 'your cell';
+      await Promise.allSettled(
+        (memberRows as { user_id: string }[]).map((m) =>
+          sendPushToUser(
+            m.user_id,
+            `Call started in ${cellName}`,
+            `${displayName} started a call`
+          )
+        )
+      );
+    }
+  } catch {
+    // Fire-and-forget — swallow errors
   }
 
   return data as unknown as CellCall;

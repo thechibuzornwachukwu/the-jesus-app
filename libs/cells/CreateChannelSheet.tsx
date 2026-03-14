@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { Phone } from 'lucide-react';
 import { BottomSheet } from '../shared-ui/BottomSheet';
 import type { ChannelCategory, ChannelType } from '../../lib/cells/types';
 
@@ -210,37 +211,49 @@ export function CreateChannelSheet({
           >
             Type
           </p>
-          <div
-            style={{
-              display: 'flex',
-              background: 'var(--color-surface-dp1)',
-              borderRadius: 'var(--radius-md)',
-              padding: 3,
-              gap: 3,
-            }}
-          >
-            {(['text', 'announcement'] as ChannelType[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => setChannelType(t)}
-                style={{
-                  flex: 1,
-                  height: 34,
-                  borderRadius: 'var(--radius-sm)',
-                  border: 'none',
-                  background: channelType === t ? 'var(--color-accent)' : 'transparent',
-                  color: channelType === t ? 'var(--color-accent-text)' : 'var(--color-text-muted)',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 'var(--font-weight-semibold)',
-                  cursor: 'pointer',
-                  textTransform: 'capitalize',
-                  fontFamily: 'var(--font-sans)',
-                  transition: 'background 0.15s, color 0.15s',
-                }}
-              >
-                {t}
-              </button>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div
+              style={{
+                display: 'flex',
+                background: 'var(--color-surface-dp1)',
+                borderRadius: 'var(--radius-md)',
+                padding: 3,
+                gap: 3,
+              }}
+            >
+              {(['text', 'announcement', 'voice'] as ChannelType[]).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setChannelType(t)}
+                  style={{
+                    flex: 1,
+                    height: 34,
+                    borderRadius: 'var(--radius-sm)',
+                    border: 'none',
+                    background: channelType === t ? 'var(--color-accent)' : 'transparent',
+                    color: channelType === t ? 'var(--color-accent-text)' : 'var(--color-text-muted)',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    cursor: 'pointer',
+                    textTransform: 'capitalize',
+                    fontFamily: 'var(--font-sans)',
+                    transition: 'background 0.15s, color 0.15s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 4,
+                  }}
+                >
+                  {t === 'voice' && <Phone size={11} />}
+                  {t}
+                </button>
+              ))}
+            </div>
+            {channelType === 'voice' && (
+              <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: 0 }}>
+                Real-time voice and video calls
+              </p>
+            )}
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useCallback, useTransition, useEffect } from 'react';
-import { ChevronLeft, Users, MoreVertical, CalendarPlus, Hash, Calendar, Megaphone } from 'lucide-react';
+import React, { useState, useCallback, useTransition, useEffect, useRef } from 'react';
+import { ChevronLeft, Users, MoreVertical, CalendarPlus, Hash, Calendar, Megaphone, Phone } from 'lucide-react';
 import {
   applyScore,
   NOTIFICATION_CLICK,
@@ -18,24 +18,31 @@ import { CreateChannelSheet } from './CreateChannelSheet';
 import { MeetingCard } from './MeetingCard';
 import { ScheduleMeetingSheet } from './ScheduleMeetingSheet';
 import { ChannelSidebar, type UpcomingMeetingHint } from './ChannelSidebar';
+import ActiveCallBanner from './ActiveCallBanner';
+import JitsiCallScreen from './JitsiCallScreen';
 import {
   createChannel,
   deleteChannel,
   updateChannel,
   updateReadState,
   reorderChannels,
+  startCall,
+  endCall,
+  getActiveCall,
 } from '../../lib/cells/actions';
 import { fetchChannelMessages } from '../../lib/cells/channel-actions';
 import {
   getUpcomingMeetings,
   getMeetingWithRsvps,
 } from '../../lib/cells/meeting-actions';
+import { createClient as createSupabaseBrowserClient } from '../../lib/supabase/client';
 import type { ScheduledMeeting, MeetingWithRsvps } from '../../lib/cells/meeting-actions';
 import type {
   Cell,
   ChannelCategory,
   Channel,
   CellMemberWithProfile,
+  CellCall,
   Message,
   Profile,
   NotificationScore,
@@ -86,6 +93,14 @@ export function CellShell({
   const [scheduleMeetingOpen, setScheduleMeetingOpen] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<ScheduledMeeting | null>(null);
 
+  // Stage 4A — Voice call state
+  const [activeCallByChannel, setActiveCallByChannel] = useState<Record<string, CellCall>>({});
+  const [isInCall, setIsInCall] = useState(false);
+  const [callRoomName, setCallRoomName] = useState<string | null>(null);
+  const [activeCallId, setActiveCallId] = useState<string | null>(null);
+  const callRoomNameRef = useRef<string | null>(null);
+  callRoomNameRef.current = callRoomName;
+
   const allChannels: Channel[] = localCategories.flatMap((c) => c.channels ?? []);
   const activeChannel = allChannels.find((ch) => ch.id === activeChannelId);
   const onlineCount = members.length;
@@ -120,6 +135,94 @@ export function CellShell({
       );
     });
   }, [cell.id]);
+
+  // Stage 4C — Rehydrate active call for the initial channel on mount
+  useEffect(() => {
+    getActiveCall(initialChannelId).then((call) => {
+      if (call) {
+        setActiveCallByChannel((prev) => ({ ...prev, [call.channel_id]: call }));
+      }
+    });
+  }, [initialChannelId]);
+
+  // Stage 4B — Realtime subscription: Postgres Changes on cell_calls for this cell
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    const channel = supabase
+      .channel(`call-state:${cell.id}`)
+      .on(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        'postgres_changes' as any,
+        { event: 'INSERT', schema: 'public', table: 'cell_calls', filter: `cell_id=eq.${cell.id}` },
+        (payload: { new: CellCall }) => {
+          const call = payload.new;
+          if (!call.ended_at) {
+            setActiveCallByChannel((prev) => ({ ...prev, [call.channel_id]: call }));
+          }
+        }
+      )
+      .on(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        'postgres_changes' as any,
+        { event: 'UPDATE', schema: 'public', table: 'cell_calls', filter: `cell_id=eq.${cell.id}` },
+        (payload: { new: CellCall }) => {
+          const call = payload.new;
+          if (call.ended_at) {
+            setActiveCallByChannel((prev) => {
+              const next = { ...prev };
+              delete next[call.channel_id];
+              return next;
+            });
+            // Exit call if user is in this room
+            setCallRoomName((current) => {
+              if (current === call.room_name) {
+                setIsInCall(false);
+                setActiveCallId(null);
+                return null;
+              }
+              return current;
+            });
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [cell.id]);
+
+  // Stage 4D handlers
+  const handleStartOrJoinCall = useCallback(async () => {
+    const existing = activeCallByChannel[activeChannelId];
+    if (existing) {
+      setCallRoomName(existing.room_name);
+      setActiveCallId(existing.id);
+      setIsInCall(true);
+      return;
+    }
+    const result = await startCall(activeChannelId, cell.id);
+    if ('error' in result) return;
+    setActiveCallByChannel((prev) => ({ ...prev, [result.channel_id]: result }));
+    setCallRoomName(result.room_name);
+    setActiveCallId(result.id);
+    setIsInCall(true);
+  }, [activeCallByChannel, activeChannelId, cell.id]);
+
+  const handleEndCall = useCallback(async () => {
+    const callId = activeCallByChannel[activeChannelId]?.id ?? activeCallId;
+    if (!callId) return;
+    await endCall(callId, cell.id);
+    setActiveCallByChannel((prev) => {
+      const next = { ...prev };
+      delete next[activeChannelId];
+      return next;
+    });
+    setIsInCall(false);
+    setCallRoomName(null);
+    setActiveCallId(null);
+  }, [activeCallByChannel, activeChannelId, activeCallId, cell.id]);
+
+  const handleLeaveCall = useCallback(async () => {
+    await handleEndCall();
+  }, [handleEndCall]);
 
   const handleChannelSelect = useCallback(
     async (channelId: string) => {
@@ -272,6 +375,16 @@ export function CellShell({
         overflow: 'hidden',
       }}
     >
+      {/* Stage 4D — Jitsi overlay (fixed, full-screen) */}
+      {isInCall && callRoomName && (
+        <JitsiCallScreen
+          roomName={callRoomName}
+          displayName={currentUser.username}
+          avatarUrl={currentUser.avatar_url ?? undefined}
+          onLeave={handleLeaveCall}
+          onAutoEnd={handleEndCall}
+        />
+      )}
       {/* ── Slim header ── */}
       <div
         style={{
@@ -317,8 +430,27 @@ export function CellShell({
         >
           {cell.name}
         </span>
-        {/* Right: members + more */}
+        {/* Right: call + members + more */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 2 }}>
+          {(activeChannel?.channel_type === 'text' || activeChannel?.channel_type === 'announcement') && (
+            <button
+              onClick={handleStartOrJoinCall}
+              aria-label="Start voice call"
+              title={activeCallByChannel[activeChannelId] ? 'Join active call' : 'Start voice call'}
+              style={{
+                background: activeCallByChannel[activeChannelId] ? 'var(--color-accent-soft)' : 'none',
+                border: 'none',
+                color: activeCallByChannel[activeChannelId] ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: 4,
+                borderRadius: 'var(--radius-sm)',
+              }}
+            >
+              <Phone size={15} />
+            </button>
+          )}
           <button
             onClick={() => setMemberListOpen(true)}
             aria-label={`${onlineCount} members`}
@@ -369,6 +501,8 @@ export function CellShell({
               ? <Calendar size={12} />
               : ch.channel_type === 'announcement'
               ? <Megaphone size={12} />
+              : ch.channel_type === 'voice'
+              ? <Phone size={12} />
               : <Hash size={12} />;
             return (
               <button
@@ -437,6 +571,17 @@ export function CellShell({
           userRole={userRole}
           activeCellId={cell.id}
           onCreateStory={userRole === 'admin' ? () => setCreateStoryOpen(true) : undefined}
+        />
+      )}
+
+      {/* Stage 4D — Active call banner (shown when call exists and user hasn't joined) */}
+      {activeCallByChannel[activeChannelId] && !isInCall && (
+        <ActiveCallBanner
+          call={activeCallByChannel[activeChannelId]}
+          isInCall={isInCall}
+          userRole={userRole}
+          onJoin={handleStartOrJoinCall}
+          onEnd={handleEndCall}
         />
       )}
 
@@ -516,19 +661,113 @@ export function CellShell({
             </div>
           )}
 
-          <Chat
-            key={activeChannelId}
-            cellId={cell.id}
-            cellName={cell.name}
-            cellAvatar={cell.avatar_url}
-            currentUser={currentUser}
-            initialMessages={channelMessages[activeChannelId] ?? initialMessages}
-            blockedUserIds={blockedUserIds}
-            userRole={userRole}
-            channelId={activeChannelId}
-            channelTopic={activeChannel?.topic ?? null}
-            onMessageSent={handleMessageSent}
-          />
+          {/* Stage 5C — Voice Channel Panel */}
+          {activeChannel?.channel_type === 'voice' ? (
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 'var(--space-4)',
+                padding: 'var(--space-6)',
+              }}
+            >
+              <div
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: activeCallByChannel[activeChannelId] ? 'var(--color-accent-soft)' : 'var(--color-surface)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: activeCallByChannel[activeChannelId] ? 'var(--color-accent)' : 'var(--color-text-faint)',
+                }}
+              >
+                <Phone size={36} />
+              </div>
+
+              {activeCallByChannel[activeChannelId] ? (
+                <>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: 'var(--font-size-base)', fontWeight: 600, color: 'var(--color-text)', margin: 0 }}>
+                      Call in progress
+                    </p>
+                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
+                      Started by {activeCallByChannel[activeChannelId].started_by_name}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleStartOrJoinCall}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-2)',
+                      padding: '10px 28px',
+                      background: 'var(--color-accent)',
+                      border: 'none',
+                      borderRadius: 'var(--radius-full)',
+                      color: 'var(--color-accent-text)',
+                      fontSize: 'var(--font-size-base)',
+                      fontWeight: 'var(--font-weight-semibold)',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-sans)',
+                    }}
+                  >
+                    <Phone size={16} />
+                    Join Call
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: 'var(--font-size-base)', fontWeight: 600, color: 'var(--color-text)', margin: 0 }}>
+                      {activeChannel.name}
+                    </p>
+                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
+                      No active call
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleStartOrJoinCall}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-2)',
+                      padding: '10px 28px',
+                      background: 'var(--color-accent)',
+                      border: 'none',
+                      borderRadius: 'var(--radius-full)',
+                      color: 'var(--color-accent-text)',
+                      fontSize: 'var(--font-size-base)',
+                      fontWeight: 'var(--font-weight-semibold)',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-sans)',
+                    }}
+                  >
+                    <Phone size={16} />
+                    Start Call
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <Chat
+              key={activeChannelId}
+              cellId={cell.id}
+              cellName={cell.name}
+              cellAvatar={cell.avatar_url}
+              currentUser={currentUser}
+              initialMessages={channelMessages[activeChannelId] ?? initialMessages}
+              blockedUserIds={blockedUserIds}
+              userRole={userRole}
+              channelId={activeChannelId}
+              channelTopic={activeChannel?.topic ?? null}
+              onMessageSent={handleMessageSent}
+            />
+          )}
         </div>
       </div>
 

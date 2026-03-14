@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Hash, Megaphone, Plus, X, Calendar } from 'lucide-react';
+import { Hash, Megaphone, Plus, X, Calendar, Phone } from 'lucide-react';
 import type { ChannelCategory, Channel, NotificationScore } from '../../lib/cells/types';
 import { sortChannelsByPriority, getChannelPriorityClass } from '../../lib/cells/notification-scoring';
 
@@ -261,7 +261,7 @@ export function ChannelSidebar({
                       transition: 'color 0.1s',
                     }}
                   >
-                    {ch.emoji ? ch.emoji : isMeeting ? <Calendar size={12} /> : ch.channel_type === 'announcement' ? <Megaphone size={12} /> : <Hash size={12} />}
+                    {ch.emoji ? ch.emoji : isMeeting ? <Calendar size={12} /> : ch.channel_type === 'announcement' ? <Megaphone size={12} /> : ch.channel_type === 'voice' ? <Phone size={12} /> : <Hash size={12} />}
                     {meetingAlert && (
                       <span
                         style={{
