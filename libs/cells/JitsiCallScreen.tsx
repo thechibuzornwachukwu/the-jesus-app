@@ -125,7 +125,7 @@ export default function JitsiCallScreen({
 
       {/* ── Jitsi iframe ── */}
       <JitsiMeeting
-        domain="meet.jit.si"
+        domain={process.env.NEXT_PUBLIC_JITSI_DOMAIN ?? 'meet.jit.si'}
         roomName={roomName}
         userInfo={{ displayName, email: '' }}
         configOverwrite={{
