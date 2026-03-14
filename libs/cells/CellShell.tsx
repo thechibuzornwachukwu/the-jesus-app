@@ -394,6 +394,9 @@ export function CellShell({
           roomName={callRoomName}
           displayName={currentUser.username}
           avatarUrl={currentUser.avatar_url ?? undefined}
+          cellName={cell.name}
+          channelName={activeChannel?.name ?? ''}
+          userRole={userRole}
           onLeave={handleLeaveCall}
           onAutoEnd={handleEndCall}
         />
