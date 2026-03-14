@@ -1213,6 +1213,106 @@ export async function getDefaultChannelIds(
   return map;
 }
 
+// ─── Phase Jitsi: Voice Calls ───────────────────────────────────────────────
+
+import type { CellCall } from './types';
+
+export async function startCall(
+  channelId: string,
+  cellId: string
+): Promise<CellCall | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated.' };
+
+  const { data: membership } = await supabase
+    .from('cell_members')
+    .select('user_id')
+    .eq('cell_id', cellId)
+    .eq('user_id', user.id)
+    .single();
+  if (!membership) return { error: 'Not a cell member.' };
+
+  const [{ data: cell }, { data: profile }] = await Promise.all([
+    supabase.from('cells').select('slug').eq('id', cellId).single(),
+    supabase.from('profiles').select('username').eq('id', user.id).single(),
+  ]);
+
+  const cellSlug = ((cell as { slug?: string } | null)?.slug ?? cellId).replace(/[^a-z0-9-]/g, '');
+  const cleanChannelId = channelId.replace(/[^a-z0-9-]/g, '');
+  const roomName = `jesus-app-${cellSlug}-${cleanChannelId}`;
+  const displayName = (profile as { username?: string } | null)?.username ?? 'Member';
+
+  const { data, error } = await supabase
+    .from('cell_calls')
+    .insert({ channel_id: channelId, cell_id: cellId, room_name: roomName, started_by: user.id, started_by_name: displayName })
+    .select('*')
+    .single();
+
+  if (error) {
+    if (error.code === '23505') {
+      const { data: existing } = await supabase
+        .from('cell_calls')
+        .select('*')
+        .eq('channel_id', channelId)
+        .is('ended_at', null)
+        .single();
+      if (existing) return existing as unknown as CellCall;
+    }
+    return { error: 'Failed to start call.' };
+  }
+
+  return data as unknown as CellCall;
+}
+
+export async function endCall(
+  callId: string,
+  cellId: string
+): Promise<{ success: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated.' };
+
+  const { data: call } = await supabase
+    .from('cell_calls')
+    .select('started_by')
+    .eq('id', callId)
+    .is('ended_at', null)
+    .single();
+  if (!call) return { error: 'Call not found.' };
+
+  const isStarter = (call as { started_by: string }).started_by === user.id;
+  if (!isStarter) {
+    const { data: mem } = await supabase
+      .from('cell_members')
+      .select('role')
+      .eq('cell_id', cellId)
+      .eq('user_id', user.id)
+      .single();
+    if (!mem || mem.role !== 'admin') return { error: 'Not authorized.' };
+  }
+
+  await supabase
+    .from('cell_calls')
+    .update({ ended_at: new Date().toISOString() })
+    .eq('id', callId)
+    .is('ended_at', null);
+
+  return { success: true };
+}
+
+export async function getActiveCall(channelId: string): Promise<CellCall | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('cell_calls')
+    .select('*')
+    .eq('channel_id', channelId)
+    .is('ended_at', null)
+    .limit(1)
+    .maybeSingle();
+  return (data as unknown as CellCall) ?? null;
+}
+
 export async function getLastMessages(
   cellIds: string[]
 ): Promise<Record<string, { content: string | null; message_type: string; created_at: string } | null>> {

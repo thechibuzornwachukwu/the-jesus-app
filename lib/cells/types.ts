@@ -2,7 +2,7 @@ export type MessageType = 'text' | 'audio' | 'image' | 'gif';
 
 // ─── Phase 7A: Channels ────────────────────────────────────────────────────
 
-export type ChannelType = 'text' | 'announcement' | 'meeting';
+export type ChannelType = 'text' | 'announcement' | 'meeting' | 'voice';
 
 export type Channel = {
   id: string;
@@ -139,3 +139,16 @@ export type Profile = {
 };
 
 export type NotificationScore = Record<string, number>; // channelId → score
+
+// ─── Phase Jitsi: Voice Calls ────────────────────────────────────────────────
+
+export type CellCall = {
+  id: string;
+  channel_id: string;
+  cell_id: string;
+  room_name: string;
+  started_by: string;        // user_id
+  started_by_name: string;   // display name for banner
+  started_at: string;
+  ended_at: string | null;
+};
