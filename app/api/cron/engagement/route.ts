@@ -47,72 +47,7 @@ async function notifyUser(
   const yesterdayStr = yesterday.toISOString().slice(0, 10);
   const oneDayAgo = new Date(now.getTime() - 86_400_000).toISOString();
 
-  // ── 1. Unread cell messages ─────────────────────────────────────────────────
-  const { data: memberships } = await supabase
-    .from('cell_members')
-    .select('cell_id, cells(name)')
-    .eq('user_id', userId)
-    .limit(10);
-
-  if (memberships?.length) {
-    const cellIds = memberships.map((m: { cell_id: string }) => m.cell_id);
-    const { data: channels } = await supabase
-      .from('channels')
-      .select('id, cell_id')
-      .in('cell_id', cellIds);
-
-    const channelIds = (channels ?? []).map((c: { id: string }) => c.id);
-
-    if (channelIds.length) {
-      const { data: readStates } = await supabase
-        .from('channel_read_state')
-        .select('channel_id, last_read_at')
-        .eq('user_id', userId)
-        .in('channel_id', channelIds);
-
-      const readMap = new Map(
-        (readStates ?? []).map((r: { channel_id: string; last_read_at: string }) => [
-          r.channel_id,
-          r.last_read_at,
-        ])
-      );
-
-      let totalUnread = 0;
-      let topCell: string | null = null;
-
-      await Promise.all(
-        channelIds.map(async (chId: string) => {
-          const lastRead = readMap.get(chId);
-          let q = supabase
-            .from('chat_messages')
-            .select('id', { count: 'exact', head: true })
-            .eq('channel_id', chId)
-            .neq('user_id', userId);
-          if (lastRead) q = q.gt('created_at', lastRead);
-          const { count } = await q;
-          if (count && count > 0) {
-            totalUnread += count;
-            if (!topCell) {
-              const ch = (channels ?? []).find((c: { id: string }) => c.id === chId);
-              const mem = memberships.find((m: { cell_id: string }) => m.cell_id === ch?.cell_id);
-              topCell = (mem as unknown as { cells: { name: string } } | null)?.cells?.name ?? null;
-            }
-          }
-        })
-      );
-
-      if (totalUnread > 0 && topCell) {
-        void sendPushToUser(
-          userId,
-          'Unread messages',
-          `You have ${totalUnread} unread message${totalUnread > 1 ? 's' : ''} in ${topCell}`,
-          '/explore'
-        );
-      }
-    }
-  }
-
-  // ── 2. New posts from friends (past 24h) ────────────────────────────────────
+  // ── 1. New posts from friends (past 24h) ────────────────────────────────────
   const { data: friends } = await supabase
     .from('friendships')
     .select('requester_id, addressee_id')
