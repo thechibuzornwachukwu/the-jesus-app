@@ -6,7 +6,7 @@ export const metadata = { title: 'Edit Profile  The JESUS App' };
 
 export default async function EditProfilePage() {
   const profile = await getFullProfile();
-  if (!profile) redirect('/engage');
+  if (!profile) redirect('/explore');
 
   return <EditProfileClient profile={profile} />;
 }

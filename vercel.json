@@ -1,1 +1,9 @@
-{}
+{
+  "crons": [
+    { "path": "/api/cron/engagement",      "schedule": "0 9 * * *" },
+    { "path": "/api/cron/daily-verse",     "schedule": "0 6 * * *" },
+    { "path": "/api/cron/send-scheduled",  "schedule": "* * * * *" },
+    { "path": "/api/cron/purge-expired",   "schedule": "0 0 * * *" },
+    { "path": "/api/cron/typing-presence", "schedule": "*/5 * * * *" }
+  ]
+}

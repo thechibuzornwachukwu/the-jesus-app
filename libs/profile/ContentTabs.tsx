@@ -1,20 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Heart, BookOpen, Bookmark, Users, Award } from 'lucide-react';
+import { Heart, BookOpen, Bookmark, Award } from 'lucide-react';
 import { SavedVersesList } from './SavedVersesList';
-import { JoinedCellsList } from './JoinedCellsList';
 import { PostedVideoGrid } from './PostedVideoGrid';
 import { BadgesGrid } from './BadgesGrid';
-import type { SavedVerse, JoinedCell, PostedVideo, Post } from './types';
+import type { SavedVerse, PostedVideo, Post } from './types';
 import { TabBar, EmptyState } from '../shared-ui';
 
-const TABS = ['Saved Verses', 'My Cells', 'Videos', 'Badges'] as const;
+const TABS = ['Saved Verses', 'Videos', 'Badges'] as const;
 type Tab = (typeof TABS)[number];
 
 interface ContentTabsProps {
   savedVerses: SavedVerse[];
-  joinedCells: JoinedCell[];
   postedVideos: PostedVideo[];
   posts: Post[];
   streak: number;
@@ -155,7 +153,6 @@ function JournalTab({ videos, posts }: { videos: PostedVideo[]; posts: Post[] })
 
 export function ContentTabs({
   savedVerses,
-  joinedCells,
   postedVideos,
   posts,
   streak,
@@ -174,10 +171,9 @@ export function ContentTabs({
 
       <TabBar
         tabs={[
-          { id: 'Saved Verses', label: 'Saved',      icon: <Bookmark size={16} /> },
-          { id: 'My Cells',     label: 'Fellowship', icon: <Users size={16} /> },
-          { id: 'Videos',       label: 'Journal',    icon: <BookOpen size={16} /> },
-          { id: 'Badges',       label: 'Badges',     icon: <Award size={16} /> },
+          { id: 'Saved Verses', label: 'Saved',   icon: <Bookmark size={16} /> },
+          { id: 'Videos',       label: 'Journal', icon: <BookOpen size={16} /> },
+          { id: 'Badges',       label: 'Badges',  icon: <Award size={16} /> },
         ]}
         activeId={active}
         onChange={(id) => setActive(id as Tab)}
@@ -187,12 +183,10 @@ export function ContentTabs({
       <div style={{ padding: '0 var(--space-4)' }}>
         <div key={active} style={{ animation: 'tab-fade-in 0.2s ease-out both' }}>
           {active === 'Saved Verses' && <SavedVersesList verses={savedVerses} />}
-          {active === 'My Cells'     && <JoinedCellsList cells={joinedCells} />}
           {active === 'Videos'       && <JournalTab videos={postedVideos} posts={posts} />}
           {active === 'Badges'       && (
             <BadgesGrid
               savedVerses={savedVerses}
-              joinedCells={joinedCells}
               postedVideos={postedVideos}
               streak={streak}
               longestStreak={longestStreak}

@@ -17,18 +17,6 @@ export interface SavedVerse {
   saved_at: string;
 }
 
-export interface JoinedCell {
-  role: string;
-  cell: {
-    id: string;
-    slug: string | null;
-    name: string;
-    category: string | null;
-    avatar_url: string | null;
-    banner_url: string | null;
-  };
-}
-
 export interface Post {
   id: string;
   content: string;

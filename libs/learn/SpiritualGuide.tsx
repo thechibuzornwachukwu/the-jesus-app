@@ -67,7 +67,7 @@ export function SpiritualGuide({ externalOpen, onExternalClose, seedMessage, see
     setLoading(true);
 
     try {
-      const res = await fetch('/api/learn/chat', {
+      const res = await fetch('/api/equip/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

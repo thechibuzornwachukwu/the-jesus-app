@@ -31,7 +31,7 @@ export async function updateSession(request: NextRequest) {
   // Already signed in  redirect away from auth pages
   if (user && (pathname === '/sign-in' || pathname === '/sign-up')) {
     const url = request.nextUrl.clone();
-    url.pathname = '/engage';
+    url.pathname = '/explore';
     return NextResponse.redirect(url);
   }
 
@@ -41,8 +41,7 @@ export async function updateSession(request: NextRequest) {
     pathname === '/sign-in' ||
     pathname === '/sign-up' ||
     pathname === '/setup-profile' ||
-    pathname.startsWith('/auth') ||
-    pathname.startsWith('/engage/join');
+    pathname.startsWith('/auth');
 
   if (user && !isPublicPath) {
     const { data: profile } = await supabase

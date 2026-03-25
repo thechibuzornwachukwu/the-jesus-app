@@ -82,14 +82,14 @@ export function SermonExtractor() {
       if (audioFile) {
         const form = new FormData();
         form.append('audio', audioFile);
-        res = await fetch('/api/learn/sermon', { method: 'POST', body: form });
+        res = await fetch('/api/equip/sermon', { method: 'POST', body: form });
       } else {
         if (!transcript.trim()) {
           setError('Please paste sermon text or attach an audio file.');
           setLoading(false);
           return;
         }
-        res = await fetch('/api/learn/sermon', {
+        res = await fetch('/api/equip/sermon', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ transcript }),

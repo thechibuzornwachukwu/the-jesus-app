@@ -106,7 +106,7 @@ async function notifyUser(
           userId,
           'Unread messages',
           `You have ${totalUnread} unread message${totalUnread > 1 ? 's' : ''} in ${topCell}`,
-          '/engage'
+          '/explore'
         );
       }
     }

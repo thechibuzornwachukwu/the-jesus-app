@@ -8,7 +8,7 @@ import { vibrate } from '../libs/shared-ui/haptics';
 const navItems = [
   { href: '/explore',  label: 'Experience', Icon: Globe },
   { href: '/discover', label: 'Explore',    Icon: Compass },
-  { href: '/learn',    label: 'Equip',      Icon: Zap },
+  { href: '/equip',    label: 'Equip',      Icon: Zap },
   { href: '/profile',  label: 'Profile',    Icon: User },
 ];
 
@@ -64,7 +64,7 @@ export function BottomNav() {
     >
       {navItems.map(({ href, label, Icon }) => {
         const active = pathname.startsWith(href) ||
-          (href === '/learn' && pathname.startsWith('/library'));
+          (href === '/equip' && pathname.startsWith('/library'));
         return (
           <button
             key={href}

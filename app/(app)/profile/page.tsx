@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation';
 import {
   getFullProfile,
   getSavedVerses,
-  getJoinedCells,
   getPostedVideos,
   getUserPosts,
   getUnreadCount,
@@ -18,7 +17,6 @@ export default async function ProfilePage() {
   const [
     profile,
     savedVerses,
-    joinedCells,
     postedVideos,
     posts,
     unreadCount,
@@ -28,7 +26,6 @@ export default async function ProfilePage() {
   ] = await Promise.all([
     getFullProfile(),
     getSavedVerses(),
-    getJoinedCells(),
     getPostedVideos(),
     getUserPosts(),
     getUnreadCount(),
@@ -43,7 +40,6 @@ export default async function ProfilePage() {
     <ProfileClient
       profile={profile}
       savedVerses={savedVerses}
-      joinedCells={joinedCells}
       postedVideos={postedVideos}
       posts={posts}
       unreadCount={unreadCount}

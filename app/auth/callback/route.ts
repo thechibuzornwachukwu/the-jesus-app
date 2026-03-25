@@ -4,7 +4,7 @@ import { createClient } from '../../../lib/supabase/server';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/engage';
+  const next = searchParams.get('next') ?? '/explore';
 
   if (code) {
     const supabase = await createClient();
@@ -19,7 +19,6 @@ export async function GET(request: Request) {
             id,
             email: email ?? '',
             username: user_metadata?.username ?? email?.split('@')[0] ?? id.slice(0, 8),
-            full_name: user_metadata?.full_name ?? '',
             avatar_url: user_metadata?.avatar_url ?? '',
           },
           { onConflict: 'id', ignoreDuplicates: true },

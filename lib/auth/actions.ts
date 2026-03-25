@@ -33,7 +33,6 @@ export async function signIn(_: unknown, formData: FormData) {
         id,
         email: email ?? '',
         username: user_metadata?.username ?? email?.split('@')[0] ?? id.slice(0, 8),
-        full_name: user_metadata?.full_name ?? '',
         avatar_url: user_metadata?.avatar_url ?? '',
       },
       { onConflict: 'id', ignoreDuplicates: true },
@@ -44,7 +43,7 @@ export async function signIn(_: unknown, formData: FormData) {
     }
   }
 
-  redirect('/engage');
+  redirect('/explore');
 }
 
 export async function signUp(_: unknown, formData: FormData) {

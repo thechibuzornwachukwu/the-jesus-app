@@ -40,7 +40,7 @@ export function CoursesRow({ courses, progress = [], loading }: CoursesRowProps)
 
   function handleTap(trackId: string) {
     vibrate([8]);
-    router.push(`/learn?track=${trackId}`);
+    router.push(`/equip?track=${trackId}`);
   }
 
   return (

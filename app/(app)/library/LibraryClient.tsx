@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Download, ExternalLink, Search } from 'lucide-react';
-import { LIBRARY_BOOKS } from '../../../lib/learn/library-content';
+import { LIBRARY_BOOKS } from '../../../lib/equip/library-content';
 
 const ALL_FILTER = 'All';
 
@@ -50,7 +50,7 @@ export function LibraryClient() {
         }}
       >
         <button
-          onClick={() => router.push('/learn')}
+          onClick={() => router.push('/equip')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -281,7 +281,7 @@ export function LibraryClient() {
       )}
 
       <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-faint)' }}>
-        Prefer quick access? <Link href="/learn" style={{ color: 'var(--color-accent)' }}>Back to Equip</Link>.
+        Prefer quick access? <Link href="/equip" style={{ color: 'var(--color-accent)' }}>Back to Equip</Link>.
       </p>
       </div>
     </div>

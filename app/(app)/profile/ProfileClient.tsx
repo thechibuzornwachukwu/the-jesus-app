@@ -20,7 +20,6 @@ import {
 import type {
   FullProfile,
   SavedVerse,
-  JoinedCell,
   PostedVideo,
   Post,
   AppNotification,
@@ -30,7 +29,6 @@ import type { StreakData } from '../../../lib/profile/actions';
 interface ProfileClientProps {
   profile: FullProfile;
   savedVerses: SavedVerse[];
-  joinedCells: JoinedCell[];
   postedVideos: PostedVideo[];
   posts: Post[];
   unreadCount: number;
@@ -43,7 +41,6 @@ interface ProfileClientProps {
 export function ProfileClient({
   profile: initialProfile,
   savedVerses,
-  joinedCells,
   postedVideos,
   posts,
   unreadCount: initialUnread,
@@ -228,7 +225,6 @@ export function ProfileClient({
         <div className="profile-section" style={{ marginTop: 'var(--space-4)' }}>
           <ContentTabs
             savedVerses={savedVerses}
-            joinedCells={joinedCells}
             postedVideos={postedVideos}
             posts={posts}
             streak={streakData.current}

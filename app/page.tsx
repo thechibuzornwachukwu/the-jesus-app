@@ -5,6 +5,6 @@ import LandingPage from '../libs/landing/LandingPage';
 export default async function RootPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (user) redirect('/engage');
+  if (user) redirect('/explore');
   return <LandingPage />;
 }

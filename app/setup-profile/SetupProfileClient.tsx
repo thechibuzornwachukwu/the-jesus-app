@@ -24,7 +24,7 @@ export function SetupProfileClient({ defaultUsername }: Props) {
         if (result.error) {
           setError(result.error);
         } else {
-          router.replace('/engage');
+          router.replace('/explore');
         }
       } catch {
         setError('Something went wrong saving your profile. Please try again.');

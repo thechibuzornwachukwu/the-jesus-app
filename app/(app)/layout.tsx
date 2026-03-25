@@ -19,11 +19,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, church_name')
+    .select('username, church_name')
     .eq('id', user.id)
     .single();
 
-  const profileIncomplete = !profile?.full_name || !profile?.church_name;
+  const profileIncomplete = !profile?.username || !profile?.church_name;
 
   return (
     <BereanProvider>

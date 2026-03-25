@@ -155,10 +155,10 @@ function CourseResultItem({ course }: { course: CourseResult }) {
   const router = useRouter();
   return (
     <div
-      onClick={() => router.push(`/learn?track=${course.id}`)}
+      onClick={() => router.push(`/equip?track=${course.id}`)}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && router.push(`/learn?track=${course.id}`)}
+      onKeyDown={(e) => e.key === 'Enter' && router.push(`/equip?track=${course.id}`)}
       style={{
         display: 'flex',
         alignItems: 'center',

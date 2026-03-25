@@ -34,7 +34,7 @@ export default async function SetupProfilePage() {
 
     // If username differs from the auto-generated one, profile is already set up
     if (profile.username !== emailPrefix) {
-      redirect('/engage');
+      redirect('/explore');
     }
   }
 

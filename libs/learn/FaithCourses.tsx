@@ -286,7 +286,7 @@ function TrackDetail({
 
   useEffect(() => {
     setSummaryLoading(true);
-    fetch('/api/learn/courses/summary', {
+    fetch('/api/equip/courses/summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ trackId: track.id }),

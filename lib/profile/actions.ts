@@ -9,7 +9,6 @@ import { sendPushToUser } from '../notifications/push';
 import type {
   FullProfile,
   SavedVerse,
-  JoinedCell,
   PostedVideo,
   Post,
   AppNotification,
@@ -273,29 +272,6 @@ export async function deleteSavedVerse(verseReference: string): Promise<{ error?
 }
 
 // ────────────────────────────────────────────────────────────
-// getJoinedCells
-// ────────────────────────────────────────────────────────────
-export async function getJoinedCells(): Promise<JoinedCell[]> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data } = await supabase
-    .from('cell_members')
-    .select('role, cells(id, slug, name, category, avatar_url, banner_url)')
-    .eq('user_id', user.id);
-
-  if (!data) return [];
-
-  return (data as unknown as Array<{ role: string; cells: JoinedCell['cell'] }>).map((row) => ({
-    role: row.role,
-    cell: row.cells,
-  }));
-}
-
-// ────────────────────────────────────────────────────────────
 // getPostedVideos
 // ────────────────────────────────────────────────────────────
 export async function getPostedVideos(userId?: string): Promise<PostedVideo[]> {
@@ -549,41 +525,6 @@ export async function changePassword(
   const { error } = await supabase.auth.updateUser({ password: parsed.data });
   if (error) { logError('JA-8005', error); return appError('JA-8005'); }
   return { success: 'Password updated.' };
-}
-
-// ────────────────────────────────────────────────────────────
-// notifyMention
-// ────────────────────────────────────────────────────────────
-export async function notifyMention(
-  cellId: string,
-  mentionedUserId: string,
-  preview: string
-): Promise<void> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user || user.id === mentionedUserId) return;
-
-  // Verify mentioned user is a member of the cell
-  const { data: membership } = await supabase
-    .from('cell_members')
-    .select('user_id')
-    .eq('cell_id', cellId)
-    .eq('user_id', mentionedUserId)
-    .maybeSingle();
-
-  if (!membership) return;
-
-  await supabase.from('notifications').insert({
-    user_id: mentionedUserId,
-    actor_id: user.id,
-    type: 'mention',
-    payload: { cell_id: cellId, preview: preview.slice(0, 80) },
-  });
-
-  // Fire-and-forget push
-  sendPushToUser(mentionedUserId, 'You were mentioned', preview.slice(0, 80), `/engage/${cellId}`);
 }
 
 // ────────────────────────────────────────────────────────────

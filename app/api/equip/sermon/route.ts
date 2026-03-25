@@ -38,7 +38,6 @@ export async function POST(req: NextRequest) {
   let transcript = '';
 
   if (contentType.includes('multipart/form-data')) {
-    // ── Audio upload path ────────────────────────────────────────────────────
     let formData: FormData;
     try {
       formData = await req.formData();
@@ -61,19 +60,17 @@ export async function POST(req: NextRequest) {
     });
     transcript = transcription.text;
   } else {
-    // ── Text paste path ──────────────────────────────────────────────────────
     const body = await req.json().catch(() => null);
     if (!body?.transcript || typeof body.transcript !== 'string') {
       return NextResponse.json(appError('JA-8002'), { status: 400 });
     }
-    transcript = body.transcript.trim().slice(0, 20000); // cap at 20k chars
+    transcript = body.transcript.trim().slice(0, 20000);
   }
 
   if (!transcript) {
     return NextResponse.json(appError('JA-8002'), { status: 400 });
   }
 
-  // Extract structured notes with GPT-4o
   const openai = getOpenAI();
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o',

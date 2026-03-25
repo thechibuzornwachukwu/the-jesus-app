@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { SavedVerse, JoinedCell, PostedVideo } from './types';
+import type { SavedVerse, PostedVideo } from './types';
 
 interface BadgeDef {
   id: string;
@@ -76,51 +76,47 @@ function computeEarned(
   badgeId: string,
   {
     savedVerses,
-    joinedCells,
     postedVideos,
     streak,
     longestStreak,
     notesCount,
   }: {
     savedVerses: SavedVerse[];
-    joinedCells: JoinedCell[];
     postedVideos: PostedVideo[];
     streak: number;
     longestStreak: number;
     notesCount: number;
   }
 ): boolean {
-  const isAdmin = joinedCells.some((c) => c.role === 'admin');
   switch (badgeId) {
     case 'first_verse':  return savedVerses.length >= 1;
     case 'streak_7':     return streak >= 7 || longestStreak >= 7;
     case 'streak_30':    return streak >= 30 || longestStreak >= 30;
-    case 'first_cell':   return joinedCells.length >= 1;
+    case 'first_cell':   return false;
     case 'first_video':  return postedVideos.length >= 1;
     case 'note_1':       return notesCount >= 1;
     case 'note_taker':   return notesCount >= 5;
-    case 'cell_admin':   return isAdmin;
+    case 'cell_admin':   return false;
     case 'streak_100':   return streak >= 100 || longestStreak >= 100;
     case 'anchor':       return streak >= 365 || longestStreak >= 365;
-    case 'multi_cell':   return joinedCells.length >= 3;
-    case 'cross':        return false; // future: course completion
+    case 'multi_cell':   return false;
+    case 'cross':        return false;
     default:             return false;
   }
 }
 
 interface BadgesGridProps {
   savedVerses: SavedVerse[];
-  joinedCells: JoinedCell[];
   postedVideos: PostedVideo[];
   streak: number;
   longestStreak: number;
 }
 
-export function BadgesGrid({ savedVerses, joinedCells, postedVideos, streak, longestStreak }: BadgesGridProps) {
+export function BadgesGrid({ savedVerses, postedVideos, streak, longestStreak }: BadgesGridProps) {
   const [tooltip, setTooltip] = useState<string | null>(null);
 
   const notesCount = savedVerses.filter((v) => v.note && v.note.trim().length > 0).length;
-  const context = { savedVerses, joinedCells, postedVideos, streak, longestStreak, notesCount };
+  const context = { savedVerses, postedVideos, streak, longestStreak, notesCount };
 
   const earnedCount = BADGES.filter((b) => computeEarned(b.id, context)).length;
 
