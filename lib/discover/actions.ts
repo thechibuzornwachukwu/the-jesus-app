@@ -11,8 +11,7 @@ import type { ProfileSummary } from '../../libs/profile/types';
 import { CHRISTIAN_BOOKS } from './books';
 import type { Book } from './books';
 export type { Book as BookResult } from './books';
-
-export type { ProfileSummary };
+export type { ProfileSummary } from '../../libs/profile/types';
 
 // ---------------------------------------------------------------------------
 // Types
