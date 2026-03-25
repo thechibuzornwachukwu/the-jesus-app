@@ -502,7 +502,7 @@ export function Chat({
       .upload(path, blob, { contentType: mimeType });
 
     if (uploadError) {
-      setSendError({ message: 'Failed to upload voice message.', code: uploadError.error ?? undefined });
+      setSendError({ message: 'Failed to upload voice message.', code: (uploadError as { error?: string }).error ?? undefined });
       return;
     }
 

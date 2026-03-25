@@ -1,14 +1,14 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { MessageSquare, Globe, Zap, User } from 'lucide-react';
+import { Globe, Compass, Zap, User } from 'lucide-react';
 import { vibrate } from '../libs/shared-ui/haptics';
 
 const navItems = [
-  { href: '/explore', label: 'Experience', Icon: Globe },
-  { href: '/engage',  label: 'Engage',     Icon: MessageSquare },
-  { href: '/learn',   label: 'Equip',      Icon: Zap },
-  { href: '/profile', label: 'Profile',    Icon: User },
+  { href: '/explore',  label: 'Experience', Icon: Globe },
+  { href: '/discover', label: 'Explore',    Icon: Compass },
+  { href: '/learn',    label: 'Equip',      Icon: Zap },
+  { href: '/profile',  label: 'Profile',    Icon: User },
 ];
 
 export function BottomNav() {

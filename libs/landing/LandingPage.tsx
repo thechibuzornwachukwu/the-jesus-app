@@ -485,8 +485,7 @@ export default function LandingPage() {
                 margin: '0 0 3rem',
                 padding: '0 0 0 1.25rem',
               }}>
-                The JESUS App is a movement to reflect Christ by 
-                empowering believers, cultivate discipleship in today's digital culture.
+                See a clear picture of Jesus in today's digital world.
               </blockquote>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
@@ -496,7 +495,7 @@ export default function LandingPage() {
                     body: 'Real communities built around scripture groups, and honest conversations with brethren.',
                   },
                   {
-                    label: 'Explore',
+                    label: 'Experience',
                     body: 'A feed of short-form scripture perspectives, testimonies, and daily verses  curated for reflection, not distraction.',
                   },
                   {
