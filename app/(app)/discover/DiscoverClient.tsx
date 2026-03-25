@@ -1,26 +1,24 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useTransition, useCallback } from 'react';
-import { Search, X, Users } from 'lucide-react';
-import { UserCard } from '../../../libs/profile/UserCard';
-import { searchUsers } from '../../../lib/profile/actions';
-import { Skeleton } from '../../../libs/shared-ui/Skeleton';
+import React, { useState } from 'react';
+import { Search } from 'lucide-react';
 import { TrendingTags } from '../../../libs/discover/TrendingTags';
+import { YourVerses } from '../../../libs/discover/YourVerses';
 import { PeopleRow } from '../../../libs/discover/PeopleRow';
 import { CoursesRow } from '../../../libs/discover/CoursesRow';
 import { BooksRow } from '../../../libs/discover/BooksRow';
+import { SearchOverlay } from '../../../libs/discover/SearchOverlay';
 import type { ProfileSummary } from '../../../libs/profile/types';
-import type { TrendingVerse, CourseResult, BookResult } from '../../../lib/discover/actions';
+import type { TrendingVerse, CourseResult } from '../../../lib/discover/actions';
+import type { Book } from '../../../lib/discover/books';
 import type { CourseProgress } from '../../../libs/learn/types';
-
-const DEBOUNCE_MS = 320;
 
 interface DiscoverClientProps {
   trendingVerses: TrendingVerse[];
   suggestedPeople: ProfileSummary[];
   courseProgress: CourseProgress[];
   courses: CourseResult[];
-  books: BookResult[];
+  books: Book[];
 }
 
 export function DiscoverClient({
@@ -30,44 +28,7 @@ export function DiscoverClient({
   courses,
   books,
 }: DiscoverClientProps) {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<ProfileSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-  const [, startTransition] = useTransition();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const doSearch = useCallback((q: string) => {
-    if (!q.trim()) {
-      setResults([]);
-      setSearched(false);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    startTransition(async () => {
-      const data = await searchUsers(q.trim(), 30);
-      setResults(data);
-      setSearched(true);
-      setLoading(false);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (!query.trim()) {
-      setResults([]);
-      setSearched(false);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    timerRef.current = setTimeout(() => doSearch(query), DEBOUNCE_MS);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [query, doSearch]);
-
-  const isSearching = query.trim().length > 0;
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -104,7 +65,7 @@ export function DiscoverClient({
         </h1>
       </div>
 
-      {/* ── Search bar ── */}
+      {/* ── Search bar trigger ── */}
       <div
         style={{
           padding: 'var(--space-3) var(--space-4)',
@@ -112,124 +73,56 @@ export function DiscoverClient({
           flexShrink: 0,
         }}
       >
-        <div
+        <button
+          onClick={() => setSearchOpen(true)}
+          aria-label="Open search"
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 8,
+            width: '100%',
             background: 'var(--color-surface)',
             borderRadius: 'var(--radius-full)',
             border: '1px solid var(--color-border)',
             padding: '0 14px',
             height: 40,
+            cursor: 'pointer',
+            textAlign: 'left',
+            WebkitTapHighlightColor: 'transparent',
             transition: 'border-color 0.15s',
           }}
         >
           <Search size={16} color="var(--color-text-muted)" aria-hidden />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search people, verses, courses…"
-            style={{
-              flex: 1,
-              background: 'none',
-              border: 'none',
-              outline: 'none',
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text)',
-              caretColor: 'var(--color-accent)',
-            }}
+          <span style={{ flex: 1, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+            Search people, verses, courses…
+          </span>
+        </button>
+      </div>
+
+      {/* ── Scrollable home sections ── */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-6)',
+            paddingTop: 'var(--space-4)',
+            paddingBottom: 'var(--space-6)',
+          }}
+        >
+          <YourVerses />
+          <TrendingTags verses={trendingVerses} />
+          <PeopleRow
+            people={suggestedPeople}
+            onSeeAll={() => setSearchOpen(true)}
           />
-          {query && (
-            <button
-              onClick={() => { setQuery(''); inputRef.current?.focus(); }}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                color: 'var(--color-text-muted)',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-              aria-label="Clear search"
-            >
-              <X size={14} />
-            </button>
-          )}
+          <CoursesRow courses={courses} progress={courseProgress} />
+          <BooksRow books={books} />
         </div>
       </div>
 
-      {/* ── Scrollable body ── */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-
-        {/* ── Home sections (no query) ── */}
-        {!isSearching && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-6)',
-              paddingTop: 'var(--space-4)',
-              paddingBottom: 'var(--space-6)',
-            }}
-          >
-            <TrendingTags verses={trendingVerses} />
-            <PeopleRow
-              people={suggestedPeople}
-              onSeeAll={() => inputRef.current?.focus()}
-            />
-            <CoursesRow courses={courses} progress={courseProgress} />
-            <BooksRow books={books} />
-          </div>
-        )}
-
-        {/* ── Search results ── */}
-        {isSearching && (
-          <div
-            style={{
-              padding: 'var(--space-3) var(--space-4)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-2)',
-            }}
-          >
-            {loading && (
-              <>
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} style={{ height: 72, borderRadius: 'var(--radius-lg)' }} />
-                ))}
-              </>
-            )}
-
-            {!loading && searched && results.length === 0 && (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 'var(--space-3)',
-                  padding: 'var(--space-10) var(--space-4)',
-                  color: 'var(--color-text-muted)',
-                  textAlign: 'center',
-                }}
-              >
-                <Users size={40} strokeWidth={1.2} />
-                <div>
-                  <p style={{ margin: 0, fontWeight: 600, color: 'var(--color-text)' }}>No people found</p>
-                  <p style={{ margin: '4px 0 0', fontSize: 13 }}>Try a different name or keyword</p>
-                </div>
-              </div>
-            )}
-
-            {!loading && results.map((user) => (
-              <UserCard key={user.id} user={user} />
-            ))}
-          </div>
-        )}
-      </div>
+      {/* ── Search overlay ── */}
+      {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
     </div>
   );
 }

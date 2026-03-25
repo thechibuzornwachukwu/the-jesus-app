@@ -8,6 +8,9 @@ import {
   getSuggestedUsers,
 } from '../profile/actions';
 import type { ProfileSummary } from '../../libs/profile/types';
+import { CHRISTIAN_BOOKS } from './books';
+import type { Book } from './books';
+export type { Book as BookResult } from './books';
 
 export type { ProfileSummary };
 
@@ -32,14 +35,6 @@ export interface CourseResult {
   title: string;
   description: string;
   lessonCount: number;
-}
-
-export interface BookResult {
-  id: string;
-  title: string;
-  author: string;
-  description: string;
-  genre: string;
 }
 
 export interface DiscoverPost {
@@ -201,7 +196,7 @@ export async function searchCourses(query: string): Promise<CourseResult[]> {
 // 2A-5: searchBooks — in-memory filter of curated Christian books
 // ---------------------------------------------------------------------------
 
-export async function searchBooks(query: string): Promise<BookResult[]> {
+export async function searchBooks(query: string): Promise<Book[]> {
   const q = query.trim().toLowerCase();
   if (!q) return CHRISTIAN_BOOKS;
   return CHRISTIAN_BOOKS.filter(
@@ -272,6 +267,31 @@ export async function getPostsByVerseTag(
 }
 
 // ---------------------------------------------------------------------------
+// 2A-8: getVerseStats — post count + save count for a verse reference
+// ---------------------------------------------------------------------------
+
+export interface VerseStats {
+  post_count: number;
+  save_count: number;
+}
+
+export async function getVerseStats(ref: string): Promise<VerseStats> {
+  const supabase = await createClient();
+  const [{ count: post_count }, { count: save_count }] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('id', { count: 'exact', head: true })
+      .eq('verse_reference', ref)
+      .is('reply_to_post_id', null),
+    supabase
+      .from('saved_verses')
+      .select('id', { count: 'exact', head: true })
+      .eq('verse_reference', ref),
+  ]);
+  return { post_count: post_count ?? 0, save_count: save_count ?? 0 };
+}
+
+// ---------------------------------------------------------------------------
 // 2A-7: getSuggestedPeople — delegates to existing profile/actions implementation
 // ---------------------------------------------------------------------------
 
@@ -282,149 +302,3 @@ export async function getSuggestedPeople(
   return getSuggestedUsers(limit);
 }
 
-// ---------------------------------------------------------------------------
-// Static Christian books registry
-// ---------------------------------------------------------------------------
-
-const CHRISTIAN_BOOKS: BookResult[] = [
-  {
-    id: 'mere-christianity',
-    title: 'Mere Christianity',
-    author: 'C.S. Lewis',
-    description: 'A foundational defense of the Christian faith, exploring morality, faith, and the nature of God.',
-    genre: 'Apologetics',
-  },
-  {
-    id: 'purpose-driven-life',
-    title: 'The Purpose Driven Life',
-    author: 'Rick Warren',
-    description: 'A 40-day journey to discovering God\'s purpose for your life.',
-    genre: 'Devotional',
-  },
-  {
-    id: 'crazy-love',
-    title: 'Crazy Love',
-    author: 'Francis Chan',
-    description: 'A call to stop living a lukewarm faith and pursue radical love for God.',
-    genre: 'Discipleship',
-  },
-  {
-    id: 'knowing-god',
-    title: 'Knowing God',
-    author: 'J.I. Packer',
-    description: 'A classic exploration of the attributes of God and what it means to truly know Him.',
-    genre: 'Theology',
-  },
-  {
-    id: 'celebration-discipline',
-    title: 'Celebration of Discipline',
-    author: 'Richard Foster',
-    description: 'A guide to the inward, outward, and corporate spiritual disciplines.',
-    genre: 'Spiritual Formation',
-  },
-  {
-    id: 'cost-discipleship',
-    title: 'The Cost of Discipleship',
-    author: 'Dietrich Bonhoeffer',
-    description: 'A challenging examination of the Sermon on the Mount and what it means to follow Christ.',
-    genre: 'Theology',
-  },
-  {
-    id: 'desiring-god',
-    title: 'Desiring God',
-    author: 'John Piper',
-    description: 'Christian Hedonism — the idea that God is most glorified when we are most satisfied in Him.',
-    genre: 'Theology',
-  },
-  {
-    id: 'battlefield-mind',
-    title: 'Battlefield of the Mind',
-    author: 'Joyce Meyer',
-    description: 'A practical guide to winning the battle in your mind through God\'s Word.',
-    genre: 'Spiritual Warfare',
-  },
-  {
-    id: 'whisper',
-    title: 'Whisper',
-    author: 'Mark Batterson',
-    description: 'How to hear the voice of God through seven love languages of the Holy Spirit.',
-    genre: 'Prayer',
-  },
-  {
-    id: 'power-praying-woman',
-    title: 'The Power of a Praying Woman',
-    author: 'Stormie Omartian',
-    description: 'Prayers and insights for women seeking a deeper relationship with God.',
-    genre: 'Prayer',
-  },
-  {
-    id: 'sit-walk-stand',
-    title: 'Sit, Walk, Stand',
-    author: 'Watchman Nee',
-    description: 'An exposition of Ephesians revealing three postures of the Christian life.',
-    genre: 'Bible Study',
-  },
-  {
-    id: 'prayer-keller',
-    title: 'Prayer',
-    author: 'Timothy Keller',
-    description: 'Experiencing awe and intimacy with God, drawing on Augustine, Calvin, and Luther.',
-    genre: 'Prayer',
-  },
-  {
-    id: 'prodigal-god',
-    title: 'The Prodigal God',
-    author: 'Timothy Keller',
-    description: 'A fresh look at the parable of the prodigal son, revealing the true gospel of grace.',
-    genre: 'Gospel',
-  },
-  {
-    id: 'redeeming-love',
-    title: 'Redeeming Love',
-    author: 'Francine Rivers',
-    description: 'The story of Hosea set in the California Gold Rush — a retelling of God\'s relentless love.',
-    genre: 'Fiction',
-  },
-  {
-    id: 'pilgrims-progress',
-    title: "Pilgrim's Progress",
-    author: 'John Bunyan',
-    description: 'The allegorical journey of Christian from the City of Destruction to the Celestial City.',
-    genre: 'Classic',
-  },
-  {
-    id: 'jesus-calling',
-    title: 'Jesus Calling',
-    author: 'Sarah Young',
-    description: '365 daily devotional entries written as if Jesus is speaking directly to the reader.',
-    genre: 'Devotional',
-  },
-  {
-    id: 'boundaries',
-    title: 'Boundaries',
-    author: 'Henry Cloud & John Townsend',
-    description: 'When to say yes, how to say no, to take control of your life.',
-    genre: 'Christian Living',
-  },
-  {
-    id: 'surprised-by-joy',
-    title: 'Surprised by Joy',
-    author: 'C.S. Lewis',
-    description: 'Lewis\'s account of his spiritual journey from atheism to Christian faith.',
-    genre: 'Memoir',
-  },
-  {
-    id: 'experiencing-god',
-    title: 'Experiencing God',
-    author: 'Henry Blackaby',
-    description: 'Knowing and doing the will of God through seven realities of experiencing Him.',
-    genre: 'Devotional',
-  },
-  {
-    id: 'the-shack',
-    title: 'The Shack',
-    author: 'William P. Young',
-    description: 'A story of healing and encounter with the Trinity in the midst of unspeakable loss.',
-    genre: 'Fiction',
-  },
-];

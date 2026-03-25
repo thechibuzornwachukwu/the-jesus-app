@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Globe, Compass, Zap, User } from 'lucide-react';
 import { vibrate } from '../libs/shared-ui/haptics';
@@ -26,6 +27,21 @@ export function BottomNav() {
   }
 
   return (
+    <>
+      <style>{`
+        @keyframes compassSpring {
+          0%   { transform: rotate(0deg); }
+          30%  { transform: rotate(56deg); }
+          55%  { transform: rotate(36deg); }
+          75%  { transform: rotate(49deg); }
+          90%  { transform: rotate(43deg); }
+          100% { transform: rotate(45deg); }
+        }
+        .compass-spring {
+          display: inline-flex;
+          animation: compassSpring 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+      `}</style>
     <nav
       aria-label="Main navigation"
       style={{
@@ -79,12 +95,14 @@ export function BottomNav() {
             onTouchStart={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.9)'; }}
             onTouchEnd={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
           >
-            <Icon
-              size={22}
-              strokeWidth={1.5}
-              fill={active ? 'currentColor' : 'none'}
-              aria-hidden
-            />
+            <span className={Icon === Compass && active ? 'compass-spring' : undefined}>
+              <Icon
+                size={22}
+                strokeWidth={1.5}
+                fill={active ? 'currentColor' : 'none'}
+                aria-hidden
+              />
+            </span>
             <span style={{ fontSize: 11, fontWeight: active ? 700 : 500 }}>
               {label}
             </span>
@@ -92,5 +110,6 @@ export function BottomNav() {
         );
       })}
     </nav>
+    </>
   );
 }

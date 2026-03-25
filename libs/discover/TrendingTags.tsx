@@ -59,6 +59,20 @@ export function TrendingTags({ verses, loading }: TrendingTagsProps) {
                 style={{ height: 34, width: 100 + i * 12, borderRadius: 'var(--radius-full)', flexShrink: 0 }}
               />
             ))
+          : verses.length === 0
+          ? (
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 13,
+                  color: 'var(--color-text-faint)',
+                  fontStyle: 'italic',
+                  paddingLeft: 0,
+                }}
+              >
+                No trending verses yet — save a verse to get started.
+              </p>
+            )
           : verses.map((v) => (
               <button
                 key={v.verse_reference}
