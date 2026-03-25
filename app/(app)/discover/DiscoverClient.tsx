@@ -5,11 +5,31 @@ import { Search, X, Users } from 'lucide-react';
 import { UserCard } from '../../../libs/profile/UserCard';
 import { searchUsers } from '../../../lib/profile/actions';
 import { Skeleton } from '../../../libs/shared-ui/Skeleton';
+import { TrendingTags } from '../../../libs/discover/TrendingTags';
+import { PeopleRow } from '../../../libs/discover/PeopleRow';
+import { CoursesRow } from '../../../libs/discover/CoursesRow';
+import { BooksRow } from '../../../libs/discover/BooksRow';
 import type { ProfileSummary } from '../../../libs/profile/types';
+import type { TrendingVerse, CourseResult, BookResult } from '../../../lib/discover/actions';
+import type { CourseProgress } from '../../../libs/learn/types';
 
 const DEBOUNCE_MS = 320;
 
-export function DiscoverClient() {
+interface DiscoverClientProps {
+  trendingVerses: TrendingVerse[];
+  suggestedPeople: ProfileSummary[];
+  courseProgress: CourseProgress[];
+  courses: CourseResult[];
+  books: BookResult[];
+}
+
+export function DiscoverClient({
+  trendingVerses,
+  suggestedPeople,
+  courseProgress,
+  courses,
+  books,
+}: DiscoverClientProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<ProfileSummary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,10 +67,7 @@ export function DiscoverClient() {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [query, doSearch]);
 
-  useEffect(() => {
-    // Auto-focus search input on mount
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }, []);
+  const isSearching = query.trim().length > 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -83,7 +100,7 @@ export function DiscoverClient() {
             lineHeight: 1,
           }}
         >
-          Discover People
+          Discover
         </h1>
       </div>
 
@@ -91,7 +108,6 @@ export function DiscoverClient() {
       <div
         style={{
           padding: 'var(--space-3) var(--space-4)',
-          borderBottom: '1px solid var(--color-border)',
           background: 'var(--color-bg)',
           flexShrink: 0,
         }}
@@ -114,7 +130,7 @@ export function DiscoverClient() {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name or bio…"
+            placeholder="Search people, verses, courses…"
             style={{
               flex: 1,
               background: 'none',
@@ -145,70 +161,74 @@ export function DiscoverClient() {
         </div>
       </div>
 
-      {/* ── Results ── */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: 'var(--space-3) var(--space-4)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--space-2)',
-        }}
-      >
-        {loading && (
-          <>
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} style={{ height: 72, borderRadius: 'var(--radius-lg)' }} />
+      {/* ── Scrollable body ── */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+
+        {/* ── Home sections (no query) ── */}
+        {!isSearching && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-6)',
+              paddingTop: 'var(--space-4)',
+              paddingBottom: 'var(--space-6)',
+            }}
+          >
+            <TrendingTags verses={trendingVerses} />
+            <PeopleRow
+              people={suggestedPeople}
+              onSeeAll={() => inputRef.current?.focus()}
+            />
+            <CoursesRow courses={courses} progress={courseProgress} />
+            <BooksRow books={books} />
+          </div>
+        )}
+
+        {/* ── Search results ── */}
+        {isSearching && (
+          <div
+            style={{
+              padding: 'var(--space-3) var(--space-4)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-2)',
+            }}
+          >
+            {loading && (
+              <>
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} style={{ height: 72, borderRadius: 'var(--radius-lg)' }} />
+                ))}
+              </>
+            )}
+
+            {!loading && searched && results.length === 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 'var(--space-3)',
+                  padding: 'var(--space-10) var(--space-4)',
+                  color: 'var(--color-text-muted)',
+                  textAlign: 'center',
+                }}
+              >
+                <Users size={40} strokeWidth={1.2} />
+                <div>
+                  <p style={{ margin: 0, fontWeight: 600, color: 'var(--color-text)' }}>No people found</p>
+                  <p style={{ margin: '4px 0 0', fontSize: 13 }}>Try a different name or keyword</p>
+                </div>
+              </div>
+            )}
+
+            {!loading && results.map((user) => (
+              <UserCard key={user.id} user={user} />
             ))}
-          </>
-        )}
-
-        {!loading && searched && results.length === 0 && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 'var(--space-3)',
-              padding: 'var(--space-10) var(--space-4)',
-              color: 'var(--color-text-muted)',
-              textAlign: 'center',
-            }}
-          >
-            <Users size={40} strokeWidth={1.2} />
-            <div>
-              <p style={{ margin: 0, fontWeight: 600, color: 'var(--color-text)' }}>No people found</p>
-              <p style={{ margin: '4px 0 0', fontSize: 13 }}>Try a different name or keyword</p>
-            </div>
           </div>
         )}
-
-        {!loading && !searched && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 'var(--space-3)',
-              padding: 'var(--space-10) var(--space-4)',
-              color: 'var(--color-text-muted)',
-              textAlign: 'center',
-            }}
-          >
-            <Users size={40} strokeWidth={1.2} />
-            <div>
-              <p style={{ margin: 0, fontWeight: 600, color: 'var(--color-text)' }}>Find your community</p>
-              <p style={{ margin: '4px 0 0', fontSize: 13 }}>Search for people by username or bio</p>
-            </div>
-          </div>
-        )}
-
-        {!loading && results.map((user) => (
-          <UserCard key={user.id} user={user} />
-        ))}
       </div>
     </div>
   );
