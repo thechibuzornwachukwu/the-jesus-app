@@ -1,23 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCronAuthorized } from '../../../../lib/cron/auth';
-import { GET as runSendScheduled } from '../send-scheduled/route';
 import { GET as runEngagement } from '../engagement/route';
 import { GET as runPurgeExpired } from '../purge-expired/route';
-import { GET as runTypingPresence } from '../typing-presence/route';
 import { GET as runDailyVerse } from '../daily-verse/route';
 
 type JobName =
-  | 'send-scheduled'
   | 'engagement'
   | 'purge-expired'
-  | 'typing-presence'
   | 'daily-verse';
 
 const ALL_JOBS: JobName[] = [
-  'send-scheduled',
   'engagement',
   'purge-expired',
-  'typing-presence',
   'daily-verse',
 ];
 
@@ -39,14 +33,10 @@ export async function GET(req: NextRequest) {
   for (const job of selected) {
     try {
       const response =
-        job === 'send-scheduled'
-          ? await runSendScheduled(req)
-          : job === 'engagement'
+        job === 'engagement'
           ? await runEngagement(req)
           : job === 'purge-expired'
           ? await runPurgeExpired(req)
-          : job === 'typing-presence'
-          ? await runTypingPresence(req)
           : await runDailyVerse(req);
 
       const body = await response.json().catch(() => ({}));

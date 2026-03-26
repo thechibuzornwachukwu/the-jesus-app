@@ -15,22 +15,12 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = getServiceClient();
-  const now = new Date().toISOString();
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
   const ninetyDaysAgo = new Date(Date.now() - 90 * 86400 * 1000).toISOString();
 
   const results: Record<string, number | string> = {};
 
-  // 1. Expired invite links
-  const { data: invites } = await supabase
-    .from('cell_invites')
-    .delete()
-    .lt('expires_at', now)
-    .not('expires_at', 'is', null)
-    .select('id');
-  results.expiredInvites = invites?.length ?? 0;
-
-  // 2. Soft-deleted profiles older than 30 days
+  // 1. Soft-deleted profiles older than 30 days
   const { data: profiles } = await supabase
     .from('profiles')
     .delete()
