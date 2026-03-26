@@ -103,9 +103,6 @@ export function BottomNav() {
                 aria-hidden
               />
             </span>
-            <span style={{ fontSize: 11, fontWeight: active ? 700 : 500 }}>
-              {label}
-            </span>
           </button>
         );
       })}
