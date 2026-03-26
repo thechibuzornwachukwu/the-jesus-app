@@ -7,7 +7,6 @@ export type StreakEventType =
   | 'verse_save'
   | 'verse_save_with_note'
   | 'post_content'
-  | 'cell_message'
   | 'course_complete';
 
 export type UserStreak = {
@@ -38,7 +37,6 @@ const POINT_VALUES: Record<StreakEventType, number> = {
   verse_save: 10,
   verse_save_with_note: 20,
   post_content: 15,
-  cell_message: 5,
   course_complete: 50,
 };
 

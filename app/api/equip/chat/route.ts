@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { createClient } from '../../../../lib/supabase/server';
 import { z } from 'zod';
 import { appError } from '../../../../lib/errors';
+import { guardRateLimit } from '../../../../lib/api/rate-limit';
 
 function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY! }); }
 
@@ -21,6 +22,9 @@ export async function POST(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json(appError('JA-1003'), { status: 401 });
+
+  const limited = await guardRateLimit(user.id, 'chat');
+  if (limited) return limited;
 
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
@@ -71,8 +75,8 @@ ${context}`;
 
   const answer = completion.choices[0].message.content ?? '';
 
-  // 5. Persist both turns (fire-and-forget  don't await)
-  supabase.from('spiritual_conversations').insert([
+  // 5. Persist both turns (awaited so DB errors surface; trigger enforces 500-row cap)
+  await supabase.from('spiritual_conversations').insert([
     { user_id: user.id, session_id: sessionId, role: 'user', content: message },
     { user_id: user.id, session_id: sessionId, role: 'assistant', content: answer },
   ]);

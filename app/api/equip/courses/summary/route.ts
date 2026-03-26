@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { createClient } from '../../../../../lib/supabase/server';
 import { getTrackById } from '../../../../../lib/learn/course-content';
 import { z } from 'zod';
+import { guardRateLimit } from '../../../../../lib/api/rate-limit';
 
 function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY! }); }
 
@@ -14,6 +15,9 @@ export async function POST(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const limited = await guardRateLimit(user.id, 'courses_summary');
+  if (limited) return limited;
 
   const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: 'Invalid request' }, { status: 400 });

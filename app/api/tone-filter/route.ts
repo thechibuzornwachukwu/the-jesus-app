@@ -3,10 +3,10 @@ import { z } from 'zod';
 import OpenAI from 'openai';
 import { createClient } from '../../../lib/supabase/server';
 import { appError } from '../../../lib/errors';
+import { guardRateLimit } from '../../../lib/api/rate-limit';
 
 const bodySchema = z.object({
   content: z.string().min(1).max(2000),
-  cellId: z.string().uuid().optional(),
 });
 
 const SYSTEM_PROMPT = `You are a tone moderation assistant for a Christian community app called The JESUS App.
@@ -36,6 +36,11 @@ export async function POST(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (user) {
+    const limited = await guardRateLimit(user.id, 'tone_filter');
+    if (limited) return limited;
+  }
 
   const strikeWindowStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const strictThreshold = 3;
@@ -81,7 +86,6 @@ export async function POST(req: NextRequest) {
     if (!result.pass && user) {
       await supabase.from('user_tone_strikes').insert({
         user_id: user.id,
-        cell_id: parsed.data.cellId ?? null,
         content_preview: parsed.data.content.slice(0, 240),
         severity: strictMode ? 'high' : 'medium',
       });

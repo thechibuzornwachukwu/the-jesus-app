@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '../../../../lib/supabase/server';
 import { appError, logError } from '../../../../lib/errors';
+import { sniffMime, isMimeCompatible } from '../../../../lib/upload/sniff-mime';
 
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -32,6 +33,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(appError('JA-2001'), { status: 400 });
     if (!caption)
       return NextResponse.json(appError('JA-8002'), { status: 400 });
+
+    // Magic-byte validation — guards against spoofed Content-Type
+    const headerBytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+    if (!isMimeCompatible(file.type, sniffMime(headerBytes)))
+      return NextResponse.json(appError('JA-2002'), { status: 400 });
 
     const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
     const storagePath = `${user.id}/${Date.now()}.${ext}`;
@@ -74,6 +80,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(appError('JA-2002'), { status: 400 });
   if (file.size > MAX_VIDEO_BYTES)
     return NextResponse.json(appError('JA-2001'), { status: 400 });
+
+  // Magic-byte validation — guards against spoofed Content-Type
+  const videoHeader = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  if (!isMimeCompatible(file.type, sniffMime(videoHeader)))
+    return NextResponse.json(appError('JA-2002'), { status: 400 });
 
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'mp4';
   const storagePath = `${user.id}/${Date.now()}.${ext}`;

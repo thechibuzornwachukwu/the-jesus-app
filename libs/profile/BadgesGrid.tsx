@@ -56,14 +56,11 @@ const BADGES: BadgeDef[] = [
   { id: 'first_verse',    label: 'First Word',     description: 'Save your first verse',          hue: 25,  Shape: CircleShape  },
   { id: 'streak_7',      label: 'Week Warrior',   description: 'Reach a 7-day streak',           hue: 45,  Shape: FlameShape   },
   { id: 'streak_30',     label: 'Monthly',        description: 'Reach a 30-day streak',          hue: 5,   Shape: FlameShape   },
-  { id: 'first_cell',    label: 'Fellowship',     description: 'Join your first cell',           hue: 210, Shape: ShieldShape  },
   { id: 'first_video',   label: 'Witness',        description: 'Share your first video',         hue: 145, Shape: HexShape     },
   { id: 'note_taker',    label: 'Scribe',         description: 'Add notes to 5 verses',          hue: 275, Shape: ScrollShape  },
   { id: 'note_1',        label: 'Annotator',      description: 'Add your first note',            hue: 260, Shape: ScrollShape  },
-  { id: 'cell_admin',    label: 'Shepherd',       description: 'Become a cell admin',            hue: 175, Shape: CrownShape   },
   { id: 'streak_100',    label: 'Century',        description: 'Reach a 100-day streak',         hue: 355, Shape: StarShape    },
   { id: 'anchor',        label: 'Anchor',         description: 'Reach a 365-day streak',         hue: 205, Shape: AnchorShape  },
-  { id: 'multi_cell',    label: 'Connected',      description: 'Join 3 or more cells',           hue: 190, Shape: DiamondShape },
   { id: 'cross',         label: 'Faithful',       description: 'Complete all 5 faith tracks',    hue: 35,  Shape: CrossShape   },
 ];
 
@@ -92,14 +89,11 @@ function computeEarned(
     case 'first_verse':  return savedVerses.length >= 1;
     case 'streak_7':     return streak >= 7 || longestStreak >= 7;
     case 'streak_30':    return streak >= 30 || longestStreak >= 30;
-    case 'first_cell':   return false;
     case 'first_video':  return postedVideos.length >= 1;
     case 'note_1':       return notesCount >= 1;
     case 'note_taker':   return notesCount >= 5;
-    case 'cell_admin':   return false;
     case 'streak_100':   return streak >= 100 || longestStreak >= 100;
     case 'anchor':       return streak >= 365 || longestStreak >= 365;
-    case 'multi_cell':   return false;
     case 'cross':        return false;
     default:             return false;
   }

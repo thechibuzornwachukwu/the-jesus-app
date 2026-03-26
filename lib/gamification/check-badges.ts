@@ -83,14 +83,6 @@ async function getCriteriaCounts(
           counts.post_count = (vc ?? 0) + (pc ?? 0);
           break;
         }
-        case 'cell_join': {
-          const { count } = await supabase
-            .from('cell_members')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', userId);
-          counts.cell_join = count ?? 0;
-          break;
-        }
         case 'course_complete': {
           const { count } = await supabase
             .from('course_progress')

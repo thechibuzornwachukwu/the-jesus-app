@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '../../../../lib/supabase/server';
 import { appError, logError } from '../../../../lib/errors';
+import { sniffMime, isMimeCompatible } from '../../../../lib/upload/sniff-mime';
+import { guardRateLimit } from '../../../../lib/api/rate-limit';
 
 function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY! }); }
 
@@ -33,6 +35,9 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json(appError('JA-1003'), { status: 401 });
 
+  const limited = await guardRateLimit(user.id, 'sermon');
+  if (limited) return limited;
+
   const contentType = req.headers.get('content-type') ?? '';
 
   let transcript = '';
@@ -52,6 +57,12 @@ export async function POST(req: NextRequest) {
     }
     if (audio.size > MAX_AUDIO_BYTES) {
       return NextResponse.json(appError('JA-2001'), { status: 400 });
+    }
+
+    // Magic-byte validation — guards against spoofed Content-Type
+    const audioHeader = new Uint8Array(await audio.slice(0, 12).arrayBuffer());
+    if (!isMimeCompatible(audio.type, sniffMime(audioHeader))) {
+      return NextResponse.json(appError('JA-2002'), { status: 400 });
     }
 
     const transcription = await getOpenAI().audio.transcriptions.create({

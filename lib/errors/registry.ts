@@ -27,27 +27,6 @@ export const ERROR_REGISTRY: Record<string, ErrorEntry> = {
   'JA-2002': { category: 'UPLOAD', message: 'Unsupported file type.', technical: 'MIME type not in allowed list' },
   'JA-2003': { category: 'UPLOAD', message: 'Upload failed. Please check your connection and try again.', technical: 'Storage upload returned error' },
   'JA-2004': { category: 'UPLOAD', message: 'Could not read the uploaded file.', technical: 'formData parsing failed' },
-  'JA-2005': { category: 'UPLOAD', message: 'Audio upload failed.', technical: 'chat-audio bucket upload error' },
-
-  // CHAT (3xxx)
-  'JA-3001': { category: 'CHAT', message: 'Message could not be sent. Please try again.', technical: 'chat_messages insert failed' },
-  'JA-3002': { category: 'CHAT', message: 'Could not load messages.', technical: 'chat_messages select failed' },
-  'JA-3003': { category: 'CHAT', message: 'Message deleted.', technical: 'chat_messages delete failed' },
-  'JA-3004': { category: 'CHAT', message: 'Your message was flagged by the tone filter.', technical: 'OpenAI moderation or tone check rejected message' },
-  'JA-3005': { category: 'CHAT', message: 'Voice recording could not be saved.', technical: 'Audio blob conversion or upload failed' },
-
-  // CELL (4xxx)
-  'JA-4001': { category: 'CELL', message: 'Could not create the community.', technical: 'cells insert failed' },
-  'JA-4002': { category: 'CELL', message: 'Community not found.', technical: 'cells select by slug returned no rows' },
-  'JA-4003': { category: 'CELL', message: 'You are not a member of this community.', technical: 'cell_members row missing for user' },
-  'JA-4004': { category: 'CELL', message: 'Could not join this community.', technical: 'cell_members insert failed' },
-  'JA-4005': { category: 'CELL', message: 'Could not leave this community.', technical: 'cell_members delete failed' },
-  'JA-4006': { category: 'CELL', message: 'Invite link is invalid or has expired.', technical: 'cell_invites select returned no active row' },
-  'JA-4007': { category: 'CELL', message: 'Could not create an invite link.', technical: 'cell_invites insert failed' },
-  'JA-4008': { category: 'CELL', message: 'You do not have permission to do that.', technical: 'cell_members.role !== admin' },
-  'JA-4009': { category: 'CELL', message: 'Community settings could not be saved.', technical: 'cells update failed' },
-  'JA-4010': { category: 'CELL', message: 'Could not load community members.', technical: 'cell_members select with profiles join failed' },
-
   // EXPLORE (5xxx)
   'JA-5001': { category: 'EXPLORE', message: 'Could not load posts.', technical: 'videos/posts select failed' },
   'JA-5002': { category: 'EXPLORE', message: 'Could not load comments.', technical: 'comments select failed' },
@@ -72,6 +51,9 @@ export const ERROR_REGISTRY: Record<string, ErrorEntry> = {
   'JA-7005': { category: 'PROFILE', message: 'Could not load saved verses.', technical: 'saved_verses select failed' },
   'JA-7006': { category: 'PROFILE', message: 'Account deletion failed. Please contact support.', technical: 'profiles soft-delete update failed' },
   'JA-7007': { category: 'PROFILE', message: 'Push notifications could not be enabled.', technical: 'push_subscriptions upsert failed' },
+
+  // RATE LIMIT (0xxx)
+  'JA-0429': { category: 'SERVER', message: 'Too many requests. Please wait before trying again.', technical: 'Sliding-window rate limit exceeded (Upstash or in-process)' },
 
   // SERVER (8xxx)
   'JA-8001': { category: 'SERVER', message: 'Something went wrong. Please try again.', technical: 'Unhandled server exception' },
