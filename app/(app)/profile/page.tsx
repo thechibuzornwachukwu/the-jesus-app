@@ -1,52 +1,18 @@
 import { redirect } from 'next/navigation';
-import {
-  getFullProfile,
-  getSavedVerses,
-  getPostedVideos,
-  getUserPosts,
-  getUnreadCount,
-  getBlockedUsers,
-  getStreakData,
-  getFollowCounts,
-} from '../../../lib/profile/actions';
-import { ProfileClient } from './ProfileClient';
+import { createClient } from '../../../lib/supabase/server';
 
-export const metadata = { title: 'Profile  The JESUS App' };
+export default async function ProfileRootPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/sign-in');
 
-export default async function ProfilePage() {
-  const [
-    profile,
-    savedVerses,
-    postedVideos,
-    posts,
-    unreadCount,
-    blockedUserIds,
-    followCounts,
-    streakData,
-  ] = await Promise.all([
-    getFullProfile(),
-    getSavedVerses(),
-    getPostedVideos(),
-    getUserPosts(),
-    getUnreadCount(),
-    getBlockedUsers(),
-    getFollowCounts(),
-    getStreakData(),
-  ]);
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
 
-  if (!profile) redirect('/setup-profile');
+  if (!profile?.username) redirect('/setup-profile');
 
-  return (
-    <ProfileClient
-      profile={profile}
-      savedVerses={savedVerses}
-      postedVideos={postedVideos}
-      posts={posts}
-      unreadCount={unreadCount}
-      blockedUserIds={blockedUserIds}
-      followerCount={followCounts.follower_count}
-      followingCount={followCounts.following_count}
-      streakData={streakData}
-    />
-  );
+  redirect(`/profile/${profile.username}`);
 }

@@ -1,12 +1,19 @@
 import { redirect } from 'next/navigation';
-import { getFullProfile } from '../../../../lib/profile/actions';
-import { EditProfileClient } from './EditProfileClient';
+import { createClient } from '../../../../lib/supabase/server';
 
-export const metadata = { title: 'Edit Profile  The JESUS App' };
+// Canonical edit route is now /profile/[username]/edit
+export default async function EditProfileRedirect() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/sign-in');
 
-export default async function EditProfilePage() {
-  const profile = await getFullProfile();
-  if (!profile) redirect('/explore');
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
 
-  return <EditProfileClient profile={profile} />;
+  if (!profile?.username) redirect('/sign-in');
+
+  redirect(`/profile/${profile.username}/edit`);
 }

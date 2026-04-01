@@ -1,9 +1,16 @@
-export const metadata = { title: 'Chat — The JESUS App' };
+import { redirect } from 'next/navigation';
+import { createClient } from '../../../lib/supabase/server';
+import { getConversations } from '../../../lib/chat/actions';
+import { ChatClient } from './ChatClient';
 
-export default function ChatPage() {
-  return (
-    <div style={{ padding: '80px 24px 100px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-      <p>Chat — coming soon</p>
-    </div>
-  );
+export const metadata = { title: 'Messages · The JESUS App' };
+
+export default async function ChatPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/sign-in');
+
+  const conversations = await getConversations();
+
+  return <ChatClient conversations={conversations} />;
 }

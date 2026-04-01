@@ -144,7 +144,7 @@ export function ProfileHeader({
         {/* Avatar */}
         {isOwnProfile ? (
           <button
-            onClick={() => router.push('/profile/edit')}
+            onClick={() => router.push(`/profile/${profile.username}/edit`)}
             aria-label="Edit profile"
             style={{
               position: 'relative',
