@@ -2,14 +2,14 @@
 
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Globe, Compass, Zap, User } from 'lucide-react';
+import { Home, Search, Flame, User } from 'lucide-react';
 import { vibrate } from '../libs/shared-ui/haptics';
 
 const navItems = [
-  { href: '/explore',  label: 'Experience', Icon: Globe },
-  { href: '/discover', label: 'Explore',    Icon: Compass },
-  { href: '/equip',    label: 'Equip',      Icon: Zap },
-  { href: '/profile',  label: 'Profile',    Icon: User },
+  { href: '/explore',  label: 'Explore',  Icon: Home  },
+  { href: '/discover', label: 'Discover', Icon: Search },
+  { href: '/testify',  label: 'Testify',  Icon: Flame },
+  { href: '/profile',  label: 'Profile',  Icon: User  },
 ];
 
 export function BottomNav() {
@@ -27,21 +27,6 @@ export function BottomNav() {
   }
 
   return (
-    <>
-      <style>{`
-        @keyframes compassSpring {
-          0%   { transform: rotate(0deg); }
-          30%  { transform: rotate(56deg); }
-          55%  { transform: rotate(36deg); }
-          75%  { transform: rotate(49deg); }
-          90%  { transform: rotate(43deg); }
-          100% { transform: rotate(45deg); }
-        }
-        .compass-spring {
-          display: inline-flex;
-          animation: compassSpring 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-      `}</style>
     <nav
       aria-label="Main navigation"
       style={{
@@ -63,8 +48,7 @@ export function BottomNav() {
       }}
     >
       {navItems.map(({ href, label, Icon }) => {
-        const active = pathname.startsWith(href) ||
-          (href === '/equip' && pathname.startsWith('/library'));
+        const active = pathname === href || pathname.startsWith(href + '/');
         return (
           <button
             key={href}
@@ -95,18 +79,15 @@ export function BottomNav() {
             onTouchStart={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.9)'; }}
             onTouchEnd={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
           >
-            <span className={Icon === Compass && active ? 'compass-spring' : undefined}>
-              <Icon
-                size={22}
-                strokeWidth={1.5}
-                fill={active ? 'currentColor' : 'none'}
-                aria-hidden
-              />
-            </span>
+            <Icon
+              size={22}
+              strokeWidth={1.5}
+              fill={active ? 'currentColor' : 'none'}
+              aria-hidden
+            />
           </button>
         );
       })}
     </nav>
-    </>
   );
 }

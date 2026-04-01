@@ -4,6 +4,4 @@ export { VideoCard } from './VideoCard';
 export { ScriptureOverlay } from './ScriptureOverlay';
 export { CommentSheet } from './CommentSheet';
 export { UploadSheet } from './UploadSheet';
-export { RepostSheet } from './RepostSheet';
-export { RepostCard } from './RepostCard';
 export { ThreadView } from './ThreadView';

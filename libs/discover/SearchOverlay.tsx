@@ -1,11 +1,12 @@
 'use client';
 
-// Stage 5A — Full-screen search overlay with recent searches
+// Stage 4A — Full-screen search overlay with recent searches and initial-type support
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, X, Clock, ArrowLeft } from 'lucide-react';
 import { vibrate } from '../shared-ui/haptics';
 import { SearchResults } from './SearchResults';
+import type { SearchTab } from './SearchResults';
 
 const STORAGE_KEY = 'discover_recent_searches';
 const MAX_RECENTS = 8;
@@ -38,9 +39,10 @@ function clearRecents() {
 
 interface SearchOverlayProps {
   onClose: () => void;
+  initialType?: SearchTab;
 }
 
-export function SearchOverlay({ onClose }: SearchOverlayProps) {
+export function SearchOverlay({ onClose, initialType = 'all' }: SearchOverlayProps) {
   const [query, setQuery] = useState('');
   const [recents, setRecents] = useState<string[]>([]);
   const [committed, setCommitted] = useState('');
@@ -153,7 +155,7 @@ export function SearchOverlay({ onClose }: SearchOverlayProps) {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search people, verses, courses, books…"
+            placeholder="Search videos, testimonies, people, verses…"
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
@@ -240,12 +242,12 @@ export function SearchOverlay({ onClose }: SearchOverlayProps) {
           >
             <Search size={40} strokeWidth={1.2} />
             <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--color-text)' }}>Search the app</p>
-            <p style={{ margin: 0, fontSize: 13 }}>Find people, verses, courses, and books</p>
+            <p style={{ margin: 0, fontSize: 13 }}>Find videos, testimonies, people, and scripture</p>
           </div>
         )}
 
         {/* Search results */}
-        {committed && <SearchResults query={committed} />}
+        {committed && <SearchResults query={committed} initialTab={initialType} />}
       </div>
     </div>
   );

@@ -36,6 +36,21 @@ export interface CourseResult {
   lessonCount: number;
 }
 
+export interface VideoResult {
+  id: string;
+  caption: string | null;
+  thumbnail_url: string | null;
+  author: { username: string; avatar_url: string | null } | null;
+}
+
+export interface TestimonyResult {
+  id: string;
+  content: string;
+  verse_reference: string | null;
+  created_at: string;
+  author: { username: string; avatar_url: string | null } | null;
+}
+
 export interface DiscoverPost {
   id: string;
   user_id: string;
@@ -301,3 +316,81 @@ export async function getSuggestedPeople(
   return getSuggestedUsers(limit);
 }
 
+// ---------------------------------------------------------------------------
+// 4B: searchVideos — searches videos table by caption
+// ---------------------------------------------------------------------------
+
+export async function searchVideos(query: string): Promise<VideoResult[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  const supabase = await createClient();
+  const { data: videos } = await supabase
+    .from('videos')
+    .select('id, caption, thumbnail_url, user_id')
+    .ilike('caption', `%${q}%`)
+    .limit(20);
+
+  if (!videos || videos.length === 0) return [];
+
+  const userIds = [...new Set(videos.map((v) => v.user_id as string))];
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url')
+    .in('id', userIds);
+
+  const profileMap = new Map(
+    (profiles ?? []).map((p) => [
+      p.id as string,
+      { username: p.username as string, avatar_url: p.avatar_url as string | null },
+    ])
+  );
+
+  return videos.map((v) => ({
+    id: v.id as string,
+    caption: v.caption as string | null,
+    thumbnail_url: v.thumbnail_url as string | null,
+    author: profileMap.get(v.user_id as string) ?? null,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// 4B: searchTestimonies — searches posts table (testimonies = posts with content)
+// ---------------------------------------------------------------------------
+
+export async function searchTestimonies(query: string): Promise<TestimonyResult[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  const supabase = await createClient();
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('id, content, verse_reference, created_at, user_id')
+    .or(`content.ilike.%${q}%,verse_reference.ilike.%${q}%`)
+    .is('reply_to_post_id', null)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (!posts || posts.length === 0) return [];
+
+  const userIds = [...new Set(posts.map((p) => p.user_id as string))];
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url')
+    .in('id', userIds);
+
+  const profileMap = new Map(
+    (profiles ?? []).map((p) => [
+      p.id as string,
+      { username: p.username as string, avatar_url: p.avatar_url as string | null },
+    ])
+  );
+
+  return posts.map((p) => ({
+    id: p.id as string,
+    content: p.content as string,
+    verse_reference: p.verse_reference as string | null,
+    created_at: p.created_at as string,
+    author: profileMap.get(p.user_id as string) ?? null,
+  }));
+}
