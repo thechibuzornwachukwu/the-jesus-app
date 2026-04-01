@@ -64,7 +64,7 @@ export function ThreadView({ root, replies, userId }: ThreadViewProps) {
 
     startPosting(async () => {
       const result = await addThreadReply(root.id, root.id, content);
-      if (result.error || !result.reply) {
+      if (result.error || !result.post) {
         setThreadReplies((prev) => prev.filter((reply) => reply.id !== tempId));
         setReplyText(content);
         showToast(result.error ?? 'Could not post reply.', 'error');
@@ -72,7 +72,7 @@ export function ThreadView({ root, replies, userId }: ThreadViewProps) {
       }
 
       setThreadReplies((prev) =>
-        prev.map((reply) => (reply.id === tempId ? result.reply! : reply))
+        prev.map((reply) => (reply.id === tempId ? result.post! : reply))
       );
     });
   };

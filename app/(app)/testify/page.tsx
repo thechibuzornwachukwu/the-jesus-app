@@ -1,9 +1,18 @@
+import { redirect } from 'next/navigation';
+import { createClient } from '../../../lib/supabase/server';
+import { getTestimonies } from '../../../lib/testify/actions';
+import { TestifyClient } from './TestifyClient';
+
 export const metadata = { title: 'Testify — The JESUS App' };
 
-export default function TestifyPage() {
-  return (
-    <div style={{ padding: '80px 24px 100px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-      <p>Testify — coming soon</p>
-    </div>
-  );
+export default async function TestifyPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/sign-in');
+
+  const { testimonies } = await getTestimonies();
+
+  return <TestifyClient initialTestimonies={testimonies} />;
 }

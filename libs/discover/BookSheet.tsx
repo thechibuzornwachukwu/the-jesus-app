@@ -40,7 +40,7 @@ export function BookSheet({ book, onClose }: BookSheetProps) {
   }
 
   return (
-    <BottomSheet onClose={onClose}>
+    <BottomSheet open={true} onClose={onClose}>
       {/* Cover banner */}
       <div
         style={{

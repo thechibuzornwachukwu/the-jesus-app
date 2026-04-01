@@ -144,12 +144,12 @@ export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
     );
     setPublishing(false);
     if ('error' in result) {
-      setError(result.error);
+      setError(result.error ?? 'Something went wrong.');
       return;
     }
     reset();
     onClose();
-    onUploaded?.(result.postId, 'post');
+    onUploaded?.(result.post?.id ?? '', 'post');
   };
 
   const handlePublishImage = () => {

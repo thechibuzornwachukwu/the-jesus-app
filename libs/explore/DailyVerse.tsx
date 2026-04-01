@@ -61,7 +61,7 @@ export function DailyVerse({
       setLikeCount((c) => wasLiked ? c + 1 : c - 1);
       showToast(res.error, 'error');
     } else {
-      setLikeCount(res.count);
+      setLikeCount(res.likeCount);
     }
   };
 
