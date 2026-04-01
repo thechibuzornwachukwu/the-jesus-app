@@ -2,10 +2,9 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Share2, Volume2, VolumeX, Repeat2 } from 'lucide-react';
+import { Heart, MessageSquare, Share2, Volume2, VolumeX, Repeat2 } from 'lucide-react';
 import type { Video, ReactionType } from '../../lib/explore/types';
 import { ScriptureOverlay } from './ScriptureOverlay';
-import { ReactionPicker } from './ReactionPicker';
 import { toggleReaction, saveVerse } from '../../lib/explore/actions';
 import { vibrate } from '../shared-ui/haptics';
 import { showToast } from '../shared-ui';
@@ -29,6 +28,7 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
   const [saved, setSaved] = useState(false);
   const [amenBurst, setAmenBurst] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [progress, setProgress] = useState(0);
   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
 
@@ -36,16 +36,17 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
-    if (isActive) {
-      el.play().catch(() => {/* Autoplay blocked  user must tap */});
+    if (isActive && !paused) {
+      el.play().catch(() => {/* Autoplay blocked — user must tap */});
     } else {
       el.pause();
-      el.currentTime = 0;
+      if (!isActive) el.currentTime = 0;
     }
-  }, [isActive]);
+  }, [isActive, paused]);
 
-  // Double-tap → 'amen' reaction
+  // Double-tap → 'amen' reaction; single tap → play/pause
   const lastTap = useRef(0);
+  const singleTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleReact = useCallback(async (type: ReactionType) => {
     // Optimistic update
@@ -77,12 +78,22 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
   const handleVideoTap = useCallback(() => {
     const now = Date.now();
     if (now - lastTap.current < 300) {
-      // Double tap → amen burst
+      // Double tap → cancel pending single-tap, trigger amen burst
+      if (singleTapTimer.current) {
+        clearTimeout(singleTapTimer.current);
+        singleTapTimer.current = null;
+      }
       if (!userReaction || userReaction !== 'amen') {
         setAmenBurst(true);
         setTimeout(() => setAmenBurst(false), 900);
         handleReact('amen');
       }
+    } else {
+      // Single tap — wait to confirm it's not a double tap
+      singleTapTimer.current = setTimeout(() => {
+        singleTapTimer.current = null;
+        setPaused((p) => !p);
+      }, 300);
     }
     lastTap.current = now;
   }, [userReaction, handleReact]);
@@ -170,6 +181,40 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
         >
           <span style={{ display: 'flex', animation: 'amenBurst 0.9s ease-out forwards', fontSize: 80 }}>
             🙏
+          </span>
+        </div>
+      )}
+
+      {/* Pause indicator */}
+      {paused && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+            zIndex: 5,
+          }}
+        >
+          <span
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              background: 'rgba(0,0,0,0.45)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              animation: 'pauseFade 0.18s ease-out forwards',
+            }}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+              <rect x="5" y="3" width="4" height="18" rx="1" />
+              <rect x="15" y="3" width="4" height="18" rx="1" />
+            </svg>
           </span>
         </div>
       )}
@@ -299,10 +344,17 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
           zIndex: 3,
         }}
       >
-        <ReactionPicker
-          userReaction={userReaction}
-          counts={reactionCounts}
-          onReact={handleReact}
+        <ActionButton
+          icon={
+            <Heart
+              size={26}
+              color={userReaction ? 'var(--color-accent)' : 'var(--color-text)'}
+              fill={userReaction ? 'var(--color-accent)' : 'none'}
+            />
+          }
+          label="React"
+          count={Object.values(reactionCounts).reduce((a, b) => a + b, 0)}
+          onClick={() => handleReact('heart')}
         />
         <ActionButton
           icon={<MessageSquare size={26} color="var(--color-text)" />}
@@ -334,6 +386,10 @@ export function VideoCard({ video, isActive, height, onComment, onReactionChange
           0%   { transform: scale(0.6); opacity: 1; }
           50%  { transform: scale(1.4); opacity: 1; }
           100% { transform: scale(1.8); opacity: 0; }
+        }
+        @keyframes pauseFade {
+          0%   { opacity: 0; transform: scale(0.8); }
+          100% { opacity: 1; transform: scale(1); }
         }
       `}</style>
     </div>

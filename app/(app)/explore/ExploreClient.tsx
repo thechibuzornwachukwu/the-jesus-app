@@ -1,20 +1,15 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import type { FeedItem } from '../../../lib/explore/types';
 import { PerspectiveFeed, type PerspectiveFeedHandle } from '../../../libs/explore/PerspectiveFeed';
 import { CommentSheet } from '../../../libs/explore/CommentSheet';
 import { ComposeSheet } from '../../../libs/explore/ComposeSheet';
 import { DiscoverSheet } from '../../../libs/explore/DiscoverSheet';
 import { showToast } from '../../../libs/shared-ui/Toast';
-import { EmptyState } from '../../../libs/shared-ui';
-import { Users, Search, Plus } from 'lucide-react';
-import { getFollowingFeed } from '../../../lib/explore/actions';
+import { Search, Plus } from 'lucide-react';
 
 const FEED_HEIGHT = `calc(100dvh - var(--safe-top) - var(--nav-height) - var(--safe-bottom))`;
-
-const TAB_OPTIONS = ['For Me', 'Friends'] as const;
-type Tab = typeof TAB_OPTIONS[number];
 
 interface ExploreClientProps {
   initialItems: FeedItem[];
@@ -26,39 +21,13 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
   const [commentVideoId, setCommentVideoId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [discoverOpen, setDiscoverOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>('For Me');
-  const [followingItems, setFollowingItems] = useState<FeedItem[]>([]);
-  const [followingCursor, setFollowingCursor] = useState<string | null>(null);
-  const [followingLoading, setFollowingLoading] = useState(false);
-  const [followingLoaded, setFollowingLoaded] = useState(false);
   const feedRef = useRef<PerspectiveFeedHandle>(null);
-
-  const loadFollowingFeed = useCallback(async () => {
-    if (followingLoaded) return;
-    setFollowingLoading(true);
-    try {
-      const { items, nextCursor } = await getFollowingFeed();
-      setFollowingItems(items);
-      setFollowingCursor(nextCursor);
-      setFollowingLoaded(true);
-    } finally {
-      setFollowingLoading(false);
-    }
-  }, [followingLoaded]);
-
-  useEffect(() => {
-    if (tab === 'Friends') {
-      loadFollowingFeed();
-    }
-  }, [tab, loadFollowingFeed]);
 
   const handleUploaded = async (_id: string, _kind: 'video'): Promise<void> => {
     showToast('Perspective published!', 'success');
     setUploadOpen(false);
     feedRef.current?.refreshFeed();
   };
-
-  const isForMe = tab === 'For Me';
 
   return (
     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -73,137 +42,67 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
           zIndex: 10,
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           padding: '10px 12px',
           pointerEvents: 'none',
         }}
       >
-        {/* Left spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* Center pill tab switcher */}
-        <div
+        {/* Left: Create post */}
+        <button
+          aria-label="Create post"
+          onClick={() => setUploadOpen(true)}
           style={{
             pointerEvents: 'auto',
+            background: 'var(--color-accent)',
+            border: 'none',
+            borderRadius: 999,
+            width: 38,
+            height: 38,
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            filter: 'drop-shadow(0 1px 6px rgba(244,117,33,0.55))',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <Plus size={20} color="#fff" />
+        </button>
+
+        {/* Right: Discover */}
+        <button
+          aria-label="Discover people"
+          onClick={() => setDiscoverOpen(true)}
+          style={{
+            pointerEvents: 'auto',
             background: 'rgba(0,0,0,0.32)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
+            border: 'none',
             borderRadius: 999,
-            padding: '3px 4px',
-            gap: 2,
+            width: 38,
+            height: 38,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))',
+            WebkitTapHighlightColor: 'transparent',
           }}
         >
-          {TAB_OPTIONS.map((t) => {
-            const active = tab === t;
-            return (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                style={{
-                  background: active ? 'rgba(255,255,255,0.92)' : 'transparent',
-                  border: 'none',
-                  borderRadius: 999,
-                  padding: '5px 16px',
-                  cursor: 'pointer',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: active ? 700 : 500,
-                  color: active ? '#111' : 'rgba(255,255,255,0.82)',
-                  textShadow: active ? 'none' : '0 1px 4px rgba(0,0,0,0.7)',
-                  letterSpacing: '0.01em',
-                  transition: 'background 0.18s, color 0.18s',
-                  WebkitTapHighlightColor: 'transparent',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {t}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Right actions */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 8, pointerEvents: 'auto' }}>
-          <button
-            aria-label="Discover people"
-            onClick={() => setDiscoverOpen(true)}
-            style={{
-              background: 'rgba(0,0,0,0.32)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              border: 'none',
-              borderRadius: 999,
-              width: 38,
-              height: 38,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            <Search size={18} color="#fff" />
-          </button>
-          <button
-            aria-label="Create post"
-            onClick={() => setUploadOpen(true)}
-            style={{
-              background: 'var(--color-accent)',
-              border: 'none',
-              borderRadius: 999,
-              width: 38,
-              height: 38,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              filter: 'drop-shadow(0 1px 6px rgba(244,117,33,0.55))',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            <Plus size={20} color="#fff" />
-          </button>
-        </div>
+          <Search size={18} color="#fff" />
+        </button>
       </div>
 
-      {/* Friends: loading */}
-      {!isForMe && followingLoading && (
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--color-text-muted)',
-          fontSize: 'var(--font-size-sm)',
-        }}>
-          Loading…
-        </div>
-      )}
-
-      {/* Friends: empty state */}
-      {!isForMe && followingLoaded && followingItems.length === 0 && (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-8)' }}>
-          <EmptyState
-            icon={<Users size={40} />}
-            message="Follow people to see their perspectives here. Discover creators in the For Me feed!"
-          />
-        </div>
-      )}
-
       {/* Feed */}
-      {(isForMe || (followingLoaded && followingItems.length > 0)) && (
-        <PerspectiveFeed
-          key={tab}
-          ref={isForMe ? feedRef : undefined}
-          initialItems={isForMe ? initialItems : followingItems}
-          initialCursor={isForMe ? initialCursor : followingCursor}
-          userId={userId}
-          feedHeight={FEED_HEIGHT}
-          onComment={(id) => setCommentVideoId(id)}
-          loadFeed={isForMe ? undefined : getFollowingFeed}
-        />
-      )}
+      <PerspectiveFeed
+        ref={feedRef}
+        initialItems={initialItems}
+        initialCursor={initialCursor}
+        userId={userId}
+        feedHeight={FEED_HEIGHT}
+        onComment={(id) => setCommentVideoId(id)}
+      />
 
       <CommentSheet videoId={commentVideoId} onClose={() => setCommentVideoId(null)} />
       <ComposeSheet open={uploadOpen} onClose={() => setUploadOpen(false)} onUploaded={handleUploaded} />
