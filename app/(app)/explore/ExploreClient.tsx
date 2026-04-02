@@ -32,6 +32,8 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
       left: 0,
       right: 0,
       bottom: 'calc(var(--nav-height) + var(--safe-bottom, 0px))',
+      maxWidth: 430,
+      margin: '0 auto',
       zIndex: 1,
     }}>
 
