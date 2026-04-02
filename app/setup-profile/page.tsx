@@ -20,22 +20,10 @@ export default async function SetupProfilePage() {
     .is('deleted_at', null)
     .maybeSingle();
 
-  // Auto-generated usernames are derived from email local-part with underscores —
-  // they contain no spaces and are 30 chars max. A "real" username is one the user
-  // explicitly set (we can't distinguish, so we always show setup on first visit).
-  // To avoid an infinite loop we check: if profile exists AND username looks custom
-  // (not just the email-derived default) we can skip. For simplicity: if the profile
-  // row has a username that doesn't match the raw email-prefix pattern, redirect.
+  // If the user already has a username, send them to their profile page.
+  // This handles Google OAuth users whose profile was auto-created by the DB trigger.
   if (profile?.username) {
-    const emailPrefix = (user.email ?? user.id)
-      .split('@')[0]
-      .replace(/[^a-zA-Z0-9_]/g, '_')
-      .slice(0, 30);
-
-    // If username differs from the auto-generated one, profile is already set up
-    if (profile.username !== emailPrefix) {
-      redirect('/explore');
-    }
+    redirect(`/profile/${profile.username}`);
   }
 
   const defaultUsername = profile?.username ?? '';

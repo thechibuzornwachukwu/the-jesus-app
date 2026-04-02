@@ -17,12 +17,11 @@ export async function GET(request: Request) {
         const { error: upsertError } = await supabase.from('profiles').upsert(
           {
             id,
-            email: email ?? '',
             username:
               user_metadata?.preferred_username ??
               user_metadata?.user_name ??
               user_metadata?.username ??
-              email?.split('@')[0] ??
+              email?.split('@')[0]?.replace(/[^a-z0-9_]/gi, '').toLowerCase() ??
               id.slice(0, 8),
             avatar_url: user_metadata?.avatar_url ?? user_metadata?.picture ?? '',
             display_name: user_metadata?.full_name ?? user_metadata?.name ?? '',

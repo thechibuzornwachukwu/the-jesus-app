@@ -31,8 +31,7 @@ export async function signIn(_: unknown, formData: FormData) {
     const { error: upsertError } = await supabase.from('profiles').upsert(
       {
         id,
-        email: email ?? '',
-        username: user_metadata?.username ?? email?.split('@')[0] ?? id.slice(0, 8),
+        username: user_metadata?.username ?? email?.split('@')[0]?.replace(/[^a-z0-9_]/gi, '').toLowerCase() ?? id.slice(0, 8),
         avatar_url: user_metadata?.avatar_url ?? '',
       },
       { onConflict: 'id', ignoreDuplicates: true },

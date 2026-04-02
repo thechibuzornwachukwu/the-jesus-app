@@ -199,7 +199,7 @@ export function AuthForm({ mode, action, magicLinkAction }: AuthFormProps) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
           <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
           <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-faint)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            or email
+            email
           </span>
           <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
         </div>
