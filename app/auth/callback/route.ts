@@ -18,8 +18,14 @@ export async function GET(request: Request) {
           {
             id,
             email: email ?? '',
-            username: user_metadata?.username ?? email?.split('@')[0] ?? id.slice(0, 8),
-            avatar_url: user_metadata?.avatar_url ?? '',
+            username:
+              user_metadata?.preferred_username ??
+              user_metadata?.user_name ??
+              user_metadata?.username ??
+              email?.split('@')[0] ??
+              id.slice(0, 8),
+            avatar_url: user_metadata?.avatar_url ?? user_metadata?.picture ?? '',
+            display_name: user_metadata?.full_name ?? user_metadata?.name ?? '',
           },
           { onConflict: 'id', ignoreDuplicates: true },
         );

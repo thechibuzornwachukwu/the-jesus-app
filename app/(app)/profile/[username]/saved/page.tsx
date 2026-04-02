@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '../../../../../lib/supabase/server';
-import { EmptyState } from '../../../../../libs/shared-ui/EmptyState';
-import { Bookmark } from 'lucide-react';
+import { getSavedVerses, getPostedVideos } from '../../../../../lib/profile/actions';
+import { SavedPageClient } from './SavedPageClient';
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -13,7 +13,9 @@ export default async function SavedPage({ params }: Props) {
   const { username } = await params;
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in');
 
   const { data: myRow } = await supabase
@@ -24,21 +26,38 @@ export default async function SavedPage({ params }: Props) {
 
   if (myRow?.username !== username) redirect(`/profile/${username}`);
 
+  // Fetch saved verses + liked videos in parallel
+  const [savedVerses, likedVideos] = await Promise.all([
+    getSavedVerses(),
+    // liked videos: join post_likes / likes to get videos the user liked
+    (async () => {
+      const { data: likes } = await supabase
+        .from('likes')
+        .select('video_id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (!likes?.length) return [];
+      const videoIds = likes.map((l) => l.video_id as string);
+      const { data: videos } = await supabase
+        .from('videos')
+        .select('id, url, caption, thumbnail_url, created_at')
+        .in('id', videoIds);
+      return (videos ?? []).map((v) => ({
+        id: v.id as string,
+        url: v.url as string,
+        caption: v.caption as string | null,
+        thumbnail_url: v.thumbnail_url as string | null,
+        created_at: v.created_at as string,
+      }));
+    })(),
+  ]);
+
   return (
-    <div style={{ minHeight: '100%', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column' }}>
-      <div
-        style={{
-          padding: 'calc(var(--safe-top) + var(--space-4)) var(--space-4) var(--space-3)',
-          borderBottom: '1px solid var(--color-border)',
-        }}
-      >
-        <h1 style={{ margin: 0, fontSize: 'var(--font-size-xl)', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
-          Saved
-        </h1>
-      </div>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <EmptyState icon={<Bookmark size={32} />} message="Saved verses and videos will appear here." />
-      </div>
-    </div>
+    <SavedPageClient
+      username={username}
+      savedVerses={savedVerses}
+      likedVideos={likedVideos}
+    />
   );
 }

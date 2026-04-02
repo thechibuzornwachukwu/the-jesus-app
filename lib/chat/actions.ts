@@ -116,3 +116,42 @@ export async function getPartnerProfile(userId: string): Promise<{ id: string; u
     .single();
   return data ?? null;
 }
+
+// ---------------------------------------------------------------------------
+// getOrCreateConversation — ensures a conversations row exists for the pair
+// Uses the conversations table from newdb/07_chat.sql.
+// Run 07_chat.sql in Supabase SQL Editor before using.
+// ---------------------------------------------------------------------------
+export async function getOrCreateConversation(
+  partnerId: string
+): Promise<{ conversationId: string | null; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { conversationId: null, error: 'Not authenticated' };
+  if (user.id === partnerId) return { conversationId: null, error: 'Cannot message yourself' };
+
+  // Canonical pair ordering prevents (A,B)/(B,A) duplicates
+  const a = user.id < partnerId ? user.id : partnerId;
+  const b = user.id < partnerId ? partnerId : user.id;
+
+  // Check if conversation already exists
+  const { data: existing } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('participant_a', a)
+    .eq('participant_b', b)
+    .maybeSingle();
+
+  if (existing) return { conversationId: (existing as { id: string }).id };
+
+  const { data: created, error } = await supabase
+    .from('conversations')
+    .insert({ participant_a: a, participant_b: b })
+    .select('id')
+    .single();
+
+  if (error) return { conversationId: null, error: error.message };
+  return { conversationId: (created as { id: string }).id };
+}

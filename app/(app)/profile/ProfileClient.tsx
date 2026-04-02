@@ -216,8 +216,6 @@ export function ProfileClient({
           <StreakWidget
             current={streakData.current}
             longest={streakData.longest}
-            totalPoints={streakData.totalPoints}
-            weeklyActivity={streakData.weeklyActivity}
           />
         </div>
 

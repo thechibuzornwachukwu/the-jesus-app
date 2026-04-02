@@ -4,6 +4,8 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Upload, X, ToggleLeft, ToggleRight } from 'lucide-react';
 import { showToast } from '../../../../libs/shared-ui/Toast';
+import { createClient } from '../../../../lib/supabase/client';
+import { submitTestimony } from '../../../../lib/testify/actions';
 import type { TestimonyCategory } from '../../../../lib/testify/types';
 
 const CATEGORIES: TestimonyCategory[] = [
@@ -45,11 +47,48 @@ export function SubmitTestimonyClient() {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
-    // Stub — no server call yet
-    await new Promise((r) => setTimeout(r, 600));
-    setSubmitting(false);
-    showToast('Your testimony has been shared! 🙌', 'success');
-    router.push('/testify');
+
+    try {
+      let media_url: string | undefined;
+
+      // Upload media file to testimony-media bucket if provided
+      if (mediaFile) {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const ext = mediaFile.name.split('.').pop()?.toLowerCase() ?? 'bin';
+          const path = `${user.id}/${Date.now()}.${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from('testimony-media')
+            .upload(path, mediaFile, { contentType: mediaFile.type, upsert: false });
+
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('testimony-media')
+              .getPublicUrl(path);
+            media_url = publicUrl;
+          }
+        }
+      }
+
+      const { id, error } = await submitTestimony({
+        title: title.trim(),
+        category,
+        full_story: story.trim(),
+        show_streak: showStreak,
+        media_url,
+      });
+
+      if (error) {
+        showToast(error, 'error');
+        return;
+      }
+
+      showToast('Your testimony has been shared! 🙌', 'success');
+      router.push(id ? `/testify/${id}` : '/testify');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -327,7 +366,7 @@ export function SubmitTestimonyClient() {
                   margin: 0,
                 }}
               >
-                Displays "Seeking God for X days" on your card
+                Displays &ldquo;Seeking God for X days&rdquo; on your card
               </p>
             </div>
             <button

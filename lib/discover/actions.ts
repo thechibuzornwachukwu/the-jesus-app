@@ -355,6 +355,67 @@ export async function searchVideos(query: string): Promise<VideoResult[]> {
 }
 
 // ---------------------------------------------------------------------------
+// 8E: searchScriptures — full-text search on scriptures table (newdb/06_scriptures.sql)
+// Falls back to empty array if the scriptures table hasn't been seeded yet.
+// ---------------------------------------------------------------------------
+
+export interface ScriptureResult {
+  id: string;
+  book: string;
+  chapter: number;
+  verse: number;
+  text: string;
+  reference: string; // e.g. "John 3:16"
+}
+
+export async function searchScriptures(query: string): Promise<ScriptureResult[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  const supabase = await createClient();
+
+  // Try tsvector full-text search first
+  const tsQuery = q
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.replace(/[^a-zA-Z0-9]/g, '') + ':*')
+    .join(' & ');
+
+  const { data: ftsData } = await supabase
+    .from('scriptures')
+    .select('id, book, chapter, verse, text')
+    .textSearch('search_vector', tsQuery, { type: 'websearch', config: 'english' })
+    .limit(20);
+
+  if (ftsData?.length) {
+    return ftsData.map((r) => ({
+      id: r.id as string,
+      book: r.book as string,
+      chapter: r.chapter as number,
+      verse: r.verse as number,
+      text: r.text as string,
+      reference: `${r.book} ${r.chapter}:${r.verse}`,
+    }));
+  }
+
+  // Fallback: ILIKE on text for short / non-English queries
+  const { data: likeData } = await supabase
+    .from('scriptures')
+    .select('id, book, chapter, verse, text')
+    .or(`text.ilike.%${q}%,book.ilike.%${q}%`)
+    .limit(20);
+
+  return (likeData ?? []).map((r) => ({
+    id: r.id as string,
+    book: r.book as string,
+    chapter: r.chapter as number,
+    verse: r.verse as number,
+    text: r.text as string,
+    reference: `${r.book} ${r.chapter}:${r.verse}`,
+  }));
+}
+
+// ---------------------------------------------------------------------------
 // 4B: searchTestimonies — searches posts table (testimonies = posts with content)
 // ---------------------------------------------------------------------------
 
