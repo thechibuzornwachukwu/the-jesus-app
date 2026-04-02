@@ -1,9 +1,7 @@
 'use client';
 
-// Stage 4A — Hero search bar + filter chips (Videos · Testimonies · People · Scripture)
-
-import React, { useState } from 'react';
-import { Search, Video, MessageSquareText, Users, BookMarked } from 'lucide-react';
+import { useState } from 'react';
+import { Search } from 'lucide-react';
 import { vibrate } from '../../../libs/shared-ui/haptics';
 import { TrendingTags } from '../../../libs/discover/TrendingTags';
 import { YourVerses } from '../../../libs/discover/YourVerses';
@@ -17,13 +15,6 @@ interface DiscoverClientProps {
   trendingVerses: TrendingVerse[];
   suggestedPeople: ProfileSummary[];
 }
-
-const FILTER_CHIPS: { key: SearchTab; label: string; icon: React.ReactNode }[] = [
-  { key: 'videos', label: 'Videos', icon: <Video size={14} aria-hidden /> },
-  { key: 'testimonies', label: 'Testimonies', icon: <MessageSquareText size={14} aria-hidden /> },
-  { key: 'people', label: 'People', icon: <Users size={14} aria-hidden /> },
-  { key: 'scripture', label: 'Scripture', icon: <BookMarked size={14} aria-hidden /> },
-];
 
 export function DiscoverClient({
   trendingVerses,
@@ -41,7 +32,7 @@ export function DiscoverClient({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-      {/* ── Sticky header ── */}
+      {/* Sticky header */}
       <div
         style={{
           position: 'sticky',
@@ -52,7 +43,6 @@ export function DiscoverClient({
           flexShrink: 0,
         }}
       >
-        {/* Title row */}
         <div
           style={{
             height: 52,
@@ -75,89 +65,40 @@ export function DiscoverClient({
           >
             Discover
           </h1>
-        </div>
 
-        {/* Hero search bar */}
-        <div style={{ padding: '0 var(--space-4) var(--space-3)' }}>
+          {/* Search icon button (top-right) */}
           <button
             onClick={() => openSearch('all')}
-            aria-label="Open search"
+            aria-label="Search"
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 10,
-              width: '100%',
-              background: 'var(--color-surface)',
+              justifyContent: 'center',
+              width: 40,
+              height: 40,
               borderRadius: 'var(--radius-full)',
-              border: '1px solid var(--color-border)',
-              padding: '0 16px',
-              height: 44,
+              border: 'none',
+              background: 'none',
+              color: 'var(--color-text-muted)',
               cursor: 'pointer',
-              textAlign: 'left',
               WebkitTapHighlightColor: 'transparent',
-              transition: 'border-color 0.15s',
+              transition: 'color 0.15s, background 0.15s',
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-accent)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)'; }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-accent-soft)';
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-accent)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'none';
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-muted)';
+            }}
           >
-            <Search size={16} color="var(--color-text-muted)" aria-hidden />
-            <span style={{ flex: 1, fontSize: 14, color: 'var(--color-text-muted)' }}>
-              Search videos, people, scripture…
-            </span>
+            <Search size={20} aria-hidden />
           </button>
-        </div>
-
-        {/* Filter chips */}
-        <div
-          className="hide-scrollbar"
-          style={{
-            display: 'flex',
-            gap: 8,
-            overflowX: 'auto',
-            paddingLeft: 'var(--space-4)',
-            paddingRight: 'var(--space-4)',
-            paddingBottom: 'var(--space-3)',
-          }}
-        >
-          {FILTER_CHIPS.map((chip) => (
-            <button
-              key={chip.key}
-              onClick={() => openSearch(chip.key)}
-              style={{
-                flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 14px',
-                borderRadius: 'var(--radius-full)',
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-surface)',
-                color: 'var(--color-text)',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                WebkitTapHighlightColor: 'transparent',
-                transition: 'background 0.12s, border-color 0.12s, color 0.12s',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-accent-soft)';
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-accent)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-accent)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-surface)';
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text)';
-              }}
-            >
-              {chip.icon}
-              {chip.label}
-            </button>
-          ))}
         </div>
       </div>
 
-      {/* ── Scrollable home sections ── */}
+      {/* Scrollable home sections */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
         <div
           style={{
@@ -169,15 +110,15 @@ export function DiscoverClient({
           }}
         >
           <YourVerses />
-          <TrendingTags verses={trendingVerses} />
           <PeopleRow
             people={suggestedPeople}
             onSeeAll={() => openSearch('people')}
           />
+          <TrendingTags verses={trendingVerses} />
         </div>
       </div>
 
-      {/* ── Search overlay ── */}
+      {/* Search overlay */}
       {searchOpen && (
         <SearchOverlay
           onClose={() => setSearchOpen(false)}

@@ -264,7 +264,7 @@ export function ScriptureDetailClient({
                 letterSpacing: '0.02em',
               }}
             >
-              — {verseRef}
+              {verseRef}
             </p>
           </div>
         ) : (

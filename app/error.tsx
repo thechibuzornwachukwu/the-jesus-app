@@ -35,7 +35,7 @@ export default function GlobalError({ error, reset }: ErrorPageProps) {
         <h1 style={styles.heading}>Something went wrong.</h1>
 
         <p style={styles.body}>
-          An unexpected error occurred. Our team has been notified — please
+          An unexpected error occurred. Our team has been notified. Please
           try again or return home.
         </p>
 

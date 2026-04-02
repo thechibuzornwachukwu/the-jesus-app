@@ -245,7 +245,7 @@ export function SubmitTestimonyClient() {
               id="testimony-story"
               value={story}
               onChange={(e) => setStory(e.target.value)}
-              placeholder="Tell us what God did. Be as detailed as you like — your testimony could be someone else's miracle."
+              placeholder="Tell us what God did. Be as detailed as you like. Your testimony could be someone else's miracle."
               rows={8}
               style={{
                 ...fieldStyle,

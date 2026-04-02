@@ -6,7 +6,7 @@ import { TestimonyDetailClient } from './TestimonyDetailClient';
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const testimony = await getTestimonyById(id);
-  return { title: testimony ? `${testimony.title} — Testify` : 'Testimony — The JESUS App' };
+  return { title: testimony ? `${testimony.title} | Testify` : 'Testimony | The JESUS App' };
 }
 
 export default async function TestimonyDetailPage({

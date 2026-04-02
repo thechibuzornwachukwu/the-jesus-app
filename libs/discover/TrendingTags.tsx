@@ -38,7 +38,7 @@ export function TrendingTags({ verses, loading }: TrendingTagsProps) {
           color: 'var(--color-text-muted)',
         }}
       >
-        Trending Verses
+        Word
       </p>
 
       <div
@@ -70,7 +70,7 @@ export function TrendingTags({ verses, loading }: TrendingTagsProps) {
                   paddingLeft: 0,
                 }}
               >
-                No trending verses yet — save a verse to get started.
+                No trending verses yet. Save a verse to get started.
               </p>
             )
           : verses.map((v) => (

@@ -3,7 +3,7 @@ import { createClient } from '../../../lib/supabase/server';
 import { getTestimonies } from '../../../lib/testify/actions';
 import { TestifyClient } from './TestifyClient';
 
-export const metadata = { title: 'Testify — The JESUS App' };
+export const metadata = { title: 'Testify | The JESUS App' };
 
 export default async function TestifyPage() {
   const supabase = await createClient();

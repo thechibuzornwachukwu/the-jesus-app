@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const daily = DAILY_VERSES.find((v) => v.reference === verseRef);
   const { post_count } = await getVerseStats(verseRef);
 
-  const title = `${verseRef} — ${post_count} perspective${post_count !== 1 ? 's' : ''} · The JESUS App`;
+  const title = `${verseRef}: ${post_count} perspective${post_count !== 1 ? 's' : ''} · The JESUS App`;
   const description = daily?.text ?? `See what people are saying about ${verseRef}`;
 
   return {

@@ -189,7 +189,7 @@ export function BottomSheet({
             flex: 1,
             padding: contentScrollable ? 'var(--space-4) var(--space-6)' : 0,
             paddingBottom: contentScrollable
-              ? 'calc(var(--safe-bottom, 0px) + var(--space-4))'
+              ? 'calc(var(--nav-height, 64px) + var(--safe-bottom, 0px) + var(--space-4))'
               : 0,
             ...contentStyle,
           }}

@@ -97,22 +97,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {children}
       </div>
 
-      {/* Bottom tagline */}
-      <p
-        style={{
-          position: 'relative',
-          zIndex: 1,
-          marginTop: 'var(--space-6)',
-          fontFamily: 'var(--font-serif)',
-          fontStyle: 'italic',
-          fontSize: 'var(--font-size-xs)',
-          color: 'var(--color-text-faint)',
-          textAlign: 'center',
-          letterSpacing: '0.02em',
-        }}
-      >
-        "Come to me, all who are weary." — Matthew 11:28
-      </p>
     </div>
   );
 }

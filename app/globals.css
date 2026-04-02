@@ -69,12 +69,26 @@ body {
   min-height: 100dvh;
 }
 
-/* Full-bleed feed pages (Explore/Discover). Removes standard padding so
-   the page component can own its height via an explicit calc. The page
-   component must add its own margin-top to sit below the fixed header. */
+/* Full-bleed feed pages (Explore). Strips shared padding so the feed
+   component fills the entire viewport minus header + nav. */
 .page-content--fullscreen {
   padding: 0 !important;
   min-height: unset;
+}
+
+/* Feed container used by full-bleed pages (e.g. Explore).
+   Sits flush below the fixed header; height fills the usable viewport. */
+.feed-container {
+  display: flex;
+  flex-direction: column;
+  padding-top: calc(var(--header-height) + var(--safe-top, 0px));
+  height: calc(100dvh - var(--nav-height) - var(--safe-bottom, 0px));
+}
+
+/* Scrollable page area inside any content route (chat, profile, etc.)
+   Adds bottom clearance so content is never hidden behind the bottom nav. */
+.scroll-content {
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom, 0px));
 }
 /* No stagger reveal on full-bleed pages — cards animate individually */
 .page-content--fullscreen > * {

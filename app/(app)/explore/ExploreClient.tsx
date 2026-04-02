@@ -19,8 +19,6 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
   const [uploadOpen, setUploadOpen] = useState(false);
   const feedRef = useRef<PerspectiveFeedHandle>(null);
 
-  // Strip padding from the shared <main> so the feed is truly full-bleed.
-  // The outer div compensates with an explicit margin-top + height calc.
   useEffect(() => {
     const main = document.querySelector('main.page-content');
     main?.classList.add('page-content--fullscreen');
@@ -34,12 +32,7 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      marginTop: 'calc(var(--header-height) + var(--safe-top, 0px))',
-      height: 'calc(100dvh - var(--header-height) - var(--nav-height) - var(--safe-top, 0px) - var(--safe-bottom, 0px))',
-    }}>
+    <div className="feed-container">
 
       {/* Feed area */}
       <div style={{ flex: 1, position: 'relative' }}>

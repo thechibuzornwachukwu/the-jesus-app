@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Page not found — The JESUS App',
+  title: 'Page not found | The JESUS App',
 };
 
 export default function NotFound() {
@@ -34,7 +34,7 @@ export default function NotFound() {
           <em>
             &ldquo;I am the way, the truth, and the life.&rdquo;
           </em>
-          <span style={styles.verseRef}>— John 14:6</span>
+          <span style={styles.verseRef}>John 14:6</span>
         </p>
 
         <p style={styles.body}>
