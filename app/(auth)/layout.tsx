@@ -2,9 +2,9 @@ import Link from 'next/link';
 
 function CrossSVG() {
   return (
-    <svg width="36" height="45" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect x="13" y="0" width="6" height="40" rx="2" fill="var(--color-accent)" />
-      <rect x="0" y="12" width="32" height="6" rx="2" fill="var(--color-accent)" />
+    <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="13" y="0" width="6" height="40" rx="3" fill="var(--color-accent)" />
+      <rect x="0" y="12" width="32" height="6" rx="3" fill="var(--color-accent)" />
     </svg>
   );
 }
@@ -23,6 +23,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         paddingBottom: 'calc(var(--safe-bottom) + var(--space-6))',
         backgroundColor: 'var(--color-bg)',
         position: 'relative',
+        overflow: 'hidden',
       }}
     >
       {/* Back to home */}
@@ -34,13 +35,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           left: 'var(--space-5)',
           display: 'flex',
           alignItems: 'center',
-          gap: 'var(--space-1)',
+          gap: 'var(--space-2)',
           fontSize: 'var(--font-size-sm)',
-          color: 'var(--color-text-muted)',
+          color: 'var(--color-text-faint)',
           textDecoration: 'none',
           fontFamily: 'var(--font-sans)',
           fontWeight: 500,
           zIndex: 10,
+          transition: 'color 0.15s',
         }}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -55,7 +57,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           display: 'flex',
           alignItems: 'center',
           gap: 'var(--space-3)',
-          marginBottom: 'var(--space-6)',
+          marginBottom: 'var(--space-7)',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         <CrossSVG />
@@ -64,11 +68,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             fontFamily: 'var(--font-display)',
             fontWeight: 900,
             fontSize: 'var(--font-size-xl)',
-            letterSpacing: '-0.01em',
+            letterSpacing: '0.04em',
             color: 'var(--color-text)',
+            textTransform: 'uppercase',
           }}
         >
-          THE JESUS APP
+          The Jesus App
         </span>
       </div>
 
@@ -77,6 +82,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         style={{
           width: '100%',
           maxWidth: 420,
+          position: 'relative',
+          zIndex: 1,
           background: 'rgba(22,16,9,0.92)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
@@ -84,11 +91,28 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           borderRadius: 'var(--radius-xl)',
           boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
           padding: 'var(--space-8) var(--space-6)',
-          animation: 'toast-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+          animation: 'toast-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
         }}
       >
         {children}
       </div>
+
+      {/* Bottom tagline */}
+      <p
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          marginTop: 'var(--space-6)',
+          fontFamily: 'var(--font-serif)',
+          fontStyle: 'italic',
+          fontSize: 'var(--font-size-xs)',
+          color: 'var(--color-text-faint)',
+          textAlign: 'center',
+          letterSpacing: '0.02em',
+        }}
+      >
+        "Come to me, all who are weary." — Matthew 11:28
+      </p>
     </div>
   );
 }
