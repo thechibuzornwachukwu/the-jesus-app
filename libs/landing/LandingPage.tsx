@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, MessageCircle, Bookmark } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, AlertTriangle, X } from 'lucide-react';
 import { AuthModal } from '../shared-ui/AuthModal';
 
 const VERSE_FRAGMENTS = [
@@ -29,15 +29,23 @@ const VERSE_FRAGMENTS = [
 //   );
 // }
 
-export default function LandingPage() {
+export default function LandingPage({ oauthError }: { oauthError?: string }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'sign-in' | 'sign-up'>('sign-in');
+  const [errorBanner, setErrorBanner] = useState(oauthError ?? null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const modal = params.get('modal');
     if (modal === 'signup') { setModalMode('sign-up'); setModalOpen(true); }
     else if (modal === 'signin') { setModalMode('sign-in'); setModalOpen(true); }
+
+    // Auto-open sign-in and clean ugly OAuth error params from the URL
+    if (params.has('error') || params.has('error_code')) {
+      setModalMode('sign-in');
+      setModalOpen(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, []);
 
   function openSignUp() { setModalMode('sign-up'); setModalOpen(true); }
@@ -48,6 +56,48 @@ export default function LandingPage() {
       {modalOpen && (
         <AuthModal defaultMode={modalMode} onClose={() => setModalOpen(false)} />
       )}
+
+      {errorBanner && (
+        <div
+          role="alert"
+          style={{
+            position: 'fixed',
+            top: '1rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 300,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.625rem',
+            padding: '0.75rem 1rem',
+            background: 'rgba(248,113,113,0.10)',
+            border: '1px solid rgba(248,113,113,0.30)',
+            borderRadius: 'var(--radius-lg)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            maxWidth: 'calc(100vw - 2rem)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+            animation: 'toast-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+          }}
+        >
+          <AlertTriangle size={16} style={{ color: 'var(--color-error)', flexShrink: 0 }} />
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.875rem', color: 'var(--color-error)', flex: 1 }}>
+            {errorBanner}
+          </span>
+          <button
+            onClick={() => setErrorBanner(null)}
+            aria-label="Dismiss"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--color-text-faint)', padding: '0.125rem', flexShrink: 0,
+              display: 'flex', alignItems: 'center',
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       <style>{`
         @keyframes floatVerse {
           0%   { transform: translateY(0px);   opacity: 0.07; }
