@@ -28,8 +28,8 @@ export function LinkPreview({ preview }: Props) {
         {/* Thumbnail */}
         <div
           style={{
-            width: 72,
-            height: 56,
+            width: 'var(--size-preview-thumb-w)',
+            height: 'var(--size-preview-thumb-h)',
             flexShrink: 0,
             background: 'var(--color-surface)',
             display: 'flex',
@@ -64,12 +64,12 @@ export function LinkPreview({ preview }: Props) {
             {preview.title ?? 'Video'}
           </p>
           {preview.author_name && (
-            <p style={{ margin: '2px 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <p style={{ margin: 'var(--space-0-5) 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
               <User size={10} />
               {preview.author_name}
             </p>
           )}
-          <p style={{ margin: '2px 0 0', fontSize: '0.6rem', color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <p style={{ margin: 'var(--space-0-5) 0 0', fontSize: 'var(--font-size-2xs)', color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Video
           </p>
         </div>
@@ -82,21 +82,21 @@ export function LinkPreview({ preview }: Props) {
       <a href={preview.url} target="_blank" rel="noopener noreferrer" style={base}>
         <div
           style={{
-            width: 6,
+            width: 'var(--space-1-5)',
             flexShrink: 0,
             background: 'var(--color-accent)',
           }}
         />
         <div style={{ flex: 1, padding: 'var(--space-2)', minWidth: 0 }}>
           {preview.category && (
-            <p style={{ margin: 0, fontSize: '0.6rem', color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
+            <p style={{ margin: 0, fontSize: 'var(--font-size-2xs)', color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
               {preview.category}
             </p>
           )}
           {preview.excerpt && (
             <p
               style={{
-                margin: '2px 0',
+                margin: 'var(--space-0-5) 0',
                 fontSize: 'var(--font-size-xs)',
                 color: 'var(--color-text)',
                 lineHeight: 'var(--line-height-relaxed)',
@@ -110,7 +110,7 @@ export function LinkPreview({ preview }: Props) {
             </p>
           )}
           {preview.author_name && (
-            <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
               <User size={10} />
               {preview.author_name}
             </p>
@@ -127,7 +127,7 @@ export function LinkPreview({ preview }: Props) {
   return (
     <a href={preview.url} target="_blank" rel="noopener noreferrer" style={base}>
       {preview.og_image && (
-        <div style={{ width: 72, height: 56, flexShrink: 0, overflow: 'hidden' }}>
+        <div style={{ width: 'var(--size-preview-thumb-w)', height: 'var(--size-preview-thumb-h)', flexShrink: 0, overflow: 'hidden' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={preview.og_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
@@ -146,7 +146,7 @@ export function LinkPreview({ preview }: Props) {
         >
           {preview.og_title ?? preview.url}
         </p>
-        <p style={{ margin: '2px 0 0', fontSize: '0.6rem', color: 'var(--color-text-faint)', display: 'flex', alignItems: 'center', gap: 4 }}>
+        <p style={{ margin: 'var(--space-0-5) 0 0', fontSize: 'var(--font-size-2xs)', color: 'var(--color-text-faint)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
           <ExternalLink size={9} />
           {preview.url}
         </p>

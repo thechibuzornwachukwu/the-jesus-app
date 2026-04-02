@@ -44,7 +44,7 @@ export function BookSheet({ book, onClose }: BookSheetProps) {
       {/* Cover banner */}
       <div
         style={{
-          height: 120,
+          height: 'var(--size-banner-sm)',
           borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
           background: `linear-gradient(135deg, ${color}cc 0%, ${color}44 100%)`,
           display: 'flex',
@@ -60,13 +60,13 @@ export function BookSheet({ book, onClose }: BookSheetProps) {
           aria-label="Close"
           style={{
             position: 'absolute',
-            top: 12,
-            right: 12,
+            top: 'var(--space-3)',
+            right: 'var(--space-3)',
             background: 'rgba(0,0,0,0.3)',
             border: 'none',
             borderRadius: '50%',
-            width: 28,
-            height: 28,
+            width: 'var(--space-7)',
+            height: 'var(--space-7)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -85,7 +85,7 @@ export function BookSheet({ book, onClose }: BookSheetProps) {
             style={{
               margin: '0 0 4px',
               fontFamily: "'Archivo Condensed', var(--font-display)",
-              fontSize: '1.4rem',
+              fontSize: 'var(--font-size-xl)',
               fontWeight: 900,
               color: 'var(--color-text)',
               lineHeight: 1.1,
@@ -99,8 +99,8 @@ export function BookSheet({ book, onClose }: BookSheetProps) {
           <span
             style={{
               display: 'inline-block',
-              marginTop: 6,
-              padding: '2px 10px',
+              marginTop: 'var(--space-1-5)',
+              padding: 'var(--space-0-5) var(--space-2)',
               borderRadius: 'var(--radius-full)',
               background: `${color}22`,
               color,
@@ -147,7 +147,7 @@ export function BookSheet({ book, onClose }: BookSheetProps) {
               {book.quotes[quoteIdx]}
             </p>
           </div>
-          <p style={{ margin: '6px 0 0 22px', fontSize: 11, color: 'var(--color-text-faint)' }}>
+          <p style={{ margin: 'var(--space-1-5) 0 0 22px', fontSize: 11, color: 'var(--color-text-faint)' }}>
             Tap for next quote ({quoteIdx + 1}/{book.quotes.length})
           </p>
         </button>

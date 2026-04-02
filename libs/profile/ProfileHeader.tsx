@@ -66,7 +66,7 @@ function StatPill({ icon, value, label, highlight, onClick }: StatPillProps) {
       </div>
       <span
         style={{
-          fontSize: '0.62rem',
+          fontSize: 'var(--font-size-2xs)',
           color: isClickable ? 'var(--color-text-muted)' : 'var(--color-text-faint)',
           textTransform: 'uppercase',
           letterSpacing: '0.07em',

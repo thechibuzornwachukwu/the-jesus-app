@@ -41,15 +41,15 @@ const QUICK_REFERENCES = [
 const navBtnStyle: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
-  gap: 6,
+  gap: 'var(--space-1-5)',
   background: 'none',
   border: 'none',
   color: 'var(--color-accent)',
   fontFamily: 'var(--font-sans)',
   fontWeight: 700,
-  fontSize: 14,
+  fontSize: 'var(--font-size-sm)',
   cursor: 'pointer',
-  padding: '8px 0',
+  padding: 'var(--space-2) 0',
 };
 
 function isReferenceQuery(q: string) {
@@ -102,7 +102,7 @@ function PassageReader({
         >
           {bookName && chapter ? `${bookName} · ${chapter}` : passage.reference}
         </h2>
-        <p style={{ margin: 'var(--space-1) 0 0', color: 'var(--color-text-muted)', fontSize: 12 }}>
+        <p style={{ margin: 'var(--space-1) 0 0', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)' }}>
           {passage.translation}
         </p>
       </div>
@@ -126,7 +126,7 @@ function PassageReader({
                 color: savedVerses.has(verse.reference)
                   ? 'var(--color-accent)'
                   : 'var(--color-text-faint)',
-                fontSize: '0.6em',
+                fontSize: 'var(--font-size-xs)',
                 fontStyle: 'normal',
                 fontFamily: 'var(--font-sans)',
                 marginRight: '0.2em',
@@ -176,14 +176,14 @@ function PassageReader({
             style={{
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-full)',
-              padding: '8px 14px',
+              padding: 'var(--space-2) var(--space-3-5)',
               background: 'var(--color-surface)',
               color: 'var(--color-text-primary)',
               fontWeight: 700,
-              fontSize: 12,
+              fontSize: 'var(--font-size-xs)',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 'var(--space-1-5)',
               cursor: 'pointer',
             }}
           >
@@ -212,7 +212,7 @@ function SearchVerseRow({ verse }: { verse: BibleVerse }) {
 
   return (
     <div style={{ padding: 'var(--space-3) 0', borderBottom: '1px solid var(--color-border)' }}>
-      <p style={{ margin: 0, color: 'var(--color-accent)', fontSize: 12, fontWeight: 700, letterSpacing: '0.05em' }}>
+      <p style={{ margin: 0, color: 'var(--color-accent)', fontSize: 'var(--font-size-xs)', fontWeight: 700, letterSpacing: '0.05em' }}>
         {verse.reference}
       </p>
       <p style={{ margin: 'var(--space-2) 0 var(--space-2)', fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 'var(--font-size-lg)', lineHeight: 1.7 }}>
@@ -221,7 +221,7 @@ function SearchVerseRow({ verse }: { verse: BibleVerse }) {
       <button
         onClick={handleSave}
         disabled={saving || saved}
-        style={{ background: 'none', border: 'none', color: saved ? 'var(--color-accent)' : 'var(--color-text-faint)', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, cursor: saved ? 'default' : 'pointer', padding: 0 }}
+        style={{ background: 'none', border: 'none', color: saved ? 'var(--color-accent)' : 'var(--color-text-faint)', fontSize: 'var(--font-size-xs)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 'var(--space-1)', cursor: saved ? 'default' : 'pointer', padding: 0 }}
       >
         <Bookmark size={12} fill={saved ? 'currentColor' : 'none'} />
         {saved ? 'Saved' : saving ? 'Saving…' : 'Save'}
@@ -233,15 +233,15 @@ function SearchVerseRow({ verse }: { verse: BibleVerse }) {
 const selectStyle: React.CSSProperties = {
   flex: 1,
   minWidth: 0,
-  height: 38,
+  height: 'var(--size-input-compact)',
   background: 'var(--color-surface)',
   border: '1px solid var(--color-border)',
   borderRadius: 'var(--radius-lg)',
   color: 'var(--color-text)',
   fontFamily: 'var(--font-sans)',
-  fontSize: 13,
+  fontSize: 'var(--font-size-caption)',
   fontWeight: 600,
-  padding: '0 8px',
+  padding: '0 var(--space-2)',
   cursor: 'pointer',
   outline: 'none',
   appearance: 'none' as const,
@@ -274,15 +274,15 @@ function BookChapterSelector({ onGo }: { onGo: (ref: string) => void }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 6 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-1-5)' }}>
         <div style={{ position: 'relative', flex: 2, minWidth: 0 }}>
           <select value={book} onChange={handleBookChange} style={selectStyle}>
             {BIBLE_BOOKS.map((b) => (
               <option key={b.abbr} value={b.name}>{b.name}</option>
             ))}
           </select>
-          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)', fontSize: 10 }}>▾</span>
+          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-2xs)' }}>▾</span>
         </div>
         <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
           <select value={chapter} onChange={handleChapterChange} style={selectStyle}>
@@ -290,7 +290,7 @@ function BookChapterSelector({ onGo }: { onGo: (ref: string) => void }) {
               <option key={ch} value={ch}>{ch}</option>
             ))}
           </select>
-          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)', fontSize: 10 }}>▾</span>
+          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-2xs)' }}>▾</span>
         </div>
         <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
           <select value={verse} onChange={(e) => setVerse(Number(e.target.value))} style={selectStyle}>
@@ -299,20 +299,20 @@ function BookChapterSelector({ onGo }: { onGo: (ref: string) => void }) {
               <option key={v} value={v}>{v}</option>
             ))}
           </select>
-          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)', fontSize: 10 }}>▾</span>
+          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-2xs)' }}>▾</span>
         </div>
       </div>
       <button
         onClick={handleGo}
         style={{
-          height: 38,
+          height: 'var(--size-input-compact)',
           background: 'var(--color-accent)',
           border: 'none',
           borderRadius: 'var(--radius-lg)',
           color: 'var(--color-accent-text)',
           fontFamily: 'var(--font-sans)',
           fontWeight: 700,
-          fontSize: 14,
+          fontSize: 'var(--font-size-sm)',
           cursor: 'pointer',
           letterSpacing: '0.03em',
         }}
@@ -418,7 +418,7 @@ export function BibleReader({
         {/* Title row */}
         <div
           style={{
-            height: 56,
+            height: 'var(--space-14)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -440,8 +440,8 @@ export function BibleReader({
             onClick={toggleSearch}
             aria-label={searchOpen ? 'Close search' : 'Open search'}
             style={{
-              width: 40,
-              height: 40,
+              width: 'var(--space-10)',
+              height: 'var(--space-10)',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -467,7 +467,7 @@ export function BibleReader({
             padding: searchOpen ? '0 var(--space-5) var(--space-4)' : '0 var(--space-5)',
           }}
         >
-          <div style={{ display: 'flex', gap: 6, marginBottom: 'var(--space-3)' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-1-5)', marginBottom: 'var(--space-3)' }}>
             {(['text', 'structured'] as const).map((mode) => (
               <button
                 key={mode}
@@ -475,14 +475,14 @@ export function BibleReader({
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 4,
-                  padding: '4px 12px',
+                  gap: 'var(--space-1)',
+                  padding: 'var(--space-1) var(--space-3)',
                   borderRadius: 'var(--radius-full)',
                   border: selectorMode === mode ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
                   background: selectorMode === mode ? 'var(--color-accent-soft)' : 'var(--color-surface)',
                   color: selectorMode === mode ? 'var(--color-accent)' : 'var(--color-text-muted)',
                   fontFamily: 'var(--font-sans)',
-                  fontSize: 12,
+                  fontSize: 'var(--font-size-xs)',
                   fontWeight: 700,
                   cursor: 'pointer',
                   transition: 'background 0.15s, border-color 0.15s, color 0.15s',
@@ -508,7 +508,7 @@ export function BibleReader({
                 style={{
                   marginTop: 'var(--space-3)',
                   display: 'flex',
-                  gap: 8,
+                  gap: 'var(--space-2)',
                   overflowX: 'auto',
                   scrollbarWidth: 'none' as const,
                 }}
@@ -523,9 +523,9 @@ export function BibleReader({
                       borderRadius: 'var(--radius-full)',
                       background: 'var(--color-surface)',
                       color: 'var(--color-text-muted)',
-                      fontSize: 12,
+                      fontSize: 'var(--font-size-xs)',
                       fontWeight: 600,
-                      padding: '5px 12px',
+                      padding: 'var(--space-1-5) var(--space-3)',
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
                     }}
@@ -541,13 +541,13 @@ export function BibleReader({
         </div>
 
         {loading && (
-          <div style={{ padding: '0 var(--space-5) var(--space-2)', display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text-muted)', fontSize: 13 }}>
+          <div style={{ padding: '0 var(--space-5) var(--space-2)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-caption)' }}>
             <Loader2 size={13} className="spin-icon" />
             Loading scripture…
           </div>
         )}
         {error && !loading && (
-          <div style={{ padding: '0 var(--space-5) var(--space-2)', color: 'var(--color-error)', fontSize: 13 }}>
+          <div style={{ padding: '0 var(--space-5) var(--space-2)', color: 'var(--color-error)', fontSize: 'var(--font-size-caption)' }}>
             {error}
           </div>
         )}
@@ -581,7 +581,7 @@ export function BibleReader({
               margin: 0,
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 'var(--space-1-5)',
               color: 'var(--color-accent)',
               fontSize: 'var(--font-size-xs)',
               textTransform: 'uppercase',
@@ -616,14 +616,14 @@ export function BibleReader({
               style={{
                 border: '1px solid var(--color-accent)',
                 borderRadius: 'var(--radius-full)',
-                padding: '8px 12px',
+                padding: 'var(--space-2) var(--space-3)',
                 background: 'transparent',
                 color: 'var(--color-accent)',
                 fontWeight: 700,
-                fontSize: 12,
+                fontSize: 'var(--font-size-xs)',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 6,
+                gap: 'var(--space-1-5)',
                 cursor: 'pointer',
               }}
             >
@@ -635,14 +635,14 @@ export function BibleReader({
               style={{
                 border: '1px solid var(--color-border)',
                 borderRadius: 'var(--radius-full)',
-                padding: '8px 12px',
+                padding: 'var(--space-2) var(--space-3)',
                 background: 'var(--color-surface)',
                 color: 'var(--color-text-primary)',
                 fontWeight: 700,
-                fontSize: 12,
+                fontSize: 'var(--font-size-xs)',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 6,
+                gap: 'var(--space-1-5)',
                 cursor: 'pointer',
               }}
             >
@@ -665,10 +665,10 @@ export function BibleReader({
         {searchMode === 'search' && (
           <section>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--space-2)' }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontFamily: 'var(--font-serif)', fontVariant: 'small-caps', fontWeight: 700 }}>
+              <h2 style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontFamily: 'var(--font-serif)', fontVariant: 'small-caps', fontWeight: 700 }}>
                 Search Results
               </h2>
-              <span style={{ color: 'var(--color-text-faint)', fontSize: 12 }}>
+              <span style={{ color: 'var(--color-text-faint)', fontSize: 'var(--font-size-xs)' }}>
                 {searchResults.length} match{searchResults.length === 1 ? '' : 'es'}
               </span>
             </div>
@@ -681,11 +681,11 @@ export function BibleReader({
           </section>
         )}
 
-        <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-faint)' }}>
+        <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-faint)' }}>
           Need deeper guidance?{' '}
           <button
             onClick={() => openBerean()}
-            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--color-accent)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--color-accent)', fontSize: 'var(--font-size-xs)', fontWeight: 700, cursor: 'pointer' }}
           >
             Open Berean
           </button>{' '}

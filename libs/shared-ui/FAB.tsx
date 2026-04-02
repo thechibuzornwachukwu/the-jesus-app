@@ -52,7 +52,7 @@ export function FAB({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '1.5rem',
+        fontSize: 'var(--font-size-2xl)',
         fontWeight: 'var(--font-weight-bold)' as React.CSSProperties['fontWeight'],
         boxShadow: 'var(--shadow-lg)',
         zIndex,

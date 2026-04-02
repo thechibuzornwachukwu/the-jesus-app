@@ -154,4 +154,37 @@
   --color-online:      var(--color-success);
   --color-idle:        #facc15;
   --color-offline:     rgba(245,247,247,0.25);
+
+  /* ─── 1A: Responsive font size tokens ──────────────────────
+     Fills gaps below xs and above 6xl, plus semantic aliases. */
+  --font-size-2xs:        0.625rem;   /* 10px  tiny labels, badges */
+  --font-size-hero:       5rem;       /* 80px  full-bleed hero text */
+  --font-size-display:    3.25rem;    /* 52px  section display heads */
+  --font-size-subtitle:   1.0625rem;  /* 17px  subheading / card title */
+  --font-size-caption:    0.8125rem;  /* 13px  image captions, meta */
+  --font-size-label:      0.6875rem;  /* 11px  form labels, tab labels */
+  --font-size-testimony:  1.1875rem;  /* 19px  testimony / verse body copy */
+
+  /* ─── 1B: Missing spacing steps (4px base) ─────────────────── */
+  --space-0-5:  0.125rem;  /*  2px */
+  --space-1-5:  0.375rem;  /*  6px */
+  --space-3-5:  0.875rem;  /* 14px */
+  --space-7:    1.75rem;   /* 28px */
+  --space-9:    2.25rem;   /* 36px */
+  --space-14:   3.5rem;    /* 56px */
+  --space-20:   5rem;      /* 80px */
+
+  /* ─── 1C: Component dimension tokens ───────────────────────── */
+  --size-icon-xs:       16px;   /* inline icon, badge icon */
+  --size-icon-sm:       20px;   /* button icon */
+  --size-icon-md:       24px;   /* default nav / action icon */
+  --size-icon-lg:       32px;   /* section header icon */
+  --size-icon-xl:       48px;   /* empty-state illustration icon */
+  --size-thumbnail-w:   80px;   /* video / post thumbnail width */
+  --size-thumbnail-h:   80px;   /* video / post thumbnail height */
+  --size-preview-thumb-w: 4.5rem;  /* 72px  link-preview card thumbnail */
+  --size-preview-thumb-h: var(--space-14); /* 56px  link-preview card thumbnail */
+  --size-card-sm:       160px;  /* small card (course tile, story chip) */
+  --size-input-compact: 2.25rem; /* 36px  compact / inline inputs */
+  --size-banner-sm:     120px;  /* small banner height (cell info, profile) */
 }

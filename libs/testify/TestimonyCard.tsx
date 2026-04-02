@@ -206,7 +206,7 @@ export function TestimonyCard({ testimony, isActive, height }: TestimonyCardProp
         <h2
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(1.5rem, 5vw, 2.2rem)',
+            fontSize: 'var(--font-size-testimony)',
             fontWeight: 900,
             lineHeight: 1.1,
             color: 'var(--color-text)',

@@ -213,7 +213,7 @@ export function VerseTagClient({
             flex: 1,
             margin: 0,
             fontFamily: "'Archivo Condensed', var(--font-display)",
-            fontSize: '1.4rem',
+            fontSize: 'var(--font-size-xl)',
             fontWeight: 900,
             letterSpacing: '-0.01em',
             color: 'var(--color-text)',
@@ -268,7 +268,7 @@ export function VerseTagClient({
               style={{
                 margin: 0,
                 fontFamily: "'Lora', var(--font-serif)",
-                fontSize: 16,
+                fontSize: 'var(--font-size-base)',
                 lineHeight: 1.7,
                 color: 'var(--color-text)',
                 fontStyle: 'italic',

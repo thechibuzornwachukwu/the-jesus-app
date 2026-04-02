@@ -191,7 +191,7 @@ export function ScriptureDetailClient({
             flex: 1,
             margin: 0,
             fontFamily: "'Archivo Condensed', var(--font-display)",
-            fontSize: '1.4rem',
+            fontSize: 'var(--font-size-xl)',
             fontWeight: 900,
             letterSpacing: '-0.01em',
             color: 'var(--color-text)',
@@ -247,7 +247,7 @@ export function ScriptureDetailClient({
               style={{
                 margin: '0 0 var(--space-3)',
                 fontFamily: "'Lora', var(--font-serif)",
-                fontSize: 20,
+                fontSize: 'var(--font-size-xl)',
                 lineHeight: 1.75,
                 color: 'var(--color-text)',
                 fontStyle: 'italic',
