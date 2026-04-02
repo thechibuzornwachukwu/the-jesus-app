@@ -8,21 +8,14 @@ import { vibrate } from '../../../libs/shared-ui/haptics';
 import { TrendingTags } from '../../../libs/discover/TrendingTags';
 import { YourVerses } from '../../../libs/discover/YourVerses';
 import { PeopleRow } from '../../../libs/discover/PeopleRow';
-import { CoursesRow } from '../../../libs/discover/CoursesRow';
-import { BooksRow } from '../../../libs/discover/BooksRow';
 import { SearchOverlay } from '../../../libs/discover/SearchOverlay';
 import type { ProfileSummary } from '../../../libs/profile/types';
-import type { TrendingVerse, CourseResult } from '../../../lib/discover/actions';
-import type { Book } from '../../../lib/discover/books';
-import type { CourseProgress } from '../../../libs/learn/types';
+import type { TrendingVerse } from '../../../lib/discover/actions';
 import type { SearchTab } from '../../../libs/discover/SearchResults';
 
 interface DiscoverClientProps {
   trendingVerses: TrendingVerse[];
   suggestedPeople: ProfileSummary[];
-  courseProgress: CourseProgress[];
-  courses: CourseResult[];
-  books: Book[];
 }
 
 const FILTER_CHIPS: { key: SearchTab; label: string; icon: React.ReactNode }[] = [
@@ -35,9 +28,6 @@ const FILTER_CHIPS: { key: SearchTab; label: string; icon: React.ReactNode }[] =
 export function DiscoverClient({
   trendingVerses,
   suggestedPeople,
-  courseProgress,
-  courses,
-  books,
 }: DiscoverClientProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchType, setSearchType] = useState<SearchTab>('all');
@@ -184,8 +174,6 @@ export function DiscoverClient({
             people={suggestedPeople}
             onSeeAll={() => openSearch('people')}
           />
-          <CoursesRow courses={courses} progress={courseProgress} />
-          <BooksRow books={books} />
         </div>
       </div>
 

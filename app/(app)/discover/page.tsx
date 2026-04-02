@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '../../../lib/supabase/server';
-import { getTrendingVerses, getSuggestedPeople, searchBooks, searchCourses } from '../../../lib/discover/actions';
-import { getCourseProgress } from '../../../lib/learn/actions';
+import { getTrendingVerses, getSuggestedPeople } from '../../../lib/discover/actions';
 import { DiscoverClient } from './DiscoverClient';
 
 export default async function DiscoverPage() {
@@ -12,21 +11,15 @@ export default async function DiscoverPage() {
 
   if (!user) redirect('/sign-in');
 
-  const [trendingVerses, suggestedPeople, courseProgress, allCourses, allBooks] = await Promise.all([
+  const [trendingVerses, suggestedPeople] = await Promise.all([
     getTrendingVerses(12),
     getSuggestedPeople(user.id, 10),
-    getCourseProgress(),
-    searchCourses(''),
-    searchBooks(''),
   ]);
 
   return (
     <DiscoverClient
       trendingVerses={trendingVerses}
       suggestedPeople={suggestedPeople}
-      courseProgress={courseProgress}
-      courses={allCourses}
-      books={allBooks}
     />
   );
 }
