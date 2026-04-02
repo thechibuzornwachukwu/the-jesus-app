@@ -197,7 +197,7 @@ export function UploadSheet({ open, onClose, onUploaded }: UploadSheetProps) {
   });
 
   return (
-    <BottomSheet open={open} onClose={handleClose} title="Share a Perspective">
+    <BottomSheet open={open} onClose={handleClose} title="Share a Perspective" contentStyle={{ minHeight: '60dvh' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
         {/* Mode tab switcher */}
