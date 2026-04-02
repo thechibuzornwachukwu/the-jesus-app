@@ -29,10 +29,8 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
     <div style={{
       position: 'fixed',
       top: 'var(--safe-top, 0px)',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      width: '100%',
-      maxWidth: 430,
+      left: 0,
+      right: 0,
       bottom: 'calc(var(--nav-height) + var(--safe-bottom, 0px))',
       zIndex: 1,
     }}>
