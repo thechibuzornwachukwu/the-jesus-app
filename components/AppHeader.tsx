@@ -1,16 +1,13 @@
 'use client';
 
 import React from 'react';
-import { MessageCircle, Flame } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Flame } from 'lucide-react';
 
 interface AppHeaderProps {
   streakCount: number;
 }
 
 export function AppHeader({ streakCount }: AppHeaderProps) {
-  const router = useRouter();
-
   return (
     <header
       style={{
@@ -50,24 +47,6 @@ export function AppHeader({ streakCount }: AppHeaderProps) {
 
       {/* Right actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-        {/* Chat */}
-        <button
-          onClick={() => router.push('/chat')}
-          aria-label="Messages"
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--color-text-muted)',
-            display: 'flex',
-            alignItems: 'center',
-            padding: 4,
-            WebkitTapHighlightColor: 'transparent',
-          }}
-        >
-          <MessageCircle size={22} strokeWidth={1.5} aria-hidden />
-        </button>
-
         {/* Streak */}
         <div
           title={`${streakCount}-day streak`}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { FeedItem } from '../../../lib/explore/types';
 import { PerspectiveFeed, type PerspectiveFeedHandle } from '../../../libs/explore/PerspectiveFeed';
 import { CommentSheet } from '../../../libs/explore/CommentSheet';
@@ -19,6 +19,14 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
   const [uploadOpen, setUploadOpen] = useState(false);
   const feedRef = useRef<PerspectiveFeedHandle>(null);
 
+  // Strip padding from the shared <main> so the feed is truly full-bleed.
+  // The outer div compensates with an explicit margin-top + height calc.
+  useEffect(() => {
+    const main = document.querySelector('main.page-content');
+    main?.classList.add('page-content--fullscreen');
+    return () => main?.classList.remove('page-content--fullscreen');
+  }, []);
+
   const handleUploaded = async (_id: string, _kind: 'video'): Promise<void> => {
     showToast('Perspective published!', 'success');
     setUploadOpen(false);
@@ -26,10 +34,15 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      marginTop: 'calc(var(--header-height) + var(--safe-top, 0px))',
+      height: 'calc(100dvh - var(--header-height) - var(--nav-height) - var(--safe-top, 0px) - var(--safe-bottom, 0px))',
+    }}>
 
       {/* Feed area */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ flex: 1, position: 'relative' }}>
 
         {/* Create post FAB */}
         <div style={{

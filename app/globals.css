@@ -69,6 +69,18 @@ body {
   min-height: 100dvh;
 }
 
+/* Full-bleed feed pages (Explore/Discover). Removes standard padding so
+   the page component can own its height via an explicit calc. The page
+   component must add its own margin-top to sit below the fixed header. */
+.page-content--fullscreen {
+  padding: 0 !important;
+  min-height: unset;
+}
+/* No stagger reveal on full-bleed pages — cards animate individually */
+.page-content--fullscreen > * {
+  animation: none;
+}
+
 /* Desktop sidebar fill */
 @media (min-width: 431px) {
   body {

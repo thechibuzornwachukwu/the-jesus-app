@@ -2,14 +2,15 @@
 
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Search, Flame, User } from 'lucide-react';
+import { Home, Search, Flame, MessageCircle, User } from 'lucide-react';
 import { vibrate } from '../libs/shared-ui/haptics';
 
 const navItems = [
   { href: '/explore',  label: 'Explore',  Icon: Home  },
   { href: '/discover', label: 'Discover', Icon: Search },
-  { href: '/testify',  label: 'Testify',  Icon: Flame },
-  { href: '/profile',  label: 'Profile',  Icon: User  },
+  { href: '/testify',  label: 'Testify',  Icon: Flame         },
+  { href: '/chat',     label: 'Messages', Icon: MessageCircle },
+  { href: '/profile',  label: 'Profile',  Icon: User          },
 ];
 
 export function BottomNav() {
