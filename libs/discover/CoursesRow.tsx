@@ -22,8 +22,8 @@ function CourseCard({ course, done }: { course: CourseResult; done: number }) {
     <div
       role="button"
       tabIndex={0}
-      onClick={() => { vibrate([8]); router.push(`/equip?track=${course.id}`); }}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { vibrate([8]); router.push(`/equip?track=${course.id}`); } }}
+      onClick={() => { vibrate([8]); router.push(`/learn?track=${course.id}`); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { vibrate([8]); router.push(`/learn?track=${course.id}`); } }}
       style={{
         flexShrink: 0,
         width: 160,
@@ -137,7 +137,7 @@ export function CoursesRow({ courses, progress, loading }: CoursesRowProps) {
           Courses
         </p>
         <button
-          onClick={() => router.push('/equip')}
+          onClick={() => router.push('/learn')}
           style={{
             display: 'flex',
             alignItems: 'center',

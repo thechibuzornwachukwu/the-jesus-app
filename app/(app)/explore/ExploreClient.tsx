@@ -1,16 +1,12 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import type { FeedItem } from '../../../lib/explore/types';
 import { PerspectiveFeed, type PerspectiveFeedHandle } from '../../../libs/explore/PerspectiveFeed';
 import { CommentSheet } from '../../../libs/explore/CommentSheet';
 import { ComposeSheet } from '../../../libs/explore/ComposeSheet';
-import { DailyVerse } from '../../../libs/explore/DailyVerse';
-import { getDailyVerse } from '../../../lib/explore/daily-verses';
 import { showToast } from '../../../libs/shared-ui/Toast';
 import { Plus } from 'lucide-react';
-
-const verse = getDailyVerse();
 
 interface ExploreClientProps {
   initialItems: FeedItem[];
@@ -31,14 +27,6 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-
-      {/* Daily verse banner */}
-      <DailyVerse
-        verse={verse}
-        initialLikeCount={0}
-        initialUserLiked={false}
-        initialCommentCount={0}
-      />
 
       {/* Feed area */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
