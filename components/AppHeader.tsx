@@ -28,6 +28,8 @@ export function AppHeader({ streakCount }: AppHeaderProps) {
   const title = getTitle(pathname);
   const isExploreFeed = pathname === '/explore';
 
+  if (isExploreFeed) return null;
+
   return (
     <header
       style={{

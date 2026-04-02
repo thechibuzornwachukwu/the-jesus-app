@@ -26,10 +26,19 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
   };
 
   return (
-    <div className="feed-container">
+    <div style={{
+      position: 'fixed',
+      top: 'var(--safe-top, 0px)',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: '100%',
+      maxWidth: 430,
+      bottom: 'calc(var(--nav-height) + var(--safe-bottom, 0px))',
+      zIndex: 1,
+    }}>
 
       {/* Feed area */}
-      <div style={{ flex: 1, position: 'relative' }}>
+      <div style={{ position: 'absolute', inset: 0 }}>
 
         {/* Create post FAB */}
         <div style={{
