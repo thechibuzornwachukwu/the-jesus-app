@@ -27,8 +27,9 @@ export function AppHeader({ streakCount }: AppHeaderProps) {
   const pathname = usePathname();
   const title = getTitle(pathname);
   const isExploreFeed = pathname === '/explore';
+  const hasOwnHeader = isExploreFeed || pathname.startsWith('/chat');
 
-  if (isExploreFeed) return null;
+  if (hasOwnHeader) return null;
 
   return (
     <header
