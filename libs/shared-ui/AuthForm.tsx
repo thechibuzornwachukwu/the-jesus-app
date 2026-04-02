@@ -134,18 +134,6 @@ export function AuthForm({ mode, action, magicLinkAction }: AuthFormProps) {
       <div style={{ width: '100%' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
-          <p
-            style={{
-              fontFamily: 'var(--font-serif)',
-              fontStyle: 'italic',
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-faint)',
-              margin: '0 0 var(--space-3)',
-              letterSpacing: '0.01em',
-            }}
-          >
-            {isSignIn ? '"Draw near to God, and he will draw near to you."' : '"You are no longer strangers, but family."'}
-          </p>
           <h1
             style={{
               fontFamily: 'var(--font-display)',
