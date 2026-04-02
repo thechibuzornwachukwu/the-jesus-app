@@ -61,9 +61,9 @@ export function BottomNav() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: 'var(--space-1)',
-              paddingTop: 'var(--space-2)',
+              justifyContent: 'flex-start',
+              gap: 3,
+              paddingTop: 0,
               paddingBottom: 'var(--space-2)',
               height: 'var(--nav-height)',
               background: 'none',
@@ -80,12 +80,35 @@ export function BottomNav() {
             onTouchStart={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.9)'; }}
             onTouchEnd={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
           >
+            {/* 4C — active pill indicator at top of tab */}
+            <div
+              style={{
+                width: 24,
+                height: 2,
+                borderRadius: 1,
+                backgroundColor: active ? 'var(--color-accent)' : 'transparent',
+                transition: 'background-color 0.15s',
+                flexShrink: 0,
+              }}
+            />
             <Icon
-              size={22}
+              size={20}
               strokeWidth={1.5}
               fill={active ? 'currentColor' : 'none'}
               aria-hidden
             />
+            {/* 4A — text label */}
+            <span
+              style={{
+                fontSize: '0.6rem',
+                fontWeight: 600,
+                letterSpacing: '0.03em',
+                lineHeight: 1,
+                fontFamily: 'var(--font-sans, sans-serif)',
+              }}
+            >
+              {label}
+            </span>
           </button>
         );
       })}

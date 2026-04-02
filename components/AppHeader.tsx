@@ -1,13 +1,33 @@
 'use client';
 
 import React from 'react';
+import { usePathname } from 'next/navigation';
 import { Flame } from 'lucide-react';
+
+const ROUTE_TITLES: Array<{ prefix: string; title: string }> = [
+  { prefix: '/explore',  title: 'The JESUS App' },
+  { prefix: '/discover', title: 'Discover'       },
+  { prefix: '/testify',  title: 'Testify'        },
+  { prefix: '/engage',   title: 'Communities'    },
+  { prefix: '/learn',    title: 'Learn'          },
+  { prefix: '/chat',     title: 'Messages'       },
+  { prefix: '/profile',  title: 'Profile'        },
+];
+
+function getTitle(pathname: string): string {
+  const match = ROUTE_TITLES.find(({ prefix }) => pathname === prefix || pathname.startsWith(prefix + '/'));
+  return match?.title ?? 'The JESUS App';
+}
 
 interface AppHeaderProps {
   streakCount: number;
 }
 
 export function AppHeader({ streakCount }: AppHeaderProps) {
+  const pathname = usePathname();
+  const title = getTitle(pathname);
+  const isExploreFeed = pathname === '/explore';
+
   return (
     <header
       style={{
@@ -20,8 +40,8 @@ export function AppHeader({ streakCount }: AppHeaderProps) {
         height: 'var(--header-height)',
         paddingTop: 'var(--safe-top, 0px)',
         zIndex: 'var(--z-header)',
-        backgroundColor: 'var(--color-bg-surface)',
-        borderBottom: '1px solid var(--color-border)',
+        backgroundColor: isExploreFeed ? 'transparent' : 'var(--color-bg-surface)',
+        borderBottom: isExploreFeed ? '1px solid transparent' : '1px solid var(--color-border)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -29,9 +49,10 @@ export function AppHeader({ streakCount }: AppHeaderProps) {
         paddingRight: 'var(--space-3)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
+        transition: 'background-color 0.3s, border-color 0.3s',
       } as React.CSSProperties}
     >
-      {/* Wordmark */}
+      {/* Wordmark / page title */}
       <span
         style={{
           fontFamily: 'var(--font-display, "Archivo Condensed", sans-serif)',
@@ -42,7 +63,7 @@ export function AppHeader({ streakCount }: AppHeaderProps) {
           color: 'var(--color-text)',
         }}
       >
-        The JESUS App
+        {title}
       </span>
 
       {/* Right actions */}
