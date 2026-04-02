@@ -11,7 +11,6 @@ import {
   FollowersSheet,
   FollowingSheet,
 } from '../../../libs/profile';
-import { StreakWidget } from '../../../libs/profile/StreakWidget';
 import {
   getNotifications,
   markNotificationRead,
@@ -211,13 +210,6 @@ export function ProfileClient({
           />
         </div>
 
-        {/* Streak Widget */}
-        <div className="profile-section">
-          <StreakWidget
-            current={streakData.current}
-            longest={streakData.longest}
-          />
-        </div>
 
         {/* Content Tabs */}
         <div className="profile-section" style={{ marginTop: 'var(--space-4)' }}>

@@ -21,7 +21,6 @@ import { SavedVersesList } from '../../../../libs/profile/SavedVersesList';
 import { PostedVideoGrid } from '../../../../libs/profile/PostedVideoGrid';
 import { FollowersSheet } from '../../../../libs/profile/FollowersSheet';
 import { FollowingSheet } from '../../../../libs/profile/FollowingSheet';
-import { StreakWidget } from '../../../../libs/profile/StreakWidget';
 import { TabBar } from '../../../../libs/shared-ui/TabBar';
 import { EmptyState } from '../../../../libs/shared-ui/EmptyState';
 import { followUser, unfollowUser } from '../../../../lib/profile/actions';
@@ -493,9 +492,6 @@ export function ProfilePageClient({
           onFollowingClick={() => { vibrate([6]); setFollowingOpen(true); }}
         />
 
-        {isOwner && (
-          <StreakWidget current={streakData.current} longest={streakData.longest} />
-        )}
 
         {isOwner ? ownerTabsEl : visitorTabsEl}
 

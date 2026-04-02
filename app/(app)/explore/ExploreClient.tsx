@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import type { FeedItem } from '../../../lib/explore/types';
 import { PerspectiveFeed, type PerspectiveFeedHandle } from '../../../libs/explore/PerspectiveFeed';
 import { CommentSheet } from '../../../libs/explore/CommentSheet';
@@ -18,12 +18,6 @@ export function ExploreClient({ initialItems, initialCursor, userId }: ExploreCl
   const [commentVideoId, setCommentVideoId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const feedRef = useRef<PerspectiveFeedHandle>(null);
-
-  useEffect(() => {
-    const main = document.querySelector('main.page-content');
-    main?.classList.add('page-content--fullscreen');
-    return () => main?.classList.remove('page-content--fullscreen');
-  }, []);
 
   const handleUploaded = async (_id: string, _kind: 'video'): Promise<void> => {
     showToast('Perspective published!', 'success');
